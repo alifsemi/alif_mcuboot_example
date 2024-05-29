@@ -1,0 +1,4 @@
+CompileFlags:
+  CompilationDatabase: >-
+    /home/kivaisan/alif/mcuboot/mcuboot_example_DEV/libs/cmsis/CMSIS/CoreValidation/Project/tmp/Validation/CM0/none
+  Add: []

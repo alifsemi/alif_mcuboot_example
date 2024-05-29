@@ -1,0 +1,35 @@
+{
+    "DEVICE": {
+        "disabled" : false,
+        "binary": "app-device-config.json",
+        "version" : "0.5.00",
+        "signed": true
+    },
+     "HE_BL": {
+        "disabled": false,
+        "binary": "alif-mcuboot.bin",
+        "version" : "1.0.0",
+        "signed": true,
+        "mramAddress": "0x80000000",
+        "cpu_id": "M55_HE",
+        "flags": ["boot"]
+    },
+    "HE_PRI": {
+        "disabled": false,
+        "binary": "alif-example-app_signed.bin",
+        "version": "1.0.0",
+        "signed": false,
+        "mramAddress": "0x80010000",
+        "cpu_id": "M55_HE",
+        "flags": []
+    },
+    "HE_SEC": {
+        "disabled": false,
+        "binary": "alif-example-app-update_signed.bin",
+        "version": "1.0.0",
+        "signed": false,
+        "mramAddress": "0x80020000",
+        "cpu_id": "M55_HE",
+        "flags": []
+    }
+}

@@ -1,0 +1,11 @@
+ExitOnError 1
+Device AE722F80F55D5_HE
+SelectInterface JTAG
+JTAGConf -1,-1
+Speed 4000
+Connect
+Halt
+LoadFile alif-example-app-update_signed.bin 0x80020000
+Go
+Exit
+
