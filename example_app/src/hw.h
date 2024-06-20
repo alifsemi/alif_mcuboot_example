@@ -8,17 +8,13 @@
  *
  */
 
-/******************************************************************************
- * @file     board.h
- * @brief    BOARD API
- *
- *           copy this file to your project and remove #if 0 / #endif
- ******************************************************************************/
+#ifndef HW_H
+#define HW_H
 
-#ifndef __BOARD_LIB_H
-#define __BOARD_LIB_H
+#include "Driver_GPIO.h"
 
-#define BOARD_UART1_INSTANCE 2
-#define BOARD_UART2_INSTANCE 2
+void hw_init(void);
+void led_button_init(ARM_GPIO_SignalEvent_t cb);
+void led_toggle(void);
 
 #endif

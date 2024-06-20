@@ -10,38 +10,42 @@
 
 #include "uart_tracelib.h"
 #include "fault_handler.h"
-#include "pinconf.h"
-#include "Driver_GPIO.h"
 #include "system_utils.h"
-
-
 #include <stdio.h>
 
+#include "hw.h"
+#include "update.h"
+
+
 extern void clk_init(void);
+extern void flush_uart(void);
 
-#ifdef EXAMPLE_APP_UPDATE_TARGET
-#define LED_PORT  7
-#define LED_PIN 4
-#else
-#define LED_PORT  12
-#define LED_PIN 3
-#endif
-extern ARM_DRIVER_GPIO ARM_Driver_GPIO_(LED_PORT);
-static ARM_DRIVER_GPIO* Led = &ARM_Driver_GPIO_(LED_PORT);
+extern void mpu_init(void);
 
-void hw_init(void)
+static volatile uint8_t button_pressed = 0;
+static uint8_t update_available = 0;
+
+static void button_callback(uint32_t event)
 {
-    uint32_t config_uart_rx =
-			PADCTRL_READ_ENABLE |
-			PADCTRL_SCHMITT_TRIGGER_ENABLE |
-			PADCTRL_DRIVER_DISABLED_PULL_UP;
-    pinconf_set(PORT_1, PIN_0, PINMUX_ALTERNATE_FUNCTION_1, config_uart_rx);	// P1_0: RX  (mux mode 1)
-	pinconf_set(PORT_1, PIN_1, PINMUX_ALTERNATE_FUNCTION_1, 0);					// P1_1: TX  (mux mode 1)
-    pinconf_set(LED_PORT, LED_PIN, PINMUX_ALTERNATE_FUNCTION_0, 0);
+    (void)event;
+    if(!button_pressed)
+        button_pressed = 1;
+}
+
+static void do_button_pressed(void)
+{
+    if(button_pressed) {
+
+        if(update_available) {
+            set_pending();
+        }
+        button_pressed = 0;
+    }
 }
 
 int main(void)
 {
+    mpu_init(); // pull mpu in
     hw_init();
     tracelib_init(0, 0);
     fault_dump_enable(true);
@@ -54,17 +58,23 @@ int main(void)
     printf("Example app running!\n");
 #endif
 
-    Led->Initialize(LED_PIN, 0);
-    Led->PowerControl(LED_PIN, ARM_POWER_FULL);
+    read_image_state(&update_available);
 
-    Led->SetValue(LED_PIN, GPIO_PIN_OUTPUT_STATE_LOW);
-	Led->SetDirection(LED_PIN, GPIO_PIN_DIRECTION_OUTPUT);
+    if(update_available) {
+        printf("Press button to pend update.\n");
+    }
+    else {
+        printf("No update available.\n");
+    }
+    led_button_init(button_callback);
 
     while(1)
     {
-        Led->SetValue(LED_PIN, GPIO_PIN_OUTPUT_STATE_TOGGLE);
-        for(int i = 0; i < 10; i++) {
-            sys_busy_loop_us(100000);
+        led_toggle();
+        for(int i = 0; i < 100; i++) {
+            sys_busy_loop_us(10000);
+            do_button_pressed();
         }
+        flush_uart();
     }
 }

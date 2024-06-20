@@ -8,17 +8,12 @@
  *
  */
 
-/******************************************************************************
- * @file     board.h
- * @brief    BOARD API
- *
- *           copy this file to your project and remove #if 0 / #endif
- ******************************************************************************/
+#ifndef UPDATE_H
+#define UPDATE_H
 
-#ifndef __BOARD_LIB_H
-#define __BOARD_LIB_H
+#include <inttypes.h>
 
-#define BOARD_UART1_INSTANCE 2
-#define BOARD_UART2_INSTANCE 2
+int read_image_state(uint8_t* update_available);
+void set_pending(void);
 
 #endif

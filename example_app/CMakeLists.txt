@@ -32,6 +32,17 @@ set_target_properties(${target}
 
 target_sources(${target} PRIVATE
     src/main.c
+    src/hw.c
+    src/mpu_M55.c
+    src/update.c
+    ${MCUBOOT_DIR}/boot/bootutil/src/bootutil_public.c
+    ${MCUBOOT_DIR}/boot/alif/flash/flash_map_mram.c
+)
+
+target_include_directories(${target} PRIVATE
+    ${MCUBOOT_DIR}/boot/alif/include
+    ${MCUBOOT_DIR}/boot/bootutil/include
+
 )
 
 target_link_libraries(${target} PRIVATE
@@ -57,16 +68,16 @@ create_executable_target(${EXAMPLE_APP_TARGET} EXAMPLE_APP_TARGET)
 create_executable_target(${EXAMPLE_APP_UPDATE_TARGET} EXAMPLE_APP_UPDATE_TARGET)
 
 add_custom_command(TARGET ${EXAMPLE_APP_TARGET} POST_BUILD
-    COMMAND python ${MCUBOOT_DIR}/scripts/imgtool.py sign --key ${MCUBOOT_DIR}/root-rsa-2048.pem --header-size 0x800 --align 16 --pad-header --version 1.0.0 --slot-size 0x10000 ${EXAMPLE_APP_TARGET}.bin ${EXAMPLE_APP_TARGET}_signed.bin
+    COMMAND python ${MCUBOOT_DIR}/scripts/imgtool.py sign --key ${MCUBOOT_DIR}/root-rsa-2048.pem --header-size 0x800 --align 16 --pad-header --confirm --version 1.0.0 --slot-size 0x10000 ${EXAMPLE_APP_TARGET}.bin ${EXAMPLE_APP_TARGET}_signed.bin
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 add_custom_command(TARGET ${EXAMPLE_APP_TARGET} POST_BUILD
-    COMMAND python ${MCUBOOT_DIR}/scripts/imgtool.py sign --key ${MCUBOOT_DIR}/root-rsa-2048.pem --header-size 0x800 --align 16 --pad-header --pad --confirm --version 1.0.0 --slot-size 0x10000 ${EXAMPLE_APP_TARGET}.bin ${EXAMPLE_APP_TARGET}_as_update_signed.bin
+    COMMAND python ${MCUBOOT_DIR}/scripts/imgtool.py sign --key ${MCUBOOT_DIR}/root-rsa-2048.pem --header-size 0x800 --align 16 --pad-header --version 1.0.0 --slot-size 0x10000 ${EXAMPLE_APP_TARGET}.bin ${EXAMPLE_APP_TARGET}_as_update_signed.bin
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 
 add_custom_command(TARGET ${EXAMPLE_APP_UPDATE_TARGET} POST_BUILD
-    COMMAND python ${MCUBOOT_DIR}/scripts/imgtool.py sign --key ${MCUBOOT_DIR}/root-rsa-2048.pem --header-size 0x800 --align 16 --pad-header --pad --confirm --version 2.0.0 --slot-size 0x10000 ${EXAMPLE_APP_UPDATE_TARGET}.bin ${EXAMPLE_APP_UPDATE_TARGET}_signed.bin
+    COMMAND python ${MCUBOOT_DIR}/scripts/imgtool.py sign --key ${MCUBOOT_DIR}/root-rsa-2048.pem --header-size 0x800 --align 16 --pad-header --version 2.0.0 --slot-size 0x10000 ${EXAMPLE_APP_UPDATE_TARGET}.bin ${EXAMPLE_APP_UPDATE_TARGET}_signed.bin
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 
