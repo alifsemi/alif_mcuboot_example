@@ -2329,7 +2329,7 @@
 
 // <e> UART4 (Universal asynchronous receiver transmitter) [Driver_USART4]
 // <i> Configuration settings for Driver_USART4 in component ::Drivers:USART
-#define RTE_UART4   0
+#define RTE_UART4   1
 
 #if RTE_UART4
 
@@ -2662,7 +2662,7 @@
 // <h> LPTIMER (Low power timer)
 // <e> LPTIMER (Low power timer) [Driver_LPTIMER]
 // <i> Configuration settings for Driver_LPTIMER in component ::Drivers:LPTIMER
-#define RTE_LPTIMER    0
+#define RTE_LPTIMER    1
 
 #if RTE_LPTIMER
 
@@ -6690,7 +6690,7 @@
 
 // <e> CRC1 (Cyclic Redundancy Check) [Driver_CRC1]
 // <i> Configuration settings for Driver_CRC1 in component ::Drivers:CRC
-#define RTE_CRC1      0
+#define RTE_CRC1      1
 #if RTE_CRC1
 
 // <o> CRC1 DMA ENABLE

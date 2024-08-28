@@ -12,6 +12,8 @@ project(alif-example-${ENSEMBLE_CORE}
     LANGUAGES C CXX ASM
 )
 
+set(TRANSPORT "uart" CACHE STRING "Transport selection")
+set_property(CACHE TRANSPORT PROPERTY STRINGS "uart" "usb")
 
 if(${CMAKE_HOST_SYSTEM_NAME} STREQUAL Linux)
 set(JLINK_COMMAND_NAME JLinkExe)
@@ -35,18 +37,20 @@ target_sources(${target} PRIVATE
     src/hw.c
     src/mpu_M55.c
     src/update.c
-    ${MCUBOOT_DIR}/boot/bootutil/src/bootutil_public.c
+    src/mcumgr_handler.c
+    src/mcumgr_transport.c
+    src/mcumgr_transport_${TRANSPORT}.c
+    $<$<STREQUAL:${TRANSPORT},usb>:src/usb_desc.c>
     ${MCUBOOT_DIR}/boot/alif/flash/flash_map_mram.c
-)
-
-target_include_directories(${target} PRIVATE
-    ${MCUBOOT_DIR}/boot/alif/include
-    ${MCUBOOT_DIR}/boot/bootutil/include
-
 )
 
 target_link_libraries(${target} PRIVATE
     common_app_utils
+    ${LIB_BOOTUTIL}
+    ${MCUMGR_LIB}
+    rte_interface
+    ${MBEDTLS_LIB}
+    $<$<STREQUAL:${TRANSPORT},usb>:tinyusb>
 )
 
 target_compile_definitions(${target} PRIVATE

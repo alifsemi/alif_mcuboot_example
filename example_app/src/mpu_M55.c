@@ -91,10 +91,10 @@ void MPU_Load_Regions(void)
 #endif
         {   /* MRAM - BL + PRIMARY => RO  */
             .RBAR = ARM_MPU_RBAR(0x80000000, ARM_MPU_SH_NON, 1, 1, 0),
-            .RLAR = ARM_MPU_RLAR(0x8001FFFF, MEMATTRIDX_NORMAL_WT_RA)
+            .RLAR = ARM_MPU_RLAR(0x8001FFDF, MEMATTRIDX_NORMAL_WT_RA)
         },
-        {   /* MRAM - SECONDARY => RW  */
-            .RBAR = ARM_MPU_RBAR(0x80020000, ARM_MPU_SH_NON, 0, 1, 0),
+        {   /* MRAM - PRIMARY TRAILER + SECONDARY => RW  */
+            .RBAR = ARM_MPU_RBAR(0x8001FFE0, ARM_MPU_SH_NON, 0, 1, 0),
             .RLAR = ARM_MPU_RLAR(0x8002FFFF, MEMATTRIDX_DEVICE_nGnRE)
         },
         {   /* MRAM - the rest => RO  */

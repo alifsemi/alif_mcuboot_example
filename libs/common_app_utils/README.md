@@ -1,4 +1,4 @@
-# common_app_utils
+# Common Application Utilities
 This repository includes custom utilities for applications.
 
 ## logging

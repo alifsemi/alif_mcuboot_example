@@ -197,19 +197,61 @@ int flash_area_write(const struct flash_area *fa, uint32_t off,
                      const void *src, uint32_t len)
 {
     uint32_t addr = fa->fa_off + off;
-    uint32_t i;
     const uint8_t *data = src;
 
-    if (addr % MRAM_WRITE_SIZE || len % MRAM_WRITE_SIZE)
-    {
-        return -1;
+    if(addr % MRAM_WRITE_SIZE) {
+
+        // unaligned MRAM write start, write partial first
+        uint8_t* ptr = (uint8_t*)(addr & MRAM_ADDR_ALIGN_MASK);
+        uint8_t offset = addr & (~MRAM_ADDR_ALIGN_MASK);
+        uint8_t unaligned_bytes = MRAM_WRITE_SIZE - offset;
+
+        // read existing data in
+        uint64_t temp_buf[2];
+
+        temp_buf[0] = ((volatile uint64_t *)ptr)[0];
+        temp_buf[1] = ((volatile uint64_t *)ptr)[1];
+
+        // is unaligned bytes more than remaining count?
+        if(unaligned_bytes > len)
+        {
+            // then take only remaining count.
+            unaligned_bytes = len;
+        }
+
+        // overwrite
+        memcpy((uint8_t*)temp_buf + offset, data, unaligned_bytes);
+
+        // write back to MRAM
+        mram_write_128bit(ptr, temp_buf);
+
+        data += unaligned_bytes;
+        len -= unaligned_bytes;
+        addr += unaligned_bytes;
     }
 
-    for (i = 0; i < len; i += MRAM_WRITE_SIZE)
-    {
-        mram_write_128bit((void *) (addr + i), (data + i));
+    // write aligned bytes
+    while(len / MRAM_WRITE_SIZE) {
+        mram_write_128bit((void*)addr, data);
+        len -= MRAM_WRITE_SIZE;
+        data += MRAM_WRITE_SIZE;
+        addr += MRAM_WRITE_SIZE;
     }
 
+    // not full sector?
+    if(len) {
+        // read existing data in
+        uint64_t temp_buf[2];
+
+        temp_buf[0] = ((volatile uint64_t *)addr)[0];
+        temp_buf[1] = ((volatile uint64_t *)addr)[1];
+
+        // overwrite from the start
+        memcpy(temp_buf, data, len);
+
+        // write back to MRAM
+        mram_write_128bit((void*)addr, temp_buf);
+    }
     return 0;
 }
 

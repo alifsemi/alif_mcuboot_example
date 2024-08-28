@@ -13,7 +13,8 @@
 
 #include <inttypes.h>
 
-int read_image_state(uint8_t* update_available);
+int read_image_state(uint8_t* test_boot, uint8_t* update_available);
 void set_pending(void);
+void confirm_update(void);
 
 #endif

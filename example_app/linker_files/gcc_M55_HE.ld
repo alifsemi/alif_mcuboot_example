@@ -43,6 +43,8 @@ MEMORY
 {
   ITCM  (rwx) : ORIGIN = 0x00000000, LENGTH = 0x00040000
   DTCM  (rwx) : ORIGIN = 0x20000000, LENGTH = 0x00040000
+  SRAM0 (rwx) : ORIGIN = 0x02000000, LENGTH = 0x00400000
+  SRAM1 (rwx) : ORIGIN = 0x08000000, LENGTH = 0x00280000
   MRAM  (rx)  : ORIGIN = 0x80010800, LENGTH = 0x0000F800
 }
 
@@ -125,6 +127,10 @@ SECTIONS
     /* Add each additional bss section here */
     LONG (ADDR(.bss.at_dtcm))
     LONG (SIZEOF(.bss.at_dtcm)/4)
+    LONG (ADDR(.bss.at_sram0))
+    LONG (SIZEOF(.bss.at_sram0)/4)
+    LONG (ADDR(.bss.at_sram1))
+    LONG (SIZEOF(.bss.at_sram1)/4)
     __zero_table_end__ = .;
     . = ALIGN(16);
   } > MRAM
@@ -181,6 +187,16 @@ SECTIONS
     LONG (0)
     LONG (0)
   } > MRAM
+
+  .bss.at_sram0 (NOLOAD) : ALIGN(8)
+  {
+    * (.bss.sram0*)
+  } > SRAM0
+
+  .bss.at_sram1 (NOLOAD) :
+  {
+    * (.bss.sram1*)
+  } > SRAM1
 
     .bss.at_dtcm (NOLOAD) : ALIGN(8)
   {

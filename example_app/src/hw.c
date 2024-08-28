@@ -46,6 +46,8 @@ void hw_init(void)
 
     pinconf_set(PORT_1, PIN_0, PINMUX_ALTERNATE_FUNCTION_1, config_uart_rx);	// P1_0: RX  (mux mode 1)
 	pinconf_set(PORT_1, PIN_1, PINMUX_ALTERNATE_FUNCTION_1, 0);					// P1_1: TX  (mux mode 1)
+    pinconf_set(PORT_12, PIN_1, PINMUX_ALTERNATE_FUNCTION_2, config_uart_rx);	// P1_0: RX  (mux mode 1)
+	pinconf_set(PORT_12, PIN_2, PINMUX_ALTERNATE_FUNCTION_2, 0);					// P1_1: TX  (mux mode 1)
     pinconf_set(LED_PORT, LED_PIN, PINMUX_ALTERNATE_FUNCTION_0, 0);
     pinconf_set(PORT_15, BUTTON_PIN, PINMUX_ALTERNATE_FUNCTION_0, config_button);
 }

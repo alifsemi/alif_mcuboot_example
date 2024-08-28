@@ -233,7 +233,7 @@ static void FaultDump(void)
     }
     printf("Mode %s flags set: ", &mode_names[(regs[16] & 0xF) * 4]);
     for (size_t i = 0, bit = 1u<<31; i < 38; i++) {
-        if (i < sizeof flag_names) {
+        if (i < sizeof flag_names - 1) {
             if (flag_names[i] != '0') {
                 putchar(regs[16] & bit ? flag_names[i] : flag_names[i] + 'a' - 'A');
             }

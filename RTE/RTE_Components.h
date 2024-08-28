@@ -20,19 +20,10 @@
     #error "Undefined M55 CPU!"
 #endif
 
-/* AlifSemiconductor::BSP.External peripherals.OSPI Flash ISSI */
 #define RTE_Drivers_ISSI_FLASH	1
-
-/* AlifSemiconductor::CMSIS Driver.USART.USART */
-#define RTE_Drivers_USART2   1           /* Driver UART2 */
-//#define RTE_Drivers_USART3   1           /* Driver UART3 */
-//#define RTE_Drivers_USART4   1           /* Driver UART4 */
-
-/* AlifSemiconductor::Device.SOC Peripherals.GPIO */
-#define RTE_Drivers_GPIO     1           /* Driver GPIO */
-/* AlifSemiconductor::Device.SOC Peripherals.PINCONF */
-#define RTE_Drivers_PINCONF  1           /* Driver PinPAD and PinMux */
-
+#define RTE_Drivers_GPIO        1
+#define RTE_Drivers_PINCONF     1
+#define RTE_Drivers_LPTIMER     1
 //#define RTE_Drivers_OSPI     1           /* Driver OSPI */
 
 #endif /* RTE_COMPONENTS_H */

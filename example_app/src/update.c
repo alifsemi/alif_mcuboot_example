@@ -16,7 +16,7 @@
 #include <stdio.h>
 
 
-static int read_single_image_state(int id, uint8_t* update_available)
+static int read_single_image_state(int id, uint8_t* test_boot, uint8_t* update_available)
 {
     const struct flash_area* fa;
     int err = flash_area_open(id, &fa);
@@ -42,6 +42,10 @@ static int read_single_image_state(int id, uint8_t* update_available)
     printf("  image_ok:  %u\n", sstate.image_ok);
     printf("  image_num: %u\n", sstate.image_num);
 
+    if(sstate.swap_type == BOOT_SWAP_TYPE_TEST && sstate.image_ok == BOOT_MAGIC_UNSET && test_boot) {
+        *test_boot = 1;
+    }
+
     struct image_header header;
     err = boot_image_load_header(fa, &header);
     if(!err) {
@@ -55,24 +59,35 @@ static int read_single_image_state(int id, uint8_t* update_available)
     return 0;
 }
 
-int read_image_state(uint8_t* update_available)
+int read_image_state(uint8_t* test_boot, uint8_t* update_available)
 {
     printf("PRIMARY slot:\n");
-    int err = read_single_image_state(FLASH_AREA_IMAGE_PRIMARY(0), 0);
+    int err = read_single_image_state(FLASH_AREA_IMAGE_PRIMARY(0), test_boot, 0);
     if (err) {
         return err;
     }
     printf("SECONDARY slot:\n");
-    return read_single_image_state(FLASH_AREA_IMAGE_SECONDARY(0), update_available);
+    return read_single_image_state(FLASH_AREA_IMAGE_SECONDARY(0), 0, update_available);
 }
 
 void set_pending(void)
 {
-    int err = boot_set_pending_multi(0, 1);
+    int err = boot_set_pending_multi(0, 0);
     if(err) {
         printf("set_pending error: %d\n", err);
     }
     else {
         printf("Update set pending. Reboot the device to apply the update.\n");
+    }
+}
+
+void confirm_update(void)
+{
+    int err = boot_set_confirmed_multi(0);
+    if(err) {
+        printf("set_confirmed error: %d\n", err);
+    }
+    else {
+        printf("Update confirmed. Reboot will not revert anymore.\n");
     }
 }

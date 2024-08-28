@@ -26,10 +26,6 @@ target_sources(${BL_APP_TARGET} PRIVATE
     ${MCUBOOT_DIR}/boot/alif/flash/flash_map_mram.c
 )
 
-target_include_directories(${BL_APP_TARGET} PRIVATE
-    ${MCUBOOT_DIR}/boot/alif/include
-)
-
 target_link_libraries(${BL_APP_TARGET} PRIVATE
     ${LIB_BOOTUTIL}
     common_app_utils

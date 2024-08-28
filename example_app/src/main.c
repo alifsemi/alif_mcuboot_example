@@ -15,6 +15,7 @@
 
 #include "hw.h"
 #include "update.h"
+#include "mcumgr_handler.h"
 
 
 extern void clk_init(void);
@@ -24,6 +25,7 @@ extern void mpu_init(void);
 
 static volatile uint8_t button_pressed = 0;
 static uint8_t update_available = 0;
+static uint8_t test_boot = 0;
 
 static void button_callback(uint32_t event)
 {
@@ -36,7 +38,10 @@ static void do_button_pressed(void)
 {
     if(button_pressed) {
 
-        if(update_available) {
+        if(test_boot) {
+            confirm_update();
+        }
+        else if(update_available) {
             set_pending();
         }
         button_pressed = 0;
@@ -52,15 +57,24 @@ int main(void)
     clk_init();
     sys_busy_loop_init();
 
+    int32_t ret = mcumgr_handler_init();
+    if(ret) {
+        printf("Failed to initialize mcumgr: %" PRId32 "\n", ret);
+        while(1);
+    }
+
 #ifdef EXAMPLE_APP_UPDATE_TARGET
     printf("Updated app running!\n");
 #else
     printf("Example app running!\n");
 #endif
 
-    read_image_state(&update_available);
+    read_image_state(&test_boot, &update_available);
 
-    if(update_available) {
+    if(test_boot) {
+        printf("Confirm update by pressing button or reboot the device to revert.\n");
+    }
+    else if(update_available) {
         printf("Press button to pend update.\n");
     }
     else {
@@ -68,13 +82,17 @@ int main(void)
     }
     led_button_init(button_callback);
 
+    uint32_t start = S32K_CNTRead->CNTCVL;
+
     while(1)
     {
-        led_toggle();
-        for(int i = 0; i < 100; i++) {
-            sys_busy_loop_us(10000);
-            do_button_pressed();
+        if(S32K_CNTRead->CNTCVL - start > 32768) {
+            led_toggle();
+            start = S32K_CNTRead->CNTCVL;
         }
+
+        do_button_pressed();
+        mcumgr_handler_process();
         flush_uart();
     }
 }

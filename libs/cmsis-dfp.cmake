@@ -39,7 +39,10 @@ target_sources(ensemblecmsis PRIVATE
     ${ALIF_DEVICE_DIR}/common/source/clk.c
     ${ALIF_DRIVER_DIR}/Source/Driver_USART.c
     ${ALIF_DRIVER_DIR}/Source/Driver_GPIO.c
+    ${ALIF_DRIVER_DIR}/Source/Driver_CRC.c
+    ${ALIF_DRIVER_DIR}/Source/Driver_LPTIMER.c
     ${ALIF_ENSEMBLE_DRIVERS_DIR}/source/uart.c
+    ${ALIF_ENSEMBLE_DRIVERS_DIR}/source/crc.c
     ${ALIF_ENSEMBLE_DRIVERS_DIR}/source/pinconf.c
 )
 

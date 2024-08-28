@@ -274,9 +274,11 @@ int RETARGET(_write)(FILEHANDLE fh, const unsigned char *buf, unsigned int len, 
     switch (fh) {
     case STDOUT:
     case STDERR: {
-        if(in_interrupt() && !in_fault_handler())
+        bool irqs_disabled = __get_PRIMASK() != 0;
+        if((in_interrupt() || irqs_disabled) && !in_fault_handler())
         {
-           // this is ISR context so don't push to UART
+           // this is ISR context or IRQs are disabled so don't push to UART as send_str will
+           // synchronously wait for the tranmission to complete before returning
            if(retarget_buf_len < RETARGET_BUF_MAX)
            {
                // if we're full just drop

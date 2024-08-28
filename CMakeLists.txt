@@ -72,10 +72,14 @@ add_link_options(
     --entry=Reset_Handler
 )
 
-set(LIB_BOOTUTIL bootutil)
+if(NOT CMAKE_BUILD_TYPE)
+    message(STATUS "Setting build type to Release.")
+    set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build type (Release or Debug)" FORCE)
+else()
+    message(STATUS "Build type was set to ${CMAKE_BUILD_TYPE}.")
+endif()
+
 set(LIBRARIES_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libs)
-set(MBEDTLS_DIR ${LIBRARIES_DIR}/mbedtls)
-set(MCUBOOT_DIR ${LIBRARIES_DIR}/mcuboot)
 
 # Set up the project
 project(alif-mcuboot-example-${ENSEMBLE_CORE}
@@ -94,24 +98,11 @@ set(CMSIS_SRC_PATH ${LIBRARIES_DIR}/CMSIS)
 set(CMSIS_DSP_SRC_PATH ${LIBRARIES_DIR}/CMSIS-dsp)
 include(${LIBRARIES_DIR}/cmsis-dfp.cmake)
 include(${LIBRARIES_DIR}/common_app_utils.cmake)
-
-add_subdirectory(${MBEDTLS_DIR} EXCLUDE_FROM_ALL)
-target_compile_definitions(mbedcrypto PRIVATE
-    MBEDTLS_CONFIG_FILE="alif_mbedtls_config.h"
-)
-target_include_directories(mbedcrypto PRIVATE
-    mbedtls_config
-)
-
-add_subdirectory(${MCUBOOT_DIR}/boot/bootutil EXCLUDE_FROM_ALL)
-target_include_directories(bootutil PUBLIC
-    ${MCUBOOT_DIR}/boot/alif/include
-)
-
-target_link_libraries(${LIB_BOOTUTIL}
-    PRIVATE
-        mbedcrypto
-)
+include(${LIBRARIES_DIR}/mbedtls.cmake)
+include(${LIBRARIES_DIR}/mcuboot.cmake)
+include(${LIBRARIES_DIR}/tinycbor.cmake)
+include(${LIBRARIES_DIR}/mcumgr.cmake)
+include(${LIBRARIES_DIR}/tinyusb.cmake)
 
 add_subdirectory(bootloader_app)
 add_subdirectory(example_app)
