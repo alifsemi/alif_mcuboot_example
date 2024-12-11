@@ -28,7 +28,7 @@
  */
 
 /*
-* M55-HE application specific settings. These need to changed based on
+* M55-HP application specific settings. These need to changed based on
 * application and system memory requirements
 */
 __STACK_SIZE = 0x00008000;
@@ -36,18 +36,14 @@ __HEAP_SIZE  = 0x00008000;
 
 /*
 * This linker script is for application to be executed by the
-* M55-HE core.
+* M55-HP core.
 */
 
 MEMORY
 {
-  ITCM  (rwx) : ORIGIN = 0x00000000, LENGTH = 0x00040000
   DTCM  (rwx) : ORIGIN = 0x20000000, LENGTH = 0x00040000
-  SRAM0 (rwx) : ORIGIN = 0x02000000, LENGTH = 0x00400000
-  SRAM1 (rwx) : ORIGIN = 0x08000000, LENGTH = 0x00280000
-  MRAM  (rx)  : ORIGIN = 0x80010800, LENGTH = 0x0000F800
+  ITCM  (rx)  : ORIGIN = 0x00001000, LENGTH = 0x0000F000
 }
-
 
 ENTRY(Reset_Handler)
 
@@ -79,26 +75,19 @@ SECTIONS
 
     KEEP(*(.eh_frame*))
     . = ALIGN(16);
-  } > MRAM
+  } > ITCM
 
-   .text.at_itcm : ALIGN(16)
-  {
-    /* fast code */
-    
-    . = ALIGN(16);
-  } > ITCM AT> MRAM
-
-  .text.at_mram : ALIGN(16)
+   .text.at_mram : ALIGN(16)
   {
     *(.text*)
     . = ALIGN(16);
-  } > MRAM
+  } > ITCM
 
   .ARM.extab : ALIGN(16)
   {
     *(.ARM.extab* .gnu.linkonce.armextab.*)
     . = ALIGN(16);
-  } > MRAM
+  } > ITCM
 
   .ARM.exidx : ALIGN(16)
   {
@@ -106,7 +95,7 @@ SECTIONS
     *(.ARM.exidx* .gnu.linkonce.armexidx.*)
   __exidx_end = .;
   . = ALIGN(16);
-  } > MRAM
+  } > ITCM
 
   .copy.table (READONLY) : ALIGN(16)
   {
@@ -114,12 +103,9 @@ SECTIONS
     LONG (LOADADDR(.data.at_dtcm))
     LONG (ADDR(.data.at_dtcm))
     LONG (SIZEOF(.data.at_dtcm)/4)
-    LONG (LOADADDR(.text.at_itcm))
-    LONG (ADDR(.text.at_itcm))
-    LONG (SIZEOF(.text.at_itcm)/4)
     __copy_table_end__ = .;
     . = ALIGN(16);
-  } > MRAM
+  } > ITCM
 
   .zero.table (READONLY) : ALIGN(16)
   {
@@ -127,13 +113,9 @@ SECTIONS
     /* Add each additional bss section here */
     LONG (ADDR(.bss.at_dtcm))
     LONG (SIZEOF(.bss.at_dtcm)/4)
-    LONG (ADDR(.bss.at_sram0))
-    LONG (SIZEOF(.bss.at_sram0)/4)
-    LONG (ADDR(.bss.at_sram1))
-    LONG (SIZEOF(.bss.at_sram1)/4)
     __zero_table_end__ = .;
     . = ALIGN(16);
-  } > MRAM
+  } > ITCM
 
   __etext = .;
 
@@ -168,7 +150,7 @@ SECTIONS
 
     __data_end__ = .;
     . = ALIGN(16);
-  } > DTCM AT> MRAM
+  } > DTCM AT> ITCM
 
   .tdata.at.dtcm : ALIGN(16)
   {
@@ -177,7 +159,7 @@ SECTIONS
     __arm32_tls_tcb_offset = .;
     *(.tdata*)
     . = ALIGN(16);
-  } > DTCM AT> MRAM
+  } > DTCM AT> ITCM
 
  /* Force alignment of load region as SETools requires multiple of 16 */
   .padding : ALIGN(16)
@@ -186,19 +168,9 @@ SECTIONS
     LONG (0)
     LONG (0)
     LONG (0)
-  } > MRAM
+  } > ITCM
 
-  .bss.at_sram0 (NOLOAD) : ALIGN(8)
-  {
-    * (.bss.sram0*)
-  } > SRAM0
-
-  .bss.at_sram1 (NOLOAD) :
-  {
-    * (.bss.sram1*)
-  } > SRAM1
-
-    .bss.at_dtcm (NOLOAD) : ALIGN(8)
+  .bss.at_dtcm (NOLOAD) : ALIGN(8)
   {
     __bss_start__ = .;
     *(.bss)

@@ -18,7 +18,8 @@
 #ifndef __BOARD_LIB_H
 #define __BOARD_LIB_H
 
-#define BOARD_UART1_INSTANCE 2
-#define BOARD_UART2_INSTANCE 4
+#define BOARD_UART1_INSTANCE   2
+#define BOARD_UART2_INSTANCE   4
+#define BOARD_UART3_INSTANCE   3
 
 #endif

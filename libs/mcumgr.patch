@@ -1,8 +1,8 @@
 diff --git a/cmd/img_mgmt/include/img_mgmt/img_mgmt_config.h b/cmd/img_mgmt/include/img_mgmt/img_mgmt_config.h
-index 6f781aa..a8e99e3 100644
+index 6f781aa..6fb81ae 100644
 --- a/cmd/img_mgmt/include/img_mgmt/img_mgmt_config.h
 +++ b/cmd/img_mgmt/include/img_mgmt/img_mgmt_config.h
-@@ -54,10 +54,8 @@
+@@ -54,10 +54,10 @@
  
  #else
  
@@ -12,6 +12,8 @@ index 6f781aa..a8e99e3 100644
 -#error "Unknown OS/missing configuration"
 +#define IMG_MGMT_UL_CHUNK_SIZE  512
 +#define IMG_MGMT_BOOT_CURR_SLOT 0
++#undef IMG_MGMT_UPDATABLE_IMAGE_NUMBER
++#define IMG_MGMT_UPDATABLE_IMAGE_NUMBER 2
  
  #endif
  

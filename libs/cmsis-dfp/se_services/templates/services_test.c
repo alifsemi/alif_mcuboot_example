@@ -29,6 +29,7 @@
 #include "services_lib_interface.h"
 #endif
 
+void test_crypto(uint32_t services_handle);
 
 /* forward tests */
 static uint32_t test_services_heartbeat(char *p_test_name, uint32_t services_handle);
@@ -91,21 +92,18 @@ static uint32_t test_services_ldo_voltage(char *p_test_name,
 static uint32_t test_services_get_bus_frequencies(char *p_test_name, uint32_t services_handle);
 static uint32_t test_services_get_eui(char *p_test_name, uint32_t services_handle);
 
+static uint32_t test_services_bor_en(char *p_test_name, uint32_t services_handle);
+
 /*******************************************************************************
  *  M A C R O   D E F I N E S
  ******************************************************************************/
 #define RANDOMIZER_FEATURE          0
-#define TEST_PRINT_ENABLE           1   /* Enable printing from Test harness  */
-#define PRINT_VIA_CONSOLE           0   /* Print via Debugger console         */
-#define PRINT_VIA_SE_UART           1   /* Print via SE UART terminal         */
 #define NUMBER_OF_TEST_RUNS         1   /* Number of times to test            */
 
 #define SANITY_TESTS_ENABLE         1   /* Enable the sanity tests run as part of release builds */
 #define A32_BOOT_WORKAROUND         1   /* Skip A32 boot tests that crash the current B0 device */
 #define PLL_XTAL_TESTS_ENABLE       0
 #define CPU_BOOT_SEQUENCE_TEST_ENABLE 0 /* Boot a CPU core using the low level APIs */
-
-#define PRINT_BUFFER_SIZE           256 /* Maximum print buffer               */
 
 #if defined(M55_HE)
 #define CPU_STRING "M55_HE"
@@ -228,6 +226,7 @@ static services_test_t s_tests[] =
     { test_services_ldo_voltage,             "LDO voltage control    "     , false},  /*51*/
     { test_services_get_bus_frequencies,     "Get BUS frequencies    "     , false},  /*52*/
     { test_services_get_eui,                 "Get EUI-48/EUI-64 extensions", false},  /*53*/
+    { test_services_bor_en,                  "BOR_EN control",               false},  /*54*/
 };
 
 static SERVICES_toc_data_t     toc_info;    /*!< Global to test harness */
@@ -306,39 +305,66 @@ char *flags_to_string(uint32_t flags, char flag_string[])
 }
 
 /**
- * @fn    void TEST_print(uint32_t services_handle, char * fmt, ...)
- * @param services_handle
- * @param buffer_size
- * @param fmt
+ * @fn     static uint32_t digit_count(uint32_t digits)
+ * @brief  Count up the number of digits
+ * @param  digits
+ * @return the number of digits
  */
-void TEST_print(uint32_t services_handle, char *fmt, ...)
+static uint32_t digit_count(uint32_t digits)
 {
-#if TEST_PRINT_ENABLE != 0
-  va_list args;
-  static char buffer[PRINT_BUFFER_SIZE] = { 0 };
-  size_t buffer_size;
+  uint32_t count = 0;
 
-  /*
-   * @todo Handle long strings bigger than buffer size
-   */
-  va_start(args,fmt);
-  buffer_size = vsnprintf(buffer, PRINT_BUFFER_SIZE, fmt, args);
-  va_end(args);
-
-  /**
-   * Choice of Console printing or via the SE-UART
-   */
-#if PRINT_VIA_CONSOLE != 0
-  if (buffer_size >= 0)
+  do
   {
-    printf("%s", buffer);
+    digits /= 10;
+    count = count + 1;
+  } while (digits != 0);
+
+  return count;
+}
+
+/**
+ * @brief
+ *
+ * @param major
+ * @param minor
+ * @param patch
+ * @return
+ */
+static char *version_string_pack(uint32_t major, uint32_t minor, uint32_t patch)
+{
+  static char version_string[12] = {0}; /* formatted */
+  uint32_t major_length;        /* length of characters */
+  uint32_t minor_length;        /* length of characters */
+  uint32_t patch_length;        /* length of characters */
+
+  major_length = digit_count(major);
+  minor_length = digit_count(minor);
+  patch_length = digit_count(patch);
+
+  sprintf(version_string, "%*d.%*d.%*d",
+          (int)major_length, (int)major,
+          (int)minor_length, (int)minor,
+          (int)patch_length, (int)patch);
+
+  return (char *)&version_string[0];
+}
+
+/**
+ * @brief
+ *
+ * @param dest
+ * @param src
+ * @param num_bytes
+ */
+static void format_and_print(char *dest, uint8_t *src, int num_bytes)
+{
+  int next_pos = 0;
+
+  for (int i=0; i < num_bytes; i++)
+  {
+    next_pos += sprintf((char *)(dest+next_pos), "%X", src[i]);
   }
-#endif
-#if PRINT_VIA_SE_UART != 0
-  SERVICES_uart_write(services_handle, strlen(buffer)+1, (uint8_t *)buffer);
-#endif
-  (void)buffer_size;
-#endif // #if SERVICES_PRINT_ENABLE != 0
 }
 
 /**
@@ -620,31 +646,32 @@ static uint32_t test_services_gettoc_data(char *p_test_name,
              service_error_code);
 
   TEST_print(services_handle,
-             "+-------------------------------------------------------------------------------+\n");
+             "+---------------------------------------------------------------------------------+\n");
   TEST_print(services_handle,
-             "|   Name   |    CPU   |Load Address|Boot Address|Image Size|Version|    Flags   |\n");
+             "|   Name   |    CPU   |Load Address|Boot Address|Image Size| Version |    Flags   |\n");
   TEST_print(services_handle,
-             "+-------------------------------------------------------------------------------+\n");
+             "+---------------------------------------------------------------------------------+\n");
 
   for (each_toc = 0; each_toc < toc_info.number_of_toc_entries ; each_toc++)
   {
     char flags_string[FLAG_STRING_SIZE] = {0}; /* Flags as string   */
 
     TEST_print(services_handle,
-               "| %8s |  %6s  | 0x%08X | 0x%08X | %8d | %d.%d.%d | %10s |\n",
+               "| %8s |  %6s  | 0x%08X | 0x%08X | %8d | %6s  | %10s |\n",
                toc_info.toc_entry[each_toc].image_identifier,
                CPUID_to_string(toc_info.toc_entry[each_toc].cpu),
                toc_info.toc_entry[each_toc].load_address,
                toc_info.toc_entry[each_toc].boot_address,
                toc_info.toc_entry[each_toc].image_size,
-               ((toc_info.toc_entry[each_toc].version >> 24) & 0x0F),
-               ((toc_info.toc_entry[each_toc].version >> 16) & 0x0F),
-               ((toc_info.toc_entry[each_toc].version >>  8) & 0x0F),
+               version_string_pack(
+                   (toc_info.toc_entry[each_toc].version >> 24) & 0xFF,
+                   (toc_info.toc_entry[each_toc].version >> 16) & 0xFF,
+                   (toc_info.toc_entry[each_toc].version >>  8) & 0xFF),
                flags_to_string(toc_info.toc_entry[each_toc].flags,
                                flags_string));
   }
   TEST_print(services_handle,
-             "+-------------------------------------------------------------------------------+\n");
+             "+---------------------------------------------------------------------------------+\n");
 
   return error_code;
 }
@@ -659,6 +686,8 @@ static uint32_t test_services_gettoc_data(char *p_test_name,
 static uint32_t test_services_gettoc_via_name_m55_he(char *p_test_name,
                                                      uint32_t services_handle)
 {
+  uint32_t error_code = SERVICES_REQ_SUCCESS;
+
 #if CPU != A32
   uint32_t error_code = SERVICES_REQ_SUCCESS;
   uint32_t service_error_code;
@@ -676,8 +705,9 @@ static uint32_t test_services_gettoc_via_name_m55_he(char *p_test_name,
 #else
   (void)(p_test_name);
   (void)(services_handle);
-  return SERVICES_RESP_UNKNOWN_COMMAND;
+  error_code = SERVICES_RESP_UNKNOWN_COMMAND;
 #endif // #if CPU != A32
+  return error_code;
 }
 
 /**
@@ -690,8 +720,9 @@ static uint32_t test_services_gettoc_via_name_m55_he(char *p_test_name,
 static uint32_t test_services_gettoc_via_name_m55_hp(char *p_test_name,
                                                      uint32_t services_handle)
 {
-#if CPU != A32
   uint32_t error_code = SERVICES_REQ_SUCCESS;
+
+#if CPU != A32
   uint32_t service_error_code;
 
   error_code = SERVICES_system_get_toc_via_name(services_handle,
@@ -703,12 +734,13 @@ static uint32_t test_services_gettoc_via_name_m55_hp(char *p_test_name,
              SERVICES_error_to_string(error_code),
              service_error_code);
 
-  return error_code;
 #else
   (void)(p_test_name);
   (void)(services_handle);
-  return SERVICES_RESP_UNKNOWN_COMMAND;
+
+  error_code = SERVICES_RESP_UNKNOWN_COMMAND;
 #endif // #if CPU != A32
+  return error_code;
 }
 
 /**
@@ -902,16 +934,6 @@ static uint32_t test_services_get_socid(char *p_test_name,
              service_error_code);
 
   return error_code;
-}
-
-static void format_and_print(char *dest, uint8_t *src, int num_bytes)
-{
-  int next_pos = 0;
-
-  for (int i=0; i < num_bytes; i++)
-  {
-    next_pos += sprintf((char *)(dest+next_pos), "%X", src[i]);
-  }
 }
 
 static uint32_t test_services_get_device_data(char *p_test_name,
@@ -1679,13 +1701,18 @@ static uint32_t test_services_pll_xtal(char *p_test_name, uint32_t services_hand
 
   // Switch from PLL to OSC clocks
   uint32_t pll_source = PLL_SOURCE_OSC;
-  SERVICES_clocks_select_pll_source(services_handle, pll_source, PLL_TARGET_UART,      &service_error_code);
-  SERVICES_clocks_select_pll_source(services_handle, pll_source, PLL_TARGET_ES0,       &service_error_code);
-  SERVICES_clocks_select_pll_source(services_handle, pll_source, PLL_TARGET_ES1,       &service_error_code);
+  SERVICES_clocks_select_pll_source(services_handle, pll_source, PLL_TARGET_UART,        &service_error_code);
+  SERVICES_clocks_select_pll_source(services_handle, pll_source, PLL_TARGET_ES0,         &service_error_code);
+  SERVICES_clocks_select_pll_source(services_handle, pll_source, PLL_TARGET_ES1,         &service_error_code);
   TEST_print(services_handle, "Switching from PLL to RC: %d\n", service_error_code);
-  SERVICES_clocks_select_pll_source(services_handle, pll_source, PLL_TARGET_SYSREFCLK, &service_error_code);
-  SERVICES_clocks_select_pll_source(services_handle, pll_source, PLL_TARGET_SYSCLK,    &service_error_code);
-  SERVICES_clocks_select_pll_source(services_handle, pll_source, PLL_TARGET_SECENC,    &service_error_code);
+  SERVICES_clocks_select_pll_source(services_handle, pll_source, PLL_TARGET_SYSREFCLK,   &service_error_code);
+  SERVICES_clocks_select_pll_source(services_handle, pll_source, PLL_TARGET_SYSCLK,      &service_error_code);
+  SERVICES_clocks_select_pll_source(services_handle, pll_source, PLL_TARGET_SECENC,      &service_error_code);
+  SERVICES_clocks_select_pll_source(services_handle, pll_source, PLL_TARGET_PD4_SRAM,    &service_error_code);
+
+  // Switch from XTAL to RC
+  SERVICES_clocks_select_osc_source(services_handle, OSCILLATOR_SOURCE_RC, OSCILLATOR_TARGET_SYS_CLOCKS, &service_error_code);
+  SERVICES_clocks_select_osc_source(services_handle, OSCILLATOR_SOURCE_RC, OSCILLATOR_TARGET_PERIPH_CLOCKS, &service_error_code);
 
   // Stop PLL and XTAL
   SERVICES_pll_clkpll_stop(services_handle, &service_error_code);
@@ -1704,7 +1731,7 @@ static uint32_t test_services_pll_xtal(char *p_test_name, uint32_t services_hand
   SERVICES_clocks_select_pll_source(services_handle, pll_source, PLL_TARGET_UART,        &service_error_code);
   SERVICES_clocks_select_pll_source(services_handle, pll_source, PLL_TARGET_ES0,         &service_error_code);
   SERVICES_clocks_select_pll_source(services_handle, pll_source, PLL_TARGET_ES1,         &service_error_code);
-
+  SERVICES_clocks_select_pll_source(services_handle, pll_source, PLL_TARGET_PD4_SRAM,    &service_error_code);
 
   // Recover the device
   SERVICES_pll_initialize(services_handle, &service_error_code);
@@ -1910,6 +1937,49 @@ static uint32_t test_services_get_eui(char *p_test_name, uint32_t services_handl
 }
 
 /**
+ * @brief Test the BOR_EN coontrol
+ */
+static uint32_t test_services_bor_en(char *p_test_name, uint32_t services_handle)
+{
+  uint32_t error_code = SERVICES_REQ_SUCCESS;
+  uint32_t service_error_code;
+
+  uint32_t bor_en = 0;
+  error_code = SERVICES_power_setting_get(services_handle,
+                                          POWER_SETTING_BOR_EN,
+                                          &bor_en,
+                                          &service_error_code);
+  PRINT_TEST_RESULT;
+
+  TEST_print(services_handle, "Current BOR_EN: %d\n", bor_en);
+  bor_en = !bor_en;
+  error_code = SERVICES_power_setting_configure(services_handle,
+                                                POWER_SETTING_BOR_EN,
+                                                bor_en,
+                                                &service_error_code);
+  PRINT_TEST_RESULT;
+
+  error_code = SERVICES_power_setting_get(services_handle,
+                                          POWER_SETTING_BOR_EN,
+                                          &bor_en,
+                                          &service_error_code);
+
+  PRINT_TEST_RESULT;
+  TEST_print(services_handle, "New BOR_EN: %d\n", bor_en);
+
+  // restore the original BOR_EN
+  TEST_print(services_handle, "Restore original BOR_EN\n");
+  bor_en = !bor_en;
+  error_code = SERVICES_power_setting_configure(services_handle,
+                                                POWER_SETTING_BOR_EN,
+                                                bor_en,
+                                                &service_error_code);
+  PRINT_TEST_RESULT;
+
+  return error_code;
+}
+
+/**
  * @fn    void setup_tests(void)
  * @brief enable/disable individual tests based on configuration
  */
@@ -1966,12 +2036,6 @@ static void setup_tests(void)
  */
 void SERVICES_test_guts(uint32_t services_handle)
 {
-  uint32_t service_error_code = SERVICES_REQ_SUCCESS;
-
-  /* Disable tracing output for services */
-  SERVICES_system_set_services_debug(services_handle, false,
-                                     &service_error_code);
-
   /* A32 calls SERVICES_test_guts() directly from main() */
   setup_tests();
 
@@ -2011,18 +2075,8 @@ void SERVICES_test_guts(uint32_t services_handle)
  */
 void SERVICES_test(uint32_t services_handle)
 {
-  int retry_count;
-
-  /* keep sending heartbeat services requests until one succeeds */
-  retry_count = SERVICES_synchronize_with_se(services_handle);
-  if (retry_count < 0)
-  {
-    TEST_print(services_handle, "SERVICES_synchronize_with_se() FAILED after %d heartbeat attempts\n", -retry_count);
-  }
-  else
-  {
-    TEST_print(services_handle, "SERVICES_synchronize_with_se() returned %d\n", retry_count);
-  }
+  TEST_init(services_handle);
 
   SERVICES_test_guts(services_handle);
+  test_crypto(services_handle);
 }

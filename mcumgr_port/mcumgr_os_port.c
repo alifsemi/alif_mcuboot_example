@@ -4,6 +4,7 @@
 #include "Driver_LPTIMER.h"
 #include <stdio.h>
 #include <inttypes.h>
+#include "mcumgr_os_port.h"
 
 
 extern ARM_DRIVER_LPTIMER DRIVER_LPTIMER0;
@@ -11,11 +12,13 @@ static ARM_DRIVER_LPTIMER* timer = &DRIVER_LPTIMER0;
 
 #define LPTIMER_CLOCK_FREQUENCY 32768
 
+static reset_cb reset_callback_fn;
+
 static void lptimer_event_callback(uint8_t event)
 {
     (void)event;
     timer->Stop(0);
-    NVIC_SystemReset();
+    reset_callback_fn();
 }
 
 int os_mgmt_impl_reset(unsigned int delay_ms)
@@ -42,8 +45,9 @@ int os_mgmt_impl_reset(unsigned int delay_ms)
     return 0;
 }
 
-int32_t os_mgmt_impl_init()
+int32_t os_mgmt_impl_init(reset_cb cb)
 {
+    reset_callback_fn = cb;
     int32_t ret = timer->Initialize(0, lptimer_event_callback);
     if(ret) {
         printf("LPTIMER initialize: %" PRId32 "\n", ret);

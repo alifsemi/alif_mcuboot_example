@@ -144,11 +144,6 @@ void _platform_pre_stackheap_init(void)
 void (*_do_platform_pre_stackheap_init)() __attribute__((section(".preinit_array"))) = _platform_pre_stackheap_init;
 #endif
 
-#if defined(__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050)
-  #pragma clang diagnostic push
-  #pragma clang diagnostic ignored "-Wmissing-noreturn"
-#endif
-
 /*----------------------------------------------------------------------------
   System initialization function
  *----------------------------------------------------------------------------*/

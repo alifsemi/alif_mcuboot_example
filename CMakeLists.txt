@@ -2,23 +2,6 @@
 
 cmake_minimum_required(VERSION 3.19.0 FATAL_ERROR)
 
-set(ENSEMBLE_CORE "M55_HE" CACHE STRING "Ensemble core selection")
-set_property(CACHE ENSEMBLE_CORE PROPERTY STRINGS "M55_HE" "M55_HP")
-
-if (${ENSEMBLE_CORE} STREQUAL "M55_HP")
-    add_compile_definitions(
-        _RTE_
-        M55_HP
-    )
-elseif (${ENSEMBLE_CORE} STREQUAL "M55_HE")
-    add_compile_definitions(
-        _RTE_
-        M55_HE
-    )
-else()
-    message(FATAL_ERROR "Unsupported ENSEMBLE_CORE value!")
-endif()
-
 set(CMAKE_C_COMPILER                arm-none-eabi-gcc)
 set(CMAKE_CXX_COMPILER              arm-none-eabi-g++)
 SET(CMAKE_LINKER                    arm-none-eabi-ld)
@@ -79,6 +62,21 @@ else()
     message(STATUS "Build type was set to ${CMAKE_BUILD_TYPE}.")
 endif()
 
+set(MCUBOOT_MODE "SWAP" CACHE STRING "MCUboot mode selection. Either SWAP or RAMLOAD.")
+set_property(CACHE MCUBOOT_MODE PROPERTY STRINGS "SWAP" "RAMLOAD")
+
+add_compile_definitions(
+    MCUBOOT_MODE_${MCUBOOT_MODE}
+)
+
+set(HE_UPDATES_BOTH FALSE CACHE BOOL "Set single updater mode. In single updater mode HE core updates both binaries.")
+
+if(HE_UPDATES_BOTH)
+    add_compile_definitions(
+        HE_UPDATES_BOTH=1
+    )
+endif()
+
 set(LIBRARIES_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libs)
 
 # Set up the project
@@ -106,4 +104,4 @@ include(${LIBRARIES_DIR}/tinyusb.cmake)
 
 add_subdirectory(bootloader_app)
 add_subdirectory(example_app)
-
+add_subdirectory(blinky_app)

@@ -53,11 +53,12 @@
  * @param port_number
  * @param pin_number
  * @param config_data
+ * @param error_code
  * @return
  */
-uint32_t SERVICES_padcontrol(uint32_t services_handle, 
-                             uint8_t port_number, 
-                             uint8_t pin_number, 
+uint32_t SERVICES_padcontrol(uint32_t services_handle,
+                             uint8_t port_number,
+                             uint8_t pin_number,
                              uint8_t config_data,
                              uint32_t * error_code)
 
@@ -70,7 +71,8 @@ uint32_t SERVICES_padcontrol(uint32_t services_handle,
   p_svc->send_config_data = config_data;
 
   uint32_t ret =  SERVICES_send_request(services_handle,
-                               SERVICE_APPLICATION_PAD_CONTROL_ID, NULL);
+                                        SERVICE_APPLICATION_PAD_CONTROL_ID,
+                                        DEFAULT_TIMEOUT);
   *error_code = p_svc->resp_error_code;
   return ret;
 }

@@ -38,7 +38,15 @@
  * the default upgrade mode.
  */
 
+#ifdef MCUBOOT_MODE_SWAP
 #define MCUBOOT_SWAP_USING_SCRATCH 1
+
+#elif defined(MCUBOOT_MODE_RAMLOAD)
+#define MCUBOOT_RAM_LOAD
+#define IMAGE_EXECUTABLE_RAM_START (0x0)
+#define IMAGE_EXECUTABLE_RAM_SIZE (0x10000)
+#endif
+
 /* Uncomment to enable the overwrite-only code path. */
 //#define MCUBOOT_OVERWRITE_ONLY
 
@@ -53,8 +61,6 @@
 /* Uncomment to enable the revert mechanism in direct-xip mode. */
 /* #define MCUBOOT_DIRECT_XIP_REVERT */
 
-/* Uncomment to enable the ram-load code path. */
-/* #define MCUBOOT_RAM_LOAD */
 
 #define MCUBOOT_BOOT_MAX_ALIGN   16
 /*
@@ -87,11 +93,11 @@
 
 /* Default maximum number of flash sectors per image slot; change
  * as desirable. */
-#define MCUBOOT_MAX_IMG_SECTORS 64
+#define MCUBOOT_MAX_IMG_SECTORS (BOOT_SLOT_SIZE/MRAM_SECTOR_SIZE)
 
 /* Default number of separately updateable images; change in case of
  * multiple images. */
-#define MCUBOOT_IMAGE_NUMBER 	1
+#define MCUBOOT_IMAGE_NUMBER 	2
 
 /*
  * Logging
@@ -116,7 +122,7 @@
  *
  *    MCUBOOT_LOG_ERR > MCUBOOT_LOG_WRN > MCUBOOT_LOG_INF > MCUBOOT_LOG_DBG
  */
-#define MCUBOOT_HAVE_LOGGING 1
+#define MCUBOOT_HAVE_LOGGING 0
 #define MCUBOOT_LOG_LEVEL MCUBOOT_LOG_LEVEL_DEBUG
 
 #define CONFIG_MCUBOOT 1

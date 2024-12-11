@@ -1093,6 +1093,11 @@ __NO_RETURN void Reset_Handler_C(void)
   __PROGRAM_START();                        /* Enter PreMain (C library entry point) */
 }
 
+#if defined(__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050)
+  #pragma clang diagnostic push
+  #pragma clang diagnostic ignored "-Wmissing-noreturn"
+#endif
+
 /*----------------------------------------------------------------------------
   Default Handler for Faults
  *----------------------------------------------------------------------------*/

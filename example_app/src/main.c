@@ -39,10 +39,12 @@ static void do_button_pressed(void)
     if(button_pressed) {
 
         if(test_boot) {
-            confirm_update();
+            confirm_update(0);
+            test_boot = 0;
         }
         else if(update_available) {
-            set_pending();
+            set_pending(0);
+            update_available = 0;
         }
         button_pressed = 0;
     }
@@ -69,7 +71,7 @@ int main(void)
     printf("Example app running!\n");
 #endif
 
-    read_image_state(&test_boot, &update_available);
+    read_image_state(0, &test_boot, &update_available);
 
     if(test_boot) {
         printf("Confirm update by pressing button or reboot the device to revert.\n");

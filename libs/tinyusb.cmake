@@ -21,7 +21,7 @@ target_include_directories(${TINYUSB_LIB} PUBLIC
 )
 
 target_link_libraries(${TINYUSB_LIB} PUBLIC
-    ensemblecmsis
+    ensemblecmsis_he
 )
 
 target_compile_definitions(${TINYUSB_LIB} PRIVATE

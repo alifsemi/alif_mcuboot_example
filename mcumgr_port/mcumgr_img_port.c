@@ -6,6 +6,20 @@
 
 #define MRAM_WRITE_SIZE 16
 
+static int image_index_from_slot(int slot)
+{
+    // image slot comes in, need to convert to image index.
+    // assume here that 0 and 1 are image id 0
+    // and rest are image id 1... (flash_map_mram.c needs to be in sync)
+
+    if (slot < 2) {
+        return 0;
+    }
+    else {
+        return 1;
+    }
+}
+
 int img_mgmt_impl_read(int slot, unsigned int offset, void *dst,
                    unsigned int num_bytes)
 {
@@ -46,9 +60,7 @@ int img_mgmt_impl_erased_val(int slot, uint8_t *erased_val)
 
 int img_mgmt_impl_swap_type(int slot)
 {
-    assert(slot == 0 || slot == 1);
-
-    switch (boot_swap_type()) {
+    switch (boot_swap_type_multi(image_index_from_slot(slot))) {
     case BOOT_SWAP_TYPE_NONE:
         return IMG_MGMT_SWAP_TYPE_NONE;
     case BOOT_SWAP_TYPE_TEST:
@@ -66,21 +78,25 @@ int img_mgmt_impl_swap_type(int slot)
 int img_mgmt_impl_erase_slot(void)
 {
     const struct flash_area *fa;
-    int rc = flash_area_open(FLASH_AREA_IMAGE_0_SECONDARY, &fa);
-    if (rc) {
-        return MGMT_ERR_EUNKNOWN;
-    }
 
-    uint8_t erasedata[MRAM_WRITE_SIZE];
-    memset(erasedata, flash_area_erased_val(fa), MRAM_WRITE_SIZE);
+    for(int i = 0; i < IMG_MGMT_UPDATABLE_IMAGE_NUMBER; i++) {
 
-    for(uint32_t i = 0; i <= (fa->fa_size - MRAM_WRITE_SIZE) && !rc; i += MRAM_WRITE_SIZE) {
-        rc = flash_area_write(fa, i, erasedata, MRAM_WRITE_SIZE);
-    }
-    flash_area_close(fa);
+        int rc = flash_area_open(FLASH_AREA_IMAGE_SECONDARY(i), &fa);
+        if (rc) {
+            return MGMT_ERR_EUNKNOWN;
+        }
 
-    if (rc != 0) {
-        return MGMT_ERR_EUNKNOWN;
+        uint8_t erasedata[MRAM_WRITE_SIZE];
+        memset(erasedata, flash_area_erased_val(fa), MRAM_WRITE_SIZE);
+
+        for(uint32_t i = 0; i <= (fa->fa_size - MRAM_WRITE_SIZE) && !rc; i += MRAM_WRITE_SIZE) {
+            rc = flash_area_write(fa, i, erasedata, MRAM_WRITE_SIZE);
+        }
+        flash_area_close(fa);
+
+        if (rc != 0) {
+            return MGMT_ERR_EUNKNOWN;
+        }
     }
 
     return 0;
@@ -100,7 +116,7 @@ int img_mgmt_impl_write_image_data(unsigned int offset, const void *data,
     const struct flash_area *fa;
     int rc;
 
-    rc = flash_area_open(FLASH_AREA_IMAGE_0_SECONDARY, &fa);
+    rc = flash_area_open(FLASH_AREA_IMAGE_SECONDARY(g_img_mgmt_state.area_id), &fa);
     if (rc != 0) {
         return MGMT_ERR_EUNKNOWN;
     }
@@ -128,8 +144,10 @@ int img_mgmt_impl_write_confirmed(void)
 
 int img_mgmt_impl_write_pending(int slot, bool permanent)
 {
-    (void)slot;
-    int err = boot_set_pending_multi(0, permanent);
+    int image_id = image_index_from_slot(slot);
+
+    int err = boot_set_pending_multi(image_id, permanent);
+
     if(err) {
         return MGMT_ERR_EUNKNOWN;
     }
@@ -177,7 +195,7 @@ int img_mgmt_impl_upload_inspect(const struct img_mgmt_upload_req *req,
             return MGMT_ERR_EINVAL;
         }
 
-        action->area_id = 0;
+        action->area_id = req->image;
 
         if (req->upgrade) {
             // request for upgrade only.

@@ -162,6 +162,11 @@ uint32_t GetSystemAPBClock(void);
  */
 uint32_t GetSystemREFClock(void);
 
+/**
+  \brief  Get System HFOSC Clock value.
+
+   returns the currently configured HFOSC clock value.
+ */
 uint32_t GetSystemHFOSClock(void);
 
 #endif /* CLK_H_ */

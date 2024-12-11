@@ -12,6 +12,14 @@ project(alif-example-${ENSEMBLE_CORE}
     LANGUAGES C CXX ASM
 )
 
+if(MCUBOOT_MODE STREQUAL "RAMLOAD")
+set(RAM_LOAD_ADDITION "--load-addr=0x800")
+set(LINKER_FILE "gcc_M55_HE_TCM.ld")
+else()
+set(RAM_LOAD_ADDITION "")
+set(LINKER_FILE "gcc_M55_HE_MRAM.ld")
+endif()
+
 set(TRANSPORT "uart" CACHE STRING "Transport selection")
 set_property(CACHE TRANSPORT PROPERTY STRINGS "uart" "usb")
 
@@ -41,11 +49,10 @@ target_sources(${target} PRIVATE
     src/mcumgr_transport.c
     src/mcumgr_transport_${TRANSPORT}.c
     $<$<STREQUAL:${TRANSPORT},usb>:src/usb_desc.c>
-    ${MCUBOOT_DIR}/boot/alif/flash/flash_map_mram.c
 )
 
 target_link_libraries(${target} PRIVATE
-    common_app_utils
+    common_app_utils_he
     ${LIB_BOOTUTIL}
     ${MCUMGR_LIB}
     rte_interface
@@ -58,7 +65,7 @@ target_compile_definitions(${target} PRIVATE
 )
 
 target_link_options(${target} PRIVATE
-    -T ${CMAKE_CURRENT_SOURCE_DIR}/linker_files/gcc_M55_HE.ld
+    -T ${CMAKE_CURRENT_SOURCE_DIR}/linker_files/${LINKER_FILE}
     "SHELL:-Xlinker -Map=${CMAKE_BINARY_DIR}/bin/${target}.map"
 )
 
@@ -72,16 +79,16 @@ create_executable_target(${EXAMPLE_APP_TARGET} EXAMPLE_APP_TARGET)
 create_executable_target(${EXAMPLE_APP_UPDATE_TARGET} EXAMPLE_APP_UPDATE_TARGET)
 
 add_custom_command(TARGET ${EXAMPLE_APP_TARGET} POST_BUILD
-    COMMAND python ${MCUBOOT_DIR}/scripts/imgtool.py sign --key ${MCUBOOT_DIR}/root-rsa-2048.pem --header-size 0x800 --align 16 --pad-header --confirm --version 1.0.0 --slot-size 0x10000 ${EXAMPLE_APP_TARGET}.bin ${EXAMPLE_APP_TARGET}_signed.bin
+    COMMAND python ${MCUBOOT_DIR}/scripts/imgtool.py sign --key ${MCUBOOT_DIR}/root-rsa-2048.pem --header-size 0x800 --align 16 --pad-header --version 1.0.0 --slot-size 0x10000 ${RAM_LOAD_ADDITION} ${EXAMPLE_APP_TARGET}.bin ${EXAMPLE_APP_TARGET}_signed.bin
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 add_custom_command(TARGET ${EXAMPLE_APP_TARGET} POST_BUILD
-    COMMAND python ${MCUBOOT_DIR}/scripts/imgtool.py sign --key ${MCUBOOT_DIR}/root-rsa-2048.pem --header-size 0x800 --align 16 --pad-header --version 1.0.0 --slot-size 0x10000 ${EXAMPLE_APP_TARGET}.bin ${EXAMPLE_APP_TARGET}_as_update_signed.bin
+    COMMAND python ${MCUBOOT_DIR}/scripts/imgtool.py sign --key ${MCUBOOT_DIR}/root-rsa-2048.pem --header-size 0x800 --align 16 --pad-header --version 1.0.0 --slot-size 0x10000 ${RAM_LOAD_ADDITION} ${EXAMPLE_APP_TARGET}.bin ${EXAMPLE_APP_TARGET}_as_update_signed.bin
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 
 add_custom_command(TARGET ${EXAMPLE_APP_UPDATE_TARGET} POST_BUILD
-    COMMAND python ${MCUBOOT_DIR}/scripts/imgtool.py sign --key ${MCUBOOT_DIR}/root-rsa-2048.pem --header-size 0x800 --align 16 --pad-header --version 2.0.0 --slot-size 0x10000 ${EXAMPLE_APP_UPDATE_TARGET}.bin ${EXAMPLE_APP_UPDATE_TARGET}_signed.bin
+    COMMAND python ${MCUBOOT_DIR}/scripts/imgtool.py sign --key ${MCUBOOT_DIR}/root-rsa-2048.pem --header-size 0x800 --align 16 --pad-header --version 2.0.0 --slot-size 0x10000 ${RAM_LOAD_ADDITION} ${EXAMPLE_APP_UPDATE_TARGET}.bin ${EXAMPLE_APP_UPDATE_TARGET}_signed.bin
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 

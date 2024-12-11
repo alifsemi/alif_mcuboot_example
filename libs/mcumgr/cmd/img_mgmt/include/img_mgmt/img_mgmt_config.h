@@ -54,9 +54,10 @@
 
 #else
 
-/* Added by Alif */
 #define IMG_MGMT_UL_CHUNK_SIZE  512
 #define IMG_MGMT_BOOT_CURR_SLOT 0
+#undef IMG_MGMT_UPDATABLE_IMAGE_NUMBER
+#define IMG_MGMT_UPDATABLE_IMAGE_NUMBER 2
 
 #endif
 

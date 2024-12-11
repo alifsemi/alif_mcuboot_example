@@ -20,13 +20,24 @@
 #include "tinycbor/cbor_buf_writer.h"
 #include "tinycbor/extract_number_p.h"
 
+#include "mcumgr_os_port.h"
+
 #include "RTE_Components.h"
 #include CMSIS_device_header
 
 #include "Driver_CRC.h"
 
-// OS command implementation init
-extern int32_t os_mgmt_impl_init(void);
+#include "mhu_driver.h"
+#include "services_lib_api.h"
+#include "services_lib_ids.h"
+
+// In case HE does both updates, only HE needs to be reset (it needs to anyway signal HP to shut down as
+// it might've received a spurious wakeup).
+#if HE_UPDATES_BOTH
+#define RESET_TYPE_SOC 0
+#else
+#define RESET_TYPE_SOC 1
+#endif
 
 // CRC calculation
 extern ARM_DRIVER_CRC Driver_CRC1;
@@ -50,7 +61,7 @@ static unsigned char smp_buf[MAX_BODY_SIZE_FOR_SINGLE_FRAME];
 static unsigned char transmit_buf[TRANSMIT_BUF_SIZE];
 
 // must be able to hold full response contents. needs adjustment?
-#define PACKET_BUF_SIZE 256
+#define PACKET_BUF_SIZE 512
 static char response_buf[PACKET_BUF_SIZE];
 
 // SMP handling
@@ -100,6 +111,18 @@ static struct smp_streamer_ext streamer = {
     .len = 0
 };
 
+#if RESET_TYPE_SOC
+// SE reset request via MHU from interrupt context
+static MHU_sender_frame_register_t * MHU = (MHU_sender_frame_register_t *)MHU_M55HE_SECPU_0_TX_BASE;
+static const service_header_t SOC_RESET_HDR = {
+        .hdr_service_id = SERVICE_BOOT_RESET_SOC,
+        .hdr_flags = 0,
+        .hdr_error_code = 0,
+        .hdr_padding = 0
+};
+#endif
+
+// SMP functions
 static int smp_write_at(struct cbor_encoder_writer *writer, size_t offset,
                              const void *data, size_t len, void *arg)
 {
@@ -373,14 +396,39 @@ void mcumgr_evt_callback(uint8_t opcode, uint16_t group, uint8_t id, void *arg)
 {
     if(opcode == MGMT_EVT_OP_CMD_DONE)
     {
+        if(group == 1 && id == 1) {
+            return; // suppress callback prints from image uploads, they'll spam the terminal full.
+        }
+
         struct mgmt_evt_op_cmd_done_arg* cmd_done_arg = (struct mgmt_evt_op_cmd_done_arg*)arg;
         printf("Handled MCUMGR command, group: %" PRId16 " id: %" PRId16 " result code: %d\n", group, id, cmd_done_arg->err);
     }
 }
 
+void reset_request_callback(void)
+{
+#if RESET_TYPE_SOC
+    MHU->ACCESS_REQUEST = 1;
+    while(!MHU->ACCESS_READY); // wait for MHU towards SE to be ready to receive
+
+    // send single word payload which is the global memory address of service_header_t
+    MHU->CHANNEL[0].CH_SET = LocalToGlobal(&SOC_RESET_HDR);
+
+    // now the SoC should reset...
+    // can't print error here as that might get printed even though reset is going through
+
+    // wait for the message to be received
+    while(MHU->CHANNEL[0].CH_ST);
+
+    MHU->ACCESS_REQUEST = 0;
+#else
+    while(1) NVIC_SystemReset();
+#endif
+}
+
 int32_t mcumgr_handler_init(void)
 {
-    int32_t ret = os_mgmt_impl_init();
+    int32_t ret = os_mgmt_impl_init(reset_request_callback);
     if(ret) {
         printf("mcumgr_handler_init - os_mgmt_impl_init failed: %" PRId32 "\n", ret);
         return ret;

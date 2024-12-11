@@ -50,10 +50,17 @@ CAMERA_SENSOR_DEVICE *Get_LPCamera_Sensor(void) \
 } \
 
 /**
+\brief Camera Sensor interface
+*/
+typedef enum _CAMERA_SENSOR_INTERFACE {
+    CAMERA_SENSOR_INTERFACE_PARALLEL,          /* Camera sensor parallel interface */
+    CAMERA_SENSOR_INTERFACE_MIPI               /* Camera sensor serial interface */
+} CAMERA_SENSOR_INTERFACE;
+
+/**
 \brief CPI information structure
 */
 typedef struct _CPI_INFO {
-    CPI_INTERFACE            interface;        /* CPI Interface */
     CPI_WAIT_VSYNC           vsync_wait;       /* CPI VSYNC Wait */
     CPI_CAPTURE_DATA_ENABLE  vsync_mode;       /* CPI VSYNC Mode */
     CPI_SIG_POLARITY         pixelclk_pol;     /* CPI Pixel Clock Polarity */
@@ -75,6 +82,16 @@ typedef struct _CSI_OVERRIDE_CPI_COLOR {
 } CSI_OVERRIDE_CPI_COLOR;
 
 /**
+\brief CSI Pkt2PktTime, Time between Packets (includes the duration of the LS
+       Packet + PHY LowPower to High-Speed time + any eventual camera added delay
+       + PHY HighSpeed to Low-Power time).
+*/
+typedef struct _CSI_PKT2PKT_TIME{
+    bool                  line_sync_pkt_enable;  /* LS/LE Packets are enabled */
+    float                 time_ns;               /* Time between Packets in ns */
+}CSI_PKT2PKT_TIME;
+
+/**
 \brief CSI information structure
 */
 typedef struct _CSI_INFO {
@@ -83,6 +100,7 @@ typedef struct _CSI_INFO {
     uint8_t                 n_lanes;                  /* CSI number of data lanes */
     CSI_VC_ID               vc_id;                    /* CSI virtual channel ID */
     CSI_OVERRIDE_CPI_COLOR  cpi_cfg;                  /* CSI override CPI color mode */
+    CSI_PKT2PKT_TIME        pkt2pkt_time;             /* CSI Time between Packets */
 } CSI_INFO;
 
 /**
@@ -100,6 +118,7 @@ typedef struct _CAMERA_SENSOR_OPERATIONS {
 \brief CAMERA Sensor Device
 */
 typedef struct _CAMERA_SENSOR_DEVICE {
+    CAMERA_SENSOR_INTERFACE   interface; /* Camera Sensor interface */
     int                       width;     /* Frame Width */
     int                       height;    /* Frame Height */
     CPI_INFO                  *cpi_info; /* CPI Camera Sensor device Information */

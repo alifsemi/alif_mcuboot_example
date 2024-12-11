@@ -18,8 +18,8 @@
 
 #include "Driver_USART.h"
 
-extern ARM_DRIVER_USART ARM_Driver_USART_(BOARD_UART2_INSTANCE);
-static ARM_DRIVER_USART *USARTdrv = &ARM_Driver_USART_(BOARD_UART2_INSTANCE);
+extern ARM_DRIVER_USART ARM_Driver_USART_(BOARD_UART3_INSTANCE);
+static ARM_DRIVER_USART *USARTdrv = &ARM_Driver_USART_(BOARD_UART3_INSTANCE);
 #define UART_BUF_SIZE 255 // needs to be able to hold full max size frame
 static unsigned char uart_buffer[UART_BUF_SIZE];
 static unsigned char* uart_next_char = &uart_buffer[0];

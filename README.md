@@ -1,17 +1,82 @@
-# MCUboot Example for Alif Ensemble E1-E7
+# FOTA Example for Alif Ensemble E1-E7
 
-This folder contains an example of [MCUboot](https://docs.mcuboot.com/) to be used on DevKits containing Alif Ensemble E1-E7 along with example applications that can be loaded to demonstrate update functionality.
+This folder contains an example to perform FOTA (application update) using [MCUboot](https://docs.mcuboot.com/) and [mcumgr](https://github.com/apache/mynewt-mcumgr) to be used with Alif Ensemble DevKit. Included applications are Bootloaders for both cores that are responsible for handling the applying the updates, Example application running in M55_HE that handles transporting the update to the device and Blinky application that represents application running on M55_HP.
 
 Example verification public key has been generated from the MCUboot default RSA2048 private key.
 NOTE! This key is NOT suitable for production as it's distributed publicly as example key for MCUboot!
 
 ## Supported configurations
 
-This example is built to work on and manage the application of M55 HE core.
+This example is built to work on M55 HE and (optionally) M55 HP core(s). M55 HE acts as the update dowloader, storing the updates into MCUboot's secondary slots.
 
-Currently, this example supports only OVERWRITE and SWAP modes (see [Bootloader design](https://docs.mcuboot.com/design.html#image-slots)). Only supported storage is internal MRAM. [Verification](https://docs.mcuboot.com/design.html#security) is supported with embedded key and enabled by default but encryption is not supported.
+By default, both cores will apply the update via their respective bootloaders. If HE_UPDATES_BOTH is set to true in CMAKE configuration, HE bootloader will instruct the HP to shut down and then applies the update to both cores. In this scenario HP bootloader only validates the image before jumping into it.
+
+Currently, this example supports OVERWRITE, SWAP and RAM_LOAD modes (see [Bootloader design](https://docs.mcuboot.com/design.html#image-slots)). Only supported storage is internal MRAM. [Verification](https://docs.mcuboot.com/design.html#security) is supported with embedded key and enabled by default but encryption is not supported.
 
 The update can be uploaded to the device and scheduled for updating by three different methods. [Using](#updating-the-application-using-mcumgr-cli) [mcumgr-cli](https://github.com/apache/mynewt-mcumgr-cli) though uart or usb, [direct writing to MRAM by debugger](#updating-the-application-using-debugger-direct-mram-writing) or by [writing the update via Alif Security Toolkit](#observing-update-flow-while-flashing-with-alif-security-toolkit-only).
+
+### MRAM configuration
+```
++-------------------+   0x8000 0000
+|                   |
+|  HE Bootloader    |
+|                   |
++-------------------+   0x8001 0000
+|                   |
+|  HE primary slot  |
+|                   |
++-------------------+   0x8002 0000
+|                   |
+| HE secondary slot |
+|                   |
++-------------------+   0x8003 0000
+|                   |
+|  HE Scratch area  |
+|                   |
++-------------------+   0x8003 1000
+.                   .
++-------------------+   0x8003 F000
+|                   |
+|  HP Scratch area  |   (HP scratch area is not in use if HE_UPDATES_BOTH=ON)
+|                   |
++-------------------+   0x8004 0000
+|                   |
+|  HP Bootloader    |
+|                   |
++-------------------+   0x8005 0000
+|                   |
+|  HP primary slot  |
+|                   |
++-------------------+   0x8006 0000
+|                   |
+| HP secondary slot |
+|                   |
++-------------------+   0x8007 0000
+.                   .
++-------------------+   0x8057 FFFF
+```
+
+#### TCM usage in RAM_LOAD configuration
+In RAM_LOAD configuration, the layout of the MRAM remains the same as above but the image from the MRAM is loaded into the core's ITCM.
+```
++-------------------+   0x0000 0000
+|                   |
+|     EMPTY (*)     |
+|                   |
++-------------------+   0x0000 0800
+|                   |
+|   Image header    |
+|                   |
++-------------------+   0x0000 1000
+|                   |
+| Application image |
+|                   |
++-------------------+   0x0001 0000
+.                   .
++-------------------+   <end of ITCM>
+```
+
+\* = Due to the way the image signing tool works, RAM_LOAD target cannot start from address 0x0 so empty space is left in the beginning so that Application Image starts from next suitable address given the Vector table alignment requirement of Cortex-M55.
 
 ## Building
 
@@ -29,16 +94,22 @@ This folder contains CMakeLists.txt for the project.
 1. The built elf-file, binary and map file will be generated in the bin directory under the build folder. Example applications are signed automatically.
 1. OPTIONAL: Install [Go](https://go.dev/), download [mcumgr-cli](https://github.com/apache/mynewt-mcumgr-cli) and follow building instruction from associated README.md to issue update commands via mcumgr-cli.
 
+### Building for RAM_LOAD
+To build RAM_LOAD configuration, add parameter `-DMCUBOOT_MODE=RAM_LOAD` to cmake command.
+
+The RAM_LOAD configuration does not support / require image test and confirmation, the later image is always loaded. All uploads will be stored to the secondary slot preserving the initial flashed application as 'golden image' in primary slot.
+
 ## Deployment
 
 1. Build the MCUboot application and example applications, see [Building](#building).
 1. Write MCUboot application and the signed example application to internal MRAM using [Alif Security Toolkit](https://alifsemi.com/support/software-tools/ensemble/). See alif_mcuboot.json in this folder.
+1. Observe logs from UART2 and UART4, serial settings 115200-8-N-1, to verify the applications are running.
 
 ## Updating the application using mcumgr-cli
 
 ### Preparations
-1. Build the project with selected transport mechanism. Uart is built by default, usb transport mechanism can be configured with `cmake .. -DTRANSPORT=usb`.
-1. Establish connection between your computer and the development board. For uart, UART4 is used by default. For usb, attach an usb cable to 'SoC USB' port.
+1. [Build](#building) the project with selected transport mechanism. Uart is built by default, usb transport mechanism can be configured with `cmake .. -DTRANSPORT=usb`.
+1. Establish connection between your computer and the development board. For uart, UART3 is used by default. This requires attaching an FTDI cable to pins P1_2 and P1_3 on the board. For usb, attach an usb cable to 'SoC USB' port.
 1. Create connection profile for the mcumgr-cli, for example: `mcumgr conn add uart type=serial connstring="dev=/dev/ttyACM0,baud=115200"`. Connection type and baud rate are same for uart and usb connections.
 1. Test the connection between mcumgr-cli and the device: `mcumgr -cuart echo "Echo test"`. The command should print out 'Echo test' to indicate the device returned same string it was sent.
 

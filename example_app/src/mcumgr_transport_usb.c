@@ -18,8 +18,19 @@ static unsigned char* cdc_buffer_ptr = cdc_buffer;
 
 void transmit_synchronous(const unsigned char* data, const uint32_t length)
 {
-    tud_cdc_write(data, length);
-    tud_cdc_write_flush();
+    uint32_t written = 0;
+    do {
+        uint32_t av = tud_cdc_write_available();
+        uint32_t to_write = av < length - written ? av : length - written;
+        if (to_write) {
+            written += tud_cdc_write(data + written, to_write);
+            tud_cdc_write_flush();
+        }
+        // some transmits are so long that usb might time out if
+        // not given time in between the transmit
+        tud_task();
+
+    } while((length - written) > 0);
 }
 
 int32_t get_frame_from_receive_buffer(unsigned char* frame_buf, const uint32_t maxlength, uint32_t* frame_length, const bool packet_receive_ongoing)

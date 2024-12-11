@@ -1,0 +1,5 @@
+[pytest]
+#  SE = dut[0] first port/baud
+#  M55HE = dut[1] second port/baud
+#  M55HP = dut[2] third port/baud
+addopts = --count 3 --embedded-services serial|serial|serial --port=/dev/ttyACM0|/dev/ttyACM1|/dev/ttyACM2 --baud=55000|115200|115200

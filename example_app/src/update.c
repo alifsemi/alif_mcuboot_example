@@ -15,6 +15,12 @@
 
 #include <stdio.h>
 
+int boot_read_swap_state_primary_slot_hook(int image_index, struct boot_swap_state *state)
+{
+    (void)image_index;
+    (void)state;
+    return BOOT_HOOK_REGULAR;
+}
 
 static int read_single_image_state(int id, uint8_t* test_boot, uint8_t* update_available)
 {
@@ -59,20 +65,20 @@ static int read_single_image_state(int id, uint8_t* test_boot, uint8_t* update_a
     return 0;
 }
 
-int read_image_state(uint8_t* test_boot, uint8_t* update_available)
+int read_image_state(int image_id, uint8_t* test_boot, uint8_t* update_available)
 {
     printf("PRIMARY slot:\n");
-    int err = read_single_image_state(FLASH_AREA_IMAGE_PRIMARY(0), test_boot, 0);
+    int err = read_single_image_state(FLASH_AREA_IMAGE_PRIMARY(image_id), test_boot, 0);
     if (err) {
         return err;
     }
     printf("SECONDARY slot:\n");
-    return read_single_image_state(FLASH_AREA_IMAGE_SECONDARY(0), 0, update_available);
+    return read_single_image_state(FLASH_AREA_IMAGE_SECONDARY(image_id), 0, update_available);
 }
 
-void set_pending(void)
+void set_pending(int image_id)
 {
-    int err = boot_set_pending_multi(0, 0);
+    int err = boot_set_pending_multi(image_id, 0);
     if(err) {
         printf("set_pending error: %d\n", err);
     }
@@ -81,9 +87,9 @@ void set_pending(void)
     }
 }
 
-void confirm_update(void)
+void confirm_update(int image_id)
 {
-    int err = boot_set_confirmed_multi(0);
+    int err = boot_set_confirmed_multi(image_id);
     if(err) {
         printf("set_confirmed error: %d\n", err);
     }

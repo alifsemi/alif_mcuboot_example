@@ -2276,7 +2276,7 @@
 
 // <e> UART3 (Universal asynchronous receiver transmitter) [Driver_USART3]
 // <i> Configuration settings for Driver_USART3 in component ::Drivers:USART
-#define RTE_UART3   0
+#define RTE_UART3   1
 
 #if RTE_UART3
 
@@ -6721,7 +6721,7 @@
 // <h> HWSEM (Hardware Semaphore)
 // <e> HWSEM0 (Hardware Semaphore) [Driver_HWSEM0]
 // <i> Configuration settings for Driver_HWSEM0 in component ::Drivers:HWSEM
-#define RTE_HWSEM0                                     0
+#define RTE_HWSEM0                                     1
 #if RTE_HWSEM0
 
 // <o> HWSEM0 IRQ priority <0-255>

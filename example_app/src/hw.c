@@ -11,16 +11,21 @@
 #include "hw.h"
 
 #include "pinconf.h"
+#include "RTE_Components.h"
+#include CMSIS_device_header
 
 #include <stdio.h>
 
 
-#ifdef EXAMPLE_APP_UPDATE_TARGET
-#define LED_PORT  7
-#define LED_PIN 4
-#else
 #define LED_PORT  12
-#define LED_PIN 3
+
+#define LED_PIN_ORIGINAL 3
+#define LED_PIN_UPDATED  0
+
+#ifdef EXAMPLE_APP_UPDATE_TARGET
+#define LED_PIN   LED_PIN_UPDATED
+#else
+#define LED_PIN   LED_PIN_ORIGINAL
 #endif
 
 #define BUTTON_PIN PIN_4
@@ -44,11 +49,15 @@ void hw_init(void)
             PADCTRL_SCHMITT_TRIGGER_ENABLE |
 			PADCTRL_DRIVER_DISABLED_PULL_UP;
 
+    // uart 2 = trace uart
     pinconf_set(PORT_1, PIN_0, PINMUX_ALTERNATE_FUNCTION_1, config_uart_rx);	// P1_0: RX  (mux mode 1)
-	pinconf_set(PORT_1, PIN_1, PINMUX_ALTERNATE_FUNCTION_1, 0);					// P1_1: TX  (mux mode 1)
-    pinconf_set(PORT_12, PIN_1, PINMUX_ALTERNATE_FUNCTION_2, config_uart_rx);	// P1_0: RX  (mux mode 1)
-	pinconf_set(PORT_12, PIN_2, PINMUX_ALTERNATE_FUNCTION_2, 0);					// P1_1: TX  (mux mode 1)
-    pinconf_set(LED_PORT, LED_PIN, PINMUX_ALTERNATE_FUNCTION_0, 0);
+    pinconf_set(PORT_1, PIN_1, PINMUX_ALTERNATE_FUNCTION_1, 0);					// P1_1: TX  (mux mode 1)
+
+    // uart 3 = mcumgr transport uart
+    pinconf_set(PORT_1,  PIN_2, PINMUX_ALTERNATE_FUNCTION_1, config_uart_rx);   // P1_2: RX  (mux mode 1)
+    pinconf_set(PORT_1,  PIN_3, PINMUX_ALTERNATE_FUNCTION_1, 0);                // P1_3: TX  (mux mode 1)
+    pinconf_set(LED_PORT, LED_PIN_ORIGINAL, PINMUX_ALTERNATE_FUNCTION_0, 0);
+    pinconf_set(LED_PORT, LED_PIN_UPDATED, PINMUX_ALTERNATE_FUNCTION_0, 0);
     pinconf_set(PORT_15, BUTTON_PIN, PINMUX_ALTERNATE_FUNCTION_0, config_button);
 }
 
@@ -57,8 +66,11 @@ void led_button_init(ARM_GPIO_SignalEvent_t cb)
     Led->Initialize(LED_PIN, 0);
     Led->PowerControl(LED_PIN, ARM_POWER_FULL);
 
-    Led->SetValue(LED_PIN, GPIO_PIN_OUTPUT_STATE_LOW);
-	Led->SetDirection(LED_PIN, GPIO_PIN_DIRECTION_OUTPUT);
+    Led->SetDirection(LED_PIN_ORIGINAL, GPIO_PIN_DIRECTION_OUTPUT);
+    Led->SetDirection(LED_PIN_UPDATED, GPIO_PIN_DIRECTION_OUTPUT);
+
+    Led->SetValue(LED_PIN_ORIGINAL, GPIO_PIN_OUTPUT_STATE_LOW);
+    Led->SetValue(LED_PIN_UPDATED, GPIO_PIN_OUTPUT_STATE_LOW);
 
     uint32_t err;
 

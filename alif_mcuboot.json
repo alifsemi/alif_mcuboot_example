@@ -7,7 +7,7 @@
     },
      "HE_BL": {
         "disabled": false,
-        "binary": "alif-mcuboot.bin",
+        "binary": "alif-mcuboot-he.bin",
         "version" : "1.0.0",
         "signed": true,
         "mramAddress": "0x80000000",

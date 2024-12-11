@@ -49,8 +49,9 @@
 
 /**
  * @brief  EXTSys0 Boot
- *
+ * @param services_handle
  * @param boot_args
+ * @param error_code
  * @return
  */
 uint32_t SERVICES_Boot_Net_Proc(uint32_t services_handle,
@@ -70,7 +71,8 @@ uint32_t SERVICES_Boot_Net_Proc(uint32_t services_handle,
   p_svc->send_trng_len      = boot_args->trng_len;
 
   uint32_t ret = SERVICES_send_request(services_handle,
-                                       SERVICE_EXTSYS0_BOOT_SET_ARGS, NULL);
+                                       SERVICE_EXTSYS0_BOOT_SET_ARGS,
+                                       DEFAULT_TIMEOUT);
   *error_code = p_svc->resp_error_code;
 
   return ret;
@@ -90,7 +92,8 @@ uint32_t SERVICES_Shutdown_Net_Proc(uint32_t services_handle,
       SERVICES_prepare_packet_buffer(sizeof(net_proc_shutdown_svc_t));
 
   uint32_t ret = SERVICES_send_request(services_handle,
-                                       SERVICE_EXTSYS0_SHUTDOWN, NULL);
+                                       SERVICE_EXTSYS0_SHUTDOWN,
+                                       DEFAULT_TIMEOUT);
   *error_code = p_svc->resp_error_code;
 
   return ret;

@@ -1,4 +1,3 @@
-/* SPDX-License-Identifier: GPL-2.0 */
 /**
  * @file services_lib_protocol.h
  *
@@ -31,6 +30,13 @@ extern "C" {
  ******************************************************************************/
 /**
  * Version   JIRA         Description
+ * 0.49.0                 Deprecating SERVICES_system_get_toc_via_name
+ * 0.49.1                 Updated examples for ALIF Update Package support.
+ * 0.48.0                 Switch to external CMSIS source builds
+ * 0.0.47                 Add Power setting Get/Configure API
+ * 0.0.46                 Adding UPDATE STOC Service and test
+ * 0.0.45                 Adding STOP, STANDBY Cycle tests
+ *                        Adding SES update Service
  * 0.0.44                 Example test changes
  * 0.0.43                 CMSIS V1.0.0
  * 0.0.42   SE-2176       Reduce the size of the packet buffer in the services
@@ -89,7 +95,10 @@ extern "C" {
  * 0.0.2    SE-708        First re-factoring
  * 0.0.1                  First implementation
  */
-#define SE_SERVICES_VERSION_STRING                 "0.0.44"
+#define SE_SERVICES_VERSION_STRING                 "0.49.0"
+#define SE_SERVICES_VERSION_MAJOR                  0
+#define SE_SERVICES_VERSION_MINOR                  49
+#define SE_SERVICES_VERSION_PATCH                  0
 
 #define IMAGE_NAME_LENGTH                          8
 #define VERSION_RESPONSE_LENGTH                    80
@@ -110,7 +119,7 @@ extern "C" {
  * Transport layer header structure, common for all services
  */
 
- /**
+/**
  * @struct service_header_t
  */
 typedef struct {
@@ -144,10 +153,6 @@ typedef struct {
 	volatile uint32_t send_ip_clock_gating;
 	volatile uint32_t send_phy_pwr_gating;
 	volatile uint32_t send_vdd_ioflex_3V3;
-	volatile uint32_t send_wakeup_events;
-	volatile uint32_t send_ewic_cfg;
-	volatile uint32_t send_vtor_address;
-	volatile uint32_t send_vtor_address_ns;
 	volatile int      resp_error_code;
 } aipm_set_run_profile_svc_t;
 
@@ -164,10 +169,6 @@ typedef struct {
 	volatile uint32_t resp_ip_clock_gating;
 	volatile uint32_t resp_phy_pwr_gating;
 	volatile uint32_t resp_vdd_ioflex_3V3;
-	volatile uint32_t resp_wakeup_events;
-	volatile uint32_t resp_ewic_cfg;
-	volatile uint32_t resp_vtor_address;
-	volatile uint32_t resp_vtor_address_ns;
 	volatile int      resp_error_code;
 } aipm_get_run_profile_svc_t;
 
@@ -211,23 +212,23 @@ typedef struct {
 
 // Extsys0 services
 typedef struct {
-  service_header_t header;
-  volatile uint32_t send_nvds_src_addr;
-  volatile uint32_t send_nvds_dst_addr;
-  volatile uint32_t send_nvds_copy_len;
-  volatile uint32_t send_trng_dst_addr;
-  volatile uint32_t send_trng_len;
-  volatile int      resp_error_code;
+	service_header_t header;
+	volatile uint32_t send_nvds_src_addr;
+	volatile uint32_t send_nvds_dst_addr;
+	volatile uint32_t send_nvds_copy_len;
+	volatile uint32_t send_trng_dst_addr;
+	volatile uint32_t send_trng_len;
+	volatile int      resp_error_code;
 } net_proc_boot_svc_t;
 
 typedef struct {
-  service_header_t header;
-  volatile int     resp_error_code;
+	service_header_t header;
+	volatile int     resp_error_code;
 } net_proc_shutdown_svc_t;
 
 typedef struct {
-  service_header_t header;
-  volatile int     resp_error_code;
+	service_header_t header;
+	volatile int     resp_error_code;
 } extsys1_wakeup_svc_t;
 
 // Crypto Services
@@ -504,6 +505,26 @@ typedef struct {
 } get_toc_number_svc_t;
 
 /**
+ * @struct get_toc_via_name_svc_t
+ * Get TOC via Name
+ */
+typedef struct {
+  service_header_t   header;
+  volatile  uint8_t  send_name[IMAGE_NAME_LENGTH];
+  volatile uint32_t  resp_error_code;
+} get_toc_via_name_t;
+
+/**
+ * @struct get_toc_via_cpuid_svc_t
+ * Get TOC via CPU ID
+ */
+typedef struct {
+  service_header_t   header;
+  volatile uint32_t  send_cpuid;
+  volatile uint32_t  resp_error_code;
+} get_toc_via_cpuid_t;
+
+/**
  * @struct get_toc_entry_t
  * @brief  one toc record
  */
@@ -766,18 +787,18 @@ typedef struct {
 
 // struct for returning clock registers
 typedef struct {
-  service_header_t header;
-  volatile uint32_t cgu_osc_ctrl;
-  volatile uint32_t cgu_pll_sel;
-  volatile uint32_t cgu_clk_ena;
-  volatile uint32_t cgu_escclk_sel;
-  volatile uint32_t systop_clk_div;
-  volatile uint32_t hostcpuclk_ctrl;
-  volatile uint32_t hostcpuclk_div0;
-  volatile uint32_t hostcpuclk_div1;
-  volatile uint32_t aclk_ctrl;
-  volatile uint32_t aclk_div0;
-  volatile uint32_t resp_error_code;
+	service_header_t header;
+	volatile uint32_t cgu_osc_ctrl;
+	volatile uint32_t cgu_pll_sel;
+	volatile uint32_t cgu_clk_ena;
+	volatile uint32_t cgu_escclk_sel;
+	volatile uint32_t systop_clk_div;
+	volatile uint32_t hostcpuclk_ctrl;
+	volatile uint32_t hostcpuclk_div0;
+	volatile uint32_t hostcpuclk_div1;
+	volatile uint32_t aclk_ctrl;
+	volatile uint32_t aclk_div0;
+	volatile uint32_t resp_error_code;
 } clk_get_clocks_svc_t;
 
 // struct for starting the external HF crystall
@@ -797,6 +818,22 @@ typedef struct {
 	uint32_t resp_error_code;
 } pll_clkpll_start_svc_t;
 
+// struct for updating the STOC
+typedef struct {
+	service_header_t header;
+	uint32_t send_image_address;
+	uint32_t send_image_size;
+	uint32_t resp_error_code;
+} update_stoc_svc_t;
+
+// Power Get/Configure API
+typedef struct {
+	service_header_t header;
+	volatile uint32_t send_setting_type;
+	volatile uint32_t value;
+	volatile uint32_t resp_error_code;
+} power_setting_svc_t;
+
 /*******************************************************************************
  *  G L O B A L   D E F I N E S
  ******************************************************************************/
@@ -807,12 +844,10 @@ typedef struct {
 
 uintptr_t SERVICES_prepare_packet_buffer(uint32_t size);
 
-typedef void (*SERVICES_sender_callback) (uint32_t sender_id, uint32_t data);
-
 uint32_t SERVICES_send_msg(uint32_t services_handle, uint32_t services_data);
 uint32_t SERVICES_send_request(uint32_t services_handle,
-				uint16_t service_id,
-				SERVICES_sender_callback callback);
+							   uint16_t service_id,
+							   uint32_t service_timeout);
 
 #ifdef __cplusplus
 }

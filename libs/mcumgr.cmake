@@ -27,6 +27,7 @@ target_include_directories(${MCUMGR_LIB} PUBLIC
     ${MCUMGR_DIR}/mgmt/include
     ${MCUMGR_DIR}/cmd/os_mgmt/include
     ${MCUMGR_DIR}/smp/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/mcumgr_port
 )
 
 target_sources(${MCUMGR_LIB} PRIVATE
@@ -58,8 +59,8 @@ target_include_directories(${MCUMGR_LIB} PRIVATE
 
 target_link_libraries(${MCUMGR_LIB} PUBLIC
     ${TINYCBOR_LIB}
-    ${LIB_BOOTUTIL}
-    ensemblecmsis_interface
+    ${LIB_BOOTUTIL_HE}
+    ensemblecmsis_he_interface
     rte_interface
 )
 

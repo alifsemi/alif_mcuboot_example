@@ -19,6 +19,8 @@
  * @Note     None.
  ******************************************************************************/
 
+#include <math.h>
+
 /* System Includes */
 #include "RTE_Device.h"
 #include "RTE_Components.h"
@@ -134,6 +136,11 @@ static int32_t CSI2_Initialize (ARM_MIPI_CSI2_SignalEvent_t cb_event,
         return ARM_DRIVER_ERROR_PARAMETER;
     }
 
+    if(camera_sensor->interface != CAMERA_SENSOR_INTERFACE_MIPI)
+    {
+        return ARM_DRIVER_ERROR_PARAMETER;
+    }
+
     csi_info = camera_sensor->csi_info;
 
     /* Get Data type related informations */
@@ -142,14 +149,6 @@ static int32_t CSI2_Initialize (ARM_MIPI_CSI2_SignalEvent_t cb_event,
          index++);
 
     if(cpi_data_mode_settings[index].data_type != csi_info->dt)
-    {
-        return ARM_DRIVER_ERROR_PARAMETER;
-    }
-
-    /* When camera hline is greater than or equal to IPI hline period
-     * (camera throughput is slower), all the data is transferred
-     * before a new line arrives, RAM needs to store one line*/
-    if(!((camera_sensor->width * cpi_data_mode_settings[index].bpp / CSI2_HOST_IPI_DWIDTH) <= CSI_IPI_FIFO_DEPTH))
     {
         return ARM_DRIVER_ERROR_PARAMETER;
     }
@@ -170,26 +169,77 @@ static int32_t CSI2_Initialize (ARM_MIPI_CSI2_SignalEvent_t cb_event,
     /* Timing calculation for Camera mode */
     if(ipi_info->ipi_mode == CSI_IPI_MODE_CAM_TIMIMG)
     {
-        /* The rising edge of VSYNC comes at least 3 data clock cycles prior to DATA_EN (alias to HSYNC), So we adding 3 for HSA */
-        frame_info->hsa_time = 3;
-        frame_info->hbp_time = 0;
-        /* The last transmitted pixel is already needs to be available in memory to avoid underflow. For this,
-         * the time to transmit the last pixel in PPI must be lesser than the time to transmit the
-         * last pixel in IPI. So increasing IPI hline timing 20% then camera active line timing by adjusting
-         * IPI hsd timing.
-         * (Time to transmit last pixel in IPI) = (Time to transmit last pixel in PPI) * 1.2
-         * ((ipi_hsa_time + ipi_hbp_time + ipi_hsd_time + Cycles_to_transmit_data) * Pixel_clk_per)
-         *                       = ((Bytes_to_transmit / Number_of_lanes) * Rxbyteclk_per) * 1.2
-         */
-        frame_info->hsd_time = (uint32_t)(((cpi_data_mode_settings[index].bpp *
-                                            camera_sensor->width * 4 * pixclock * 1.2f) /
-                                            (8 * csi_info->frequency)) - (camera_sensor->width + frame_info->hsa_time));
+        float time_PPI_ns = (8.0f / csi_info->frequency) * 1000000000;
+        float time_IPI_ns = (1.0f / pixclock) * 1000000000;
+        float pkt2pkt_time_ns = csi_info->pkt2pkt_time.time_ns;
+        uint32_t bytes_to_transmit = (camera_sensor->width * cpi_data_mode_settings[index].bpp) / 8;
+        uint32_t mem_req_1, mem_req_2, min_memory_depth;
 
-        frame_info->hactive_time = camera_sensor->width;
+        if (!csi_info->pkt2pkt_time.line_sync_pkt_enable)
+        {
+            csi_info->pkt2pkt_time.time_ns = 0;
+        }
+
+        /* The rising edge of VSYNC comes at least 3 data clock cycles prior to DATA_EN (alias to HSYNC), So we adding 3 for HSA */
+        frame_info->hsa_time = CSI2_HSA_MIN + 1;
+
+        /* For the pixel data to be processed correctly, the back porch time must not be less than the time between the
+         * packets plus some margin.
+         * (IPI_HSA_TIME + IPI_HBP_TIME)*TIPI > Pkt2PktTime + (2*ShortPktBytes/N_LANES + 2)*TPPI-HS/BytesPerHsClk
+         * IPI_HBP_TIME = ((((Pkt2PktTime + (2*ShortPktBytes/N_LANES + 2)*TPPI-HS/BytesPerHsClk) / TIPI) - IPI_HSA_TIME) + 1)
+         */
+        frame_info->hbp_time = ((ceil((pkt2pkt_time_ns + (2* CSI2_SHORT_PKT_BYTES / csi_info->n_lanes + 2)
+                                   * time_PPI_ns / CSI2_BYTES_PER_HS_CLK) / time_IPI_ns) - frame_info->hsa_time) + 1);
+
+        if(frame_info->hbp_time < CSI2_HBP_MIN)
+        {
+            frame_info->hbp_time = CSI2_HBP_MIN;
+        }
+
+        /* FIFO underflow occurs when the IPI has a higher throughput than the PHY. Configure the Horizontal Sync Delay (HSD)
+         * to avoid FIFO underflow.
+         * IPI_HSD_TIME > (Pkt2PktTime + (((LongPktBytes + Bytes2Transmit)/N_LANES)*TPPI-HS/BytesPerHsClk))/TIPI
+         *                 - (IPI_HSA_TIME + IPI_HBP_TIME + IPI_HACT_TIME)
+         * IPI_HSD_TIME = ((Pkt2PktTime + (((LongPktBytes + Bytes2Transmit)/N_LANES)*TPPI-HS/BytesPerHsClk))/TIPI
+         *                 - (IPI_HSA_TIME + IPI_HBP_TIME + IPI_HACT_TIME) + 1)
+         */
+        frame_info->hsd_time = (ceil((pkt2pkt_time_ns + (((CSI2_LONG_PKT_BYTES + bytes_to_transmit) / csi_info->n_lanes)
+                                 * time_PPI_ns / CSI2_BYTES_PER_HS_CLK)) / time_IPI_ns)
+                                 - (frame_info->hsa_time + frame_info->hbp_time + camera_sensor->width) + 1);
+
+        if(frame_info->hsd_time < CSI2_HSD_MIN)
+        {
+            frame_info->hsd_time = CSI2_HSD_MIN;
+        }
+
+        frame_info->hactive_time = 0;
         frame_info->vsa_line = 0;
         frame_info->vbp_line = 0;
         frame_info->vfp_line = 0;
         frame_info->vactive_line = 0;
+
+        /* Memory calculation requirements
+         * MEM_req_1 = (((IPI_HSD_TIME + IPI_HSA_TIME + IPI_HBP_TIME)*TIPI - Pkt2PktTime)/TPPI-HS)*N_LANES*BytesPerHsClk
+         *
+         * MEM_req_2 = (((IPI_HSD_TIME + IPI_HSA_TIME + IPI_HBP_TIME + IPI_HACT_TIME)*TIPI - Pkt2PktTime
+         *              - (((LongPktBytes + Bytes2Transmit)/N_LANES)*TPPI-HS))/TPPI-HS)*N_LANES*BytesPerHsClk
+         *
+         * Min_Memory_Depth = MAX (MEM_req_1, MEM_req_2, 32)*8/ Memory_Width
+         */
+        mem_req_1 = (ceil(((frame_info->hsd_time + frame_info->hsa_time + frame_info->hbp_time)* time_IPI_ns - pkt2pkt_time_ns)
+                            / time_PPI_ns) * csi_info->n_lanes * CSI2_BYTES_PER_HS_CLK);
+
+        mem_req_2 = (ceil(((frame_info->hsd_time  + frame_info->hsa_time + frame_info->hbp_time + camera_sensor->width)* time_IPI_ns
+                            - pkt2pkt_time_ns - (((CSI2_LONG_PKT_BYTES + bytes_to_transmit) / csi_info->n_lanes) * time_PPI_ns)) / time_PPI_ns)
+                            * csi_info->n_lanes * CSI2_BYTES_PER_HS_CLK);
+
+        min_memory_depth = MAX(mem_req_1, mem_req_2, 32) * 8 / CSI2_HOST_IPI_DWIDTH;
+
+        if(CSI_IPI_FIFO_DEPTH < min_memory_depth)
+        {
+            return ARM_DRIVER_ERROR;
+        }
+
     }
 
     /* Overwrite the CSI color mode on CPI */
@@ -205,7 +255,6 @@ static int32_t CSI2_Initialize (ARM_MIPI_CSI2_SignalEvent_t cb_event,
     }
 
     /* CPI config information */
-    cpi_info.interface = CPI_INTERFACE_MIPI_CSI;
     cpi_info.vsync_wait = CPI_WAIT_VSYNC_ENABLE;
     cpi_info.vsync_mode = CPI_CAPTURE_DATA_ENABLE_IF_HSYNC_HIGH;
     cpi_info.pixelclk_pol = CPI_SIG_POLARITY_INVERT_DISABLE;
@@ -542,7 +591,7 @@ static int32_t CSI2_ConfigureIPI (CSI_RESOURCES *CSI2)
     }
     else
     {
-    	csi_set_ipi_mem_flush_manual(CSI2->regs);
+        csi_set_ipi_mem_flush_manual(CSI2->regs);
     }
 
     csi_set_ipi_vc_id(CSI2->regs, CSI2->vc_id);
