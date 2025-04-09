@@ -116,7 +116,7 @@ static services_lib_t  services_init_params = {
     .packet_buffer_address = (uint32_t)se_services_packet_buffer,
     .fn_send_mhu_message   = 0,
     .fn_wait_ms            = &se_services_wait_ms,
-    .wait_timeout          = 0x01000000,
+    .wait_timeout          = 0x10000000,
     .fn_print_msg          = &se_services_print,
 };
 
@@ -133,7 +133,12 @@ static run_profile_t runp = {
 	.run_clk_src = CLK_SRC_PLL,
 	.cpu_clk_freq = CLOCK_FREQUENCY_160MHZ,
 	.scaled_clk_freq = SCALED_FREQ_XO_HIGH_DIV_38_4_MHZ,
+#if HE_UPDATES_SERAM
+	// Do not retain SERAM when doing OTA updates.
+	.memory_blocks = MRAM_MASK | SRAM0_MASK,
+#else
 	.memory_blocks = MRAM_MASK | SERAM_MASK | SRAM0_MASK,
+#endif
 	.ip_clock_gating = NPU_HP_MASK | NPU_HE_MASK | OSPI_1_MASK | CANFD_MASK | USB_MASK | CDC200_MASK | CAMERA_MASK | MIPI_DSI_MASK | MIPI_CSI_MASK | LP_PERIPH_MASK,
 	.phy_pwr_gating = LDO_PHY_MASK | USB_PHY_MASK | MIPI_TX_DPHY_MASK | MIPI_RX_DPHY_MASK | MIPI_PLL_DPHY_MASK,
 	.vdd_ioflex_3V3 = IOFLEX_LEVEL_1V8,
@@ -143,6 +148,10 @@ struct arm_vector_table {
     uint32_t msp;
     uint32_t reset;
 };
+
+#if HE_UPDATES_SERAM
+static struct image_version se_version;
+#endif
 
 extern void clk_init(void);
 extern void flush_uart(void);
@@ -311,6 +320,27 @@ int main(void)
         printf("SERVICES_set_run_cfg %" PRIu32 "    %" PRIu32 "\n", er, err);
         while(1) __WFE();
     }
+#if HE_UPDATES_SERAM
+    uint32_t toc_version;
+    er = SERVICES_system_get_toc_version(se_services_s_handle, &toc_version, &err);
+    if(er || err) {
+        printf("SERVICES_system_get_toc_version failed: %" PRIu32 "    %" PRIu32 "\n", er, err);
+        while(1) __WFE();
+    }
+
+    se_version.iv_major = (toc_version >> 24) & 0xFF;
+    se_version.iv_minor = (toc_version >> 16) & 0xFF;
+    se_version.iv_revision = (toc_version >> 8) & 0xFF;
+    se_version.iv_build_num = 0;
+
+    printf("Current SE version: %" PRIu16 ".%" PRIu16 ".%" PRIu16 "\n",
+        se_version.iv_major, se_version.iv_minor, se_version.iv_revision);
+
+    // Someone needs to confirm that the image in SERAM slot is actually running, or mcumgr will
+    // get confused
+    printf("Confirming SE primary slot\n");
+    boot_set_confirmed_multi(2);
+#endif
 
     struct arm_vector_table *vt;
     struct boot_rsp rsp;
@@ -402,23 +432,67 @@ fih_ret boot_image_check_hook(int img_index, int slot)
     return BOOT_HOOK_REGULAR;
 }
 
-int boot_perform_update_hook(int img_index, struct image_header *img_head, const struct flash_area *area)
-{
-    (void)img_index;
-    (void)img_head;
-    (void)area;
 #if HE_UPDATES_BOTH
-    printf("boot_perform_update_hook: %d\n", img_index);
-    if(img_index != 0) {
-        // updating HP image.
-        hwsem->Lock();
-        msg_acked = false;
-        mhu_driver_out.send_message(0, 0, SHUTDOWN_MESSAGE);
-        while(!msg_acked) __WFE();
-        sys_busy_loop_us(31); // minimum delay
-        hp_updated = true;
-    }
-#endif
+int update_hp()
+{
+    // updating HP image.
+    hwsem->Lock();
+    msg_acked = false;
+    mhu_driver_out.send_message(0, 0, SHUTDOWN_MESSAGE);
+    while(!msg_acked) __WFE();
+    sys_busy_loop_us(31); // minimum delay
+    hp_updated = true;
 
     return BOOT_HOOK_REGULAR;
+}
+#endif
+#if HE_UPDATES_SERAM
+int update_seram(struct image_header *img_head, const struct flash_area *area)
+{
+    printf("Updating SE image\n");
+
+    if (img_head->ih_ver.iv_major == se_version.iv_major &&
+        img_head->ih_ver.iv_minor == se_version.iv_minor &&
+        img_head->ih_ver.iv_revision == se_version.iv_revision) {
+        
+        printf("We have already updated the SE, skipping update\n");
+        return BOOT_HOOK_REGULAR;
+    }
+
+    uint32_t err;
+    uint32_t er = SERVICES_update_stoc(se_services_s_handle, area->fa_off + img_head->ih_hdr_size, img_head->ih_img_size, &err);
+    if(er || err) {
+        printf("SERVICES_system_get_toc_version failed: %" PRIu32 "    %" PRIu32 "\n", er, err);
+        return -1;
+    }
+
+    printf("SE updated, new version will not run until next SoC reset\n");
+
+    return BOOT_HOOK_REGULAR;
+}
+#endif
+int boot_perform_update_hook(int img_index, struct image_header *img_head, const struct flash_area *area)
+{
+#if !HE_UPDATES_SERAM
+    (void)img_head;
+    (void)area;
+#endif
+    int rc = BOOT_HOOK_REGULAR;
+
+    switch (img_index) {
+#if HE_UPDATES_BOTH
+        case 1:
+            rc = update_hp();
+        break;
+#endif
+#if HE_UPDATES_SERAM
+        case 2:
+            rc = update_seram(img_head, area);
+        break;
+#endif
+        default:
+        break;
+    }
+
+    return rc;
 }

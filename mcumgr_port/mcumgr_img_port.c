@@ -8,16 +8,22 @@
 
 static int image_index_from_slot(int slot)
 {
-    // image slot comes in, need to convert to image index.
-    // assume here that 0 and 1 are image id 0
-    // and rest are image id 1... (flash_map_mram.c needs to be in sync)
+    switch (slot) {
+        case 0:
+        case 1:
+            return 0;
+        case 2:
+        case 3:
+            return 1;
+#if HE_UPDATES_SERAM
+        case 4:
+        case 5:
+            return 2;
+#endif
+    }
 
-    if (slot < 2) {
-        return 0;
-    }
-    else {
-        return 1;
-    }
+    assert(0);
+    return 0;
 }
 
 int img_mgmt_impl_read(int slot, unsigned int offset, void *dst,

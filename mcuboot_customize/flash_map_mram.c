@@ -83,6 +83,33 @@ static struct flash_area secondary_2 =
 };
 #endif
 
+#if MCUBOOT_IMAGE_NUMBER > 2
+static struct flash_area primary_3 =
+{
+    .fa_id = FLASH_AREA_IMAGE_PRIMARY(2),
+    .fa_device_id = FLASH_DEVICE_MRAM,
+    .fa_off = MRAM_BASE +\
+                IMAGE_1_START +\
+                BOOT_BOOTLOADER_SIZE +\
+                BOOT_SLOT_SIZE +\
+                BOOT_SLOT_SIZE,
+    .fa_size = BOOT_SERAM_SLOT_SIZE
+};
+
+static struct flash_area secondary_3 =
+{
+    .fa_id = FLASH_AREA_IMAGE_SECONDARY(2),
+    .fa_device_id = FLASH_DEVICE_MRAM,
+    .fa_off = MRAM_BASE +\
+                IMAGE_1_START +\
+                BOOT_BOOTLOADER_SIZE +\
+                BOOT_SLOT_SIZE +\
+                BOOT_SLOT_SIZE +\
+                BOOT_SERAM_SLOT_SIZE,
+    .fa_size = BOOT_SERAM_SLOT_SIZE
+};
+#endif
+
 struct flash_area *boot_area_descs[] =
 {
     &bootloader,
@@ -94,6 +121,10 @@ struct flash_area *boot_area_descs[] =
 #if MCUBOOT_IMAGE_NUMBER > 1
     &primary_2,
     &secondary_2,
+#endif
+#if MCUBOOT_IMAGE_NUMBER > 2
+    &primary_3,
+    &secondary_3,
 #endif
     NULL
 };
@@ -425,8 +456,15 @@ int flash_area_id_from_image_slot(int slot)
     case 1: return FLASH_AREA_IMAGE_SECONDARY(0);
     case 2: return FLASH_AREA_IMAGE_PRIMARY(1);
     case 3: return FLASH_AREA_IMAGE_SECONDARY(1);
-#ifdef MCUBOOT_SWAP_USING_SCRATCH
+#if defined(MCUBOOT_SWAP_USING_SCRATCH) && (MCUBOOT_IMAGE_NUMBER == 2)
     case 4: return FLASH_AREA_IMAGE_SCRATCH;
+#endif
+#if MCUBOOT_IMAGE_NUMBER == 3
+    case 4: return FLASH_AREA_IMAGE_PRIMARY(2);
+    case 5: return FLASH_AREA_IMAGE_SECONDARY(2);
+#endif
+#if defined(MCUBOOT_SWAP_USING_SCRATCH) && (MCUBOOT_IMAGE_NUMBER == 3)
+    case 6: return FLASH_AREA_IMAGE_SCRATCH;
 #endif
     }
     return -1;

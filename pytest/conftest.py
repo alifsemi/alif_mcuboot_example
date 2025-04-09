@@ -70,15 +70,15 @@ class SecureEnclaveDut:
         cmd_packet = [0x00, 0x9]
         cmd_packet = cmd_packet + list(0x02.to_bytes(4, byteorder='little'))
         self._send_cmd(cmd_packet)
-        self.se.expect("\\[SES\\] Main Task - looping forever...", timeout=5.0)
+        self.se.expect("\\[SES\\] STOC DEVICE ok", timeout=5.0)
 
 
 class DutElement:
     def __init__(self, target_dut):
         self.target_dut = target_dut
 
-    def expect(self, what):
-        self.target_dut.expect(what, timeout=5.0)
+    def expect(self, what, timeout=5.0):
+        self.target_dut.expect(what, timeout=timeout)
 
 
 class McumgrCLI:
@@ -100,7 +100,7 @@ class McumgrCLI:
         command = "image upload " + path.join(self.images_path, binary_name)
         if image_id > 0:
             command += " -n%d" % image_id
-        return self.command(command, timeout=20)
+        return self.command(command, timeout=200)
 
     def command_and_assert(self, cmd, what, timeout=5, tries=1):
         resp = self.command(cmd, timeout, tries)
@@ -136,6 +136,13 @@ def MGRCLI(request):
     yield _MGRINSTANCE
 
 
+@pytest.fixture
+def SERAM_UPDATE(request):
+    if request.config.getoption("--enable_seram_update") is False:
+        pytest.skip("Skipping test requiring SERAM update feature since it's not enabled")
+    yield None
+
+
 def pytest_unconfigure(config):
     # recover cursor to terminal, in case pytest was run with '-s', SE
     # spamming the cursor hiding will cause it to hide from running terminal
@@ -159,4 +166,10 @@ def pytest_addoption(parser):
         action="store",
         help="Path to bin folder where FOTA example binaries are",
         default=""
+    )
+    parser.addoption(
+        "--enable_seram_update",
+        action="store",
+        default=False,
+        help="Enable SERAM update testing support, Default is False.",
     )

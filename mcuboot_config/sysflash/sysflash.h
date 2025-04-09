@@ -26,6 +26,10 @@
 #define FLASH_AREA_IMAGE_1_PRIMARY          4
 #define FLASH_AREA_IMAGE_1_SECONDARY        5
 #endif
+#if MCUBOOT_IMAGE_NUMBER > 2
+#define FLASH_AREA_IMAGE_2_PRIMARY          6
+#define FLASH_AREA_IMAGE_2_SECONDARY        7
+#endif
 
 #define MRAM_START                          (0x80000000)
 
@@ -38,6 +42,10 @@
 
 #ifndef BOOT_SLOT_SIZE
 #define BOOT_SLOT_SIZE                      (0x10000)
+#endif
+
+#ifndef BOOT_SERAM_SLOT_SIZE
+#define BOOT_SERAM_SLOT_SIZE                (0x50000)
 #endif
 
 #ifndef BOOT_SCRATCH_SIZE
@@ -71,6 +79,17 @@
 #define FLASH_AREA_IMAGE_SECONDARY(x)  (((x) == 0) ?          \
                                          FLASH_AREA_IMAGE_0_SECONDARY : \
                                          ((x) == 1) ? FLASH_AREA_IMAGE_1_SECONDARY : \
+                                         FLASH_SLOT_DOES_NOT_EXIST)
+#elif MCUBOOT_IMAGE_NUMBER == 3
+#define FLASH_AREA_IMAGE_PRIMARY(x)    (((x) == 0) ?          \
+                                         FLASH_AREA_IMAGE_0_PRIMARY : \
+                                         ((x) == 1) ? FLASH_AREA_IMAGE_1_PRIMARY : \
+                                         ((x) == 2) ? FLASH_AREA_IMAGE_2_PRIMARY : \
+                                         FLASH_SLOT_DOES_NOT_EXIST)
+#define FLASH_AREA_IMAGE_SECONDARY(x)  (((x) == 0) ?          \
+                                         FLASH_AREA_IMAGE_0_SECONDARY : \
+                                         ((x) == 1) ? FLASH_AREA_IMAGE_1_SECONDARY : \
+                                         ((x) == 2) ? FLASH_AREA_IMAGE_2_SECONDARY : \
                                          FLASH_SLOT_DOES_NOT_EXIST)
 #else
 #error Unsupported number of images.

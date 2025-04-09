@@ -61,7 +61,7 @@ static unsigned char smp_buf[MAX_BODY_SIZE_FOR_SINGLE_FRAME];
 static unsigned char transmit_buf[TRANSMIT_BUF_SIZE];
 
 // must be able to hold full response contents. needs adjustment?
-#define PACKET_BUF_SIZE 512
+#define PACKET_BUF_SIZE 1024
 static char response_buf[PACKET_BUF_SIZE];
 
 // SMP handling

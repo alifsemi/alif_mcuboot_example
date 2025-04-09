@@ -1,0 +1,52 @@
+{
+    "DEVICE": {
+        "disabled" : false,
+        "binary": "app-device-config.json",
+        "version" : "0.5.00",
+        "signed": true
+    },
+    "HE_BL": {
+        "disabled": false,
+        "binary": "alif-mcuboot-he.bin",
+        "version" : "1.0.0",
+        "signed": true,
+        "mramAddress": "0x80000000",
+        "cpu_id": "M55_HE",
+        "flags": ["boot"]
+    },
+    "HE_PRI": {
+        "disabled": false,
+        "binary": "alif-example-app_signed.bin",
+        "version": "1.0.0",
+        "signed": false,
+        "mramAddress": "0x80010000",
+        "cpu_id": "M55_HE",
+        "flags": []
+    },
+    "HP_BL": {
+        "disabled": false,
+        "binary": "alif-mcuboot-hp.bin",
+        "version" : "1.0.0",
+        "signed": true,
+        "mramAddress": "0x80040000",
+        "cpu_id": "M55_HP",
+        "flags": ["boot"]
+    },
+    "HP_PRI": {
+        "disabled": false,
+        "binary": "alif-blinky-app_signed.bin",
+        "version": "1.0.0",
+        "signed": false,
+        "mramAddress": "0x80050000",
+        "cpu_id": "M55_HP",
+        "flags": []
+    },
+    "SE_PRI": {
+        "disabled": false,
+        "binary": "seram_1.103.0_signed.bin",
+        "version": "1.0.0",
+        "signed": false,
+        "mramAddress": "0x80070000",
+        "flags": []
+    }
+}

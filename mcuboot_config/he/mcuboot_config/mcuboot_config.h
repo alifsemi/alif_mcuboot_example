@@ -93,11 +93,15 @@
 
 /* Default maximum number of flash sectors per image slot; change
  * as desirable. */
-#define MCUBOOT_MAX_IMG_SECTORS (BOOT_SLOT_SIZE/MRAM_SECTOR_SIZE)
-
-/* Default number of separately updateable images; change in case of
+ /* Default number of separately updateable images; change in case of
  * multiple images. */
+#if HE_UPDATES_SERAM
+#define MCUBOOT_MAX_IMG_SECTORS (BOOT_SERAM_SLOT_SIZE/MRAM_SECTOR_SIZE)
+#define MCUBOOT_IMAGE_NUMBER 	3
+#else
+#define MCUBOOT_MAX_IMG_SECTORS (BOOT_SLOT_SIZE/MRAM_SECTOR_SIZE)
 #define MCUBOOT_IMAGE_NUMBER 	2
+#endif
 
 #define MCUBOOT_IMAGE_ACCESS_HOOKS 1
 
