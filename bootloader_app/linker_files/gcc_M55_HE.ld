@@ -31,7 +31,7 @@
 * M55-HE application specific settings. These need to changed based on
 * application and system memory requirements
 */
-__STACK_SIZE = 0x00008000;
+__STACK_SIZE = 0x00020000;
 __HEAP_SIZE  = 0x00008000;
 
 /*
@@ -181,7 +181,6 @@ SECTIONS
     LONG (0)
     LONG (0)
   } > MRAM
-
     .bss.at_dtcm (NOLOAD) : ALIGN(8)
   {
     __bss_start__ = .;

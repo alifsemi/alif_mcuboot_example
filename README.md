@@ -52,7 +52,13 @@ The update can be uploaded to the device and scheduled for updating by three dif
 | HP secondary slot |
 |                   |
 +-------------------+   0x8007 0000
-.                   .
+|                   |
+|   SERAM primary   |   (HE_UPDATES_BOTH=ON and HP_UPDATES_SERAM=ON)
+|                   |
++-------------------+   0x800C 0000
+|                   |
+|   SERAM secondary |   (HE_UPDATES_BOTH=ON and HP_UPDATES_SERAM=ON)
+|                   |
 +-------------------+   0x8057 FFFF
 ```
 
@@ -312,3 +318,15 @@ In this flow, both the 'initial' example application and the update candidate is
       image_num: 0
     ERR: Bad image magic 0x0
     No update available.
+
+
+## SERAM update feature
+
+To use the SERAM update feature, the following criteria must be met:
+
+1. Both HE_UPDATES_BOTH and HP_UPDATES_SERAM must be enabled.
+2. A full SERAM update image, with a version matching the one currently running on the device,
+must be signed using imgtool.py.
+3. The signed SERAM update image with the matching version must be placed in image 2, slot 0
+(0x80070000).
+4. A full SoC reset is required to perform a test boot e.g., by pressing the physical reset button.

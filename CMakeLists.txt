@@ -77,6 +77,19 @@ if(HE_UPDATES_BOTH)
     )
 endif()
 
+set(HE_UPDATES_SERAM FALSE CACHE BOOL "Enable SERAM update from HE bootloader.")
+
+if (HE_UPDATES_SERAM AND NOT HE_UPDATES_BOTH)
+    message(FATAL_ERROR "SERAM update is only supported when HE bootloader handles all cores (HE_UPDATES_BOTH=1).")
+endif()
+
+
+if(HE_UPDATES_SERAM)
+    add_compile_definitions(
+        HE_UPDATES_SERAM=1
+    )
+endif()
+
 set(LIBRARIES_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libs)
 
 # Set up the project
@@ -105,3 +118,4 @@ include(${LIBRARIES_DIR}/tinyusb.cmake)
 add_subdirectory(bootloader_app)
 add_subdirectory(example_app)
 add_subdirectory(blinky_app)
+add_subdirectory(seram_update)

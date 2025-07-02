@@ -60,6 +60,8 @@ target_sources(${name} PRIVATE
     ${ALIF_SERVICES_DIR}/source/services_host_maintenance.c
     ${ALIF_SERVICES_DIR}/source/services_host_power.c
     ${ALIF_SERVICES_DIR}/source/services_host_boot.c
+    ${ALIF_SERVICES_DIR}/source/services_host_update.c
+    ${ALIF_SERVICES_DIR}/source/services_host_system.c
 )
 
 target_include_directories(${name} PRIVATE
