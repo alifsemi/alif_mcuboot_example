@@ -20,6 +20,7 @@
 #include "pinconf.h"
 #include "Driver_HWSEM.h"
 #include "services_lib_bare_metal.h"
+#include "sys_utils.h"
 
 #include "RTE_Components.h"
 #include CMSIS_device_header
@@ -169,7 +170,7 @@ void MPU_Load_Regions(void)
 #define MEMATTRIDX_NORMAL_WB_RA_WA           2
 #define MEMATTRIDX_NORMAL_WT_RA              3
 
-    static const ARM_MPU_Region_t mpu_table[] __STARTUP_RO_DATA_ATTRIBUTE =
+    static const ARM_MPU_Region_t mpu_table[] =
     {
         {   /* Host Peripherals - 16MB : RO-0, NP-1, XN-1 */
             .RBAR = ARM_MPU_RBAR(0x1A000000, ARM_MPU_SH_NON, 0, 1, 1),
@@ -181,7 +182,7 @@ void MPU_Load_Regions(void)
         },
         {   /* MRAM - Application execution area + candidate + scratch : RO-0, NP-1, XN-0  */
             .RBAR = ARM_MPU_RBAR(MRAM_START + BOOT_BOOTLOADER_SIZE, ARM_MPU_SH_NON, 0, 1, 0),
-            .RLAR = ARM_MPU_RLAR(MRAM_START + MRAM_SIZE - 1, MEMATTRIDX_DEVICE_nGnRE)
+            .RLAR = ARM_MPU_RLAR(MRAM_START + SOC_FEAT_MRAM_SIZE - 1, MEMATTRIDX_DEVICE_nGnRE)
         },
         {   /* OSPI Regs - 16MB : RO-0, NP-1, XN-1  */
             .RBAR = ARM_MPU_RBAR(0x83000000, ARM_MPU_SH_NON, 0, 1, 1),
@@ -272,7 +273,7 @@ void uninit()
     // wait for the final characters to be transmitted via uart before unitializing the driver
     extern void wait_for_uart_empty(void);
     wait_for_uart_empty();
-    
+
     tracelib_uninit();
     hw_uninit();
 }
@@ -372,7 +373,7 @@ int main(void)
             // XIP from slot
             vt = (struct arm_vector_table *)(rsp.br_image_off + rsp.br_hdr->ih_hdr_size);
         }
-        
+
         if ((uint32_t)vt & 0x7FF) {
             printf("\n ERROR: vector table alignment not correct (0x%" PRIx32 ")\n", (uint32_t)vt);
         }
@@ -454,7 +455,7 @@ int update_seram(struct image_header *img_head, const struct flash_area *area)
     if (img_head->ih_ver.iv_major == se_version.iv_major &&
         img_head->ih_ver.iv_minor == se_version.iv_minor &&
         img_head->ih_ver.iv_revision == se_version.iv_revision) {
-        
+
         printf("We have already updated the SE, skipping update\n");
         return BOOT_HOOK_REGULAR;
     }

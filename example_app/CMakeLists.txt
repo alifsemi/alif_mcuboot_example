@@ -7,7 +7,7 @@ set(EXAMPLE_APP_TARGET alif-example-app)
 set(EXAMPLE_APP_UPDATE_TARGET alif-example-app-update)
 
 # Set up the project
-project(alif-example-${ENSEMBLE_CORE}
+project(alif-example-he
     VERSION 1.0.0
     LANGUAGES C CXX ASM
 )
@@ -53,6 +53,7 @@ target_sources(${target} PRIVATE
 
 target_link_libraries(${target} PRIVATE
     common_app_utils_he
+    ensemblecmsis_he_interface
     ${LIB_BOOTUTIL}
     ${MCUMGR_LIB}
     rte_interface
@@ -61,7 +62,7 @@ target_link_libraries(${target} PRIVATE
 )
 
 target_compile_definitions(${target} PRIVATE
-    ${define} 
+    ${define}
 )
 
 target_link_options(${target} PRIVATE
@@ -92,7 +93,7 @@ add_custom_command(TARGET ${EXAMPLE_APP_UPDATE_TARGET} POST_BUILD
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 
-add_custom_target(update 
+add_custom_target(update
     COMMAND ${JLINKEXECUTABLE} -CommandFile ${CMAKE_CURRENT_SOURCE_DIR}/write-update.jlink
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )

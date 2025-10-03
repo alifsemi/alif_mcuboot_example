@@ -7,7 +7,7 @@ set(BLINKY_APP_TARGET alif-blinky-app)
 set(BLINKY_APP_UPDATE_TARGET alif-blinky-app-update)
 
 # Set up the project
-project(alif-blinky-${ENSEMBLE_CORE}
+project(alif-blinky-hp
     VERSION 1.0.0
     LANGUAGES C CXX ASM
 )
@@ -43,7 +43,7 @@ target_link_libraries(${target} PRIVATE
 )
 
 target_compile_definitions(${target} PRIVATE
-    ${define} 
+    ${define}
 )
 
 target_link_options(${target} PRIVATE

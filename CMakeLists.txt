@@ -55,6 +55,9 @@ add_link_options(
     --entry=Reset_Handler
 )
 
+set(ALIF_BOARD "DevKit-e7" CACHE STRING "Set ALIF_BOARD to: DevKit-e1c, DevKit-e7, DevKit-e8, EngKit-e8-CSP")
+
+
 if(NOT CMAKE_BUILD_TYPE)
     message(STATUS "Setting build type to Release.")
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build type (Release or Debug)" FORCE)
@@ -93,7 +96,7 @@ endif()
 set(LIBRARIES_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libs)
 
 # Set up the project
-project(alif-mcuboot-example-${ENSEMBLE_CORE}
+project(alif-mcuboot-example
     VERSION 1.0.0
     LANGUAGES C CXX ASM
 )

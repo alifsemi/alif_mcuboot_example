@@ -22,13 +22,8 @@
 
 /* Includes ------------------------------------------------------------------*/
 
-#if defined (M55_HP)
-  #include "M55_HP.h"
-#elif defined (M55_HE)
-  #include "M55_HE.h"
-#else
-  #error device not specified!
-#endif
+#include "RTE_Components.h"
+#include CMSIS_device_header
 
 #include "sysflash/sysflash.h"
 
@@ -36,7 +31,7 @@
 
 void mpu_init(void)
 {
-    
+
 }
 
 /* Public functions ----------------------------------------------------------*/
@@ -58,7 +53,7 @@ void MPU_Load_Regions(void)
 #define MEMATTRIDX_NORMAL_WB_RA_WA           2
 #define MEMATTRIDX_NORMAL_WT_RA              3
 
-    static const ARM_MPU_Region_t mpu_table[] __STARTUP_RO_DATA_ATTRIBUTE =
+    static const ARM_MPU_Region_t mpu_table[] =
     {
         {   /* SRAM0 - 4MB : RO-0, NP-1, XN-0 */
             .RBAR = ARM_MPU_RBAR(0x02000000, ARM_MPU_SH_NON, 0, 1, 0),
@@ -110,7 +105,7 @@ void MPU_Load_Regions(void)
 #if !HE_UPDATES_SERAM
         {   /* MRAM - the rest => RO  */
             .RBAR = ARM_MPU_RBAR(MRAM_START + IMAGE_1_START + BOOT_BOOTLOADER_SIZE + 2*BOOT_SLOT_SIZE, ARM_MPU_SH_NON, 1, 1, 0),
-            .RLAR = ARM_MPU_RLAR(MRAM_START + MRAM_SIZE - 1, MEMATTRIDX_NORMAL_WT_RA)
+            .RLAR = ARM_MPU_RLAR(MRAM_START + SOC_FEAT_MRAM_SIZE - 1, MEMATTRIDX_NORMAL_WT_RA)
         },
 #else
         {   /* MRAM - IMAGE 2 PRIMARY => RO  */
@@ -123,7 +118,7 @@ void MPU_Load_Regions(void)
         },
         {   /* MRAM - the rest => RO  */
             .RBAR = ARM_MPU_RBAR(MRAM_START + IMAGE_1_START + BOOT_BOOTLOADER_SIZE + 2*BOOT_SLOT_SIZE + 2*BOOT_SERAM_SLOT_SIZE, ARM_MPU_SH_NON, 1, 1, 0),
-            .RLAR = ARM_MPU_RLAR(MRAM_START + MRAM_SIZE - 1, MEMATTRIDX_NORMAL_WT_RA)
+            .RLAR = ARM_MPU_RLAR(MRAM_START + SOC_FEAT_MRAM_SIZE - 1, MEMATTRIDX_NORMAL_WT_RA)
         },
 #endif
         {   /* OSPI Regs - 16MB : RO-0, NP-1, XN-1  */
@@ -167,4 +162,3 @@ void MPU_Load_Regions(void)
     /* Load the regions from the table */
     ARM_MPU_Load(0, mpu_table, sizeof(mpu_table)/sizeof(ARM_MPU_Region_t));
 }
-

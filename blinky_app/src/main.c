@@ -8,7 +8,7 @@
  *
  */
 #include "pinconf.h"
-#include "Driver_GPIO.h"
+#include "Driver_IO.h"
 #include "RTE_Components.h"
 #include CMSIS_device_header
 #include "uart_tracelib.h"

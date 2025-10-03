@@ -11,7 +11,7 @@
 #ifndef HW_H
 #define HW_H
 
-#include "Driver_GPIO.h"
+#include "Driver_IO.h"
 
 void hw_init(void);
 void led_button_init(ARM_GPIO_SignalEvent_t cb);

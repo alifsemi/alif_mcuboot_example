@@ -19,6 +19,7 @@
 #include "fault_handler.h"
 #include "pinconf.h"
 #include "Driver_HWSEM.h"
+#include "sys_utils.h"
 
 #include "RTE_Components.h"
 #include CMSIS_device_header
@@ -50,7 +51,7 @@ void MPU_Load_Regions(void)
 #define MEMATTRIDX_NORMAL_WB_RA_WA           2
 #define MEMATTRIDX_NORMAL_WT_RA              3
 
-    static const ARM_MPU_Region_t mpu_table[] __STARTUP_RO_DATA_ATTRIBUTE =
+    static const ARM_MPU_Region_t mpu_table[] =
     {
         {   /* Host Peripherals - 16MB : RO-0, NP-1, XN-1 */
             .RBAR = ARM_MPU_RBAR(0x1A000000, ARM_MPU_SH_NON, 0, 1, 1),
@@ -70,7 +71,7 @@ void MPU_Load_Regions(void)
         },
         {   /* MRAM - Application execution area + candidate slot : RO-0, NP-1, XN-0  */
             .RBAR = ARM_MPU_RBAR(MRAM_START + IMAGE_1_START + BOOT_BOOTLOADER_SIZE, ARM_MPU_SH_NON, 0, 1, 0),
-            .RLAR = ARM_MPU_RLAR(MRAM_START + MRAM_SIZE - 1, MEMATTRIDX_DEVICE_nGnRE)
+            .RLAR = ARM_MPU_RLAR(MRAM_START + SOC_FEAT_MRAM_SIZE - 1, MEMATTRIDX_DEVICE_nGnRE)
         },
         {   /* OSPI Regs - 16MB : RO-0, NP-1, XN-1  */
             .RBAR = ARM_MPU_RBAR(0x83000000, ARM_MPU_SH_NON, 0, 1, 1),

@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
+#include <stdatomic.h>
 #include <RTE_Components.h>
 #include CMSIS_device_header
 
@@ -25,11 +26,15 @@
 static ARM_DRIVER_USART *USARTdrv;
 
 volatile uint32_t uart_event;
-static bool initialized = false;
+static atomic_bool initialized = false;
 const char * tr_prefix = NULL;
 static bool has_cb = false;
 uint16_t prefix_len;
 #define MAX_TRACE_LEN 256
+
+#ifndef TRACELIB_UART_BAUDRATE
+#define TRACELIB_UART_BAUDRATE 115200
+#endif
 
 int tracelib_init(const char * prefix, ARM_USART_SignalEvent_t cb_event)
 {
@@ -38,32 +43,53 @@ int tracelib_init(const char * prefix, ARM_USART_SignalEvent_t cb_event)
         return 0;
     }
     int32_t ret    = 0;
-#if defined(M55_HE)
+#if defined(M55_HE) || defined(M55_HE_E1C) || defined(RTSS_HE)
 #if defined(CUSTOM_HE_UART)
     extern ARM_DRIVER_USART ARM_Driver_USART_(CUSTOM_HE_UART);
     USARTdrv = &ARM_Driver_USART_(CUSTOM_HE_UART);
 #else
+#ifdef BOARD_UART1_INSTANCE
     extern ARM_DRIVER_USART ARM_Driver_USART_(BOARD_UART1_INSTANCE);
     USARTdrv = &ARM_Driver_USART_(BOARD_UART1_INSTANCE);
-#endif
-#elif defined(M55_HP)
+#elif defined(BOARD_UARTA_UART_INSTANCE)
+    extern ARM_DRIVER_USART ARM_Driver_USART_(BOARD_UARTA_UART_INSTANCE);
+    USARTdrv = &ARM_Driver_USART_(BOARD_UARTA_UART_INSTANCE);
+#endif // BOARD_UART1_INSTANCE
+#endif // CUSTOM_HE_UART
+#elif defined(M55_HP) || defined(RTSS_HP)
+#ifdef BOARD_UART2_INSTANCE
     extern ARM_DRIVER_USART ARM_Driver_USART_(BOARD_UART2_INSTANCE);
     USARTdrv = &ARM_Driver_USART_(BOARD_UART2_INSTANCE);
+#elif defined(BOARD_UARTB_UART_INSTANCE)
+    extern ARM_DRIVER_USART ARM_Driver_USART_(BOARD_UARTB_UART_INSTANCE);
+    USARTdrv = &ARM_Driver_USART_(BOARD_UARTB_UART_INSTANCE);
+#endif
 #elif defined(A32)
     int cpuid = __get_MPIDR() & 0xFF;
     switch (cpuid) {
+    case 0: {
 #ifdef BOARD_UART3_INSTANCE
-    extern ARM_DRIVER_USART ARM_Driver_USART_(BOARD_UART3_INSTANCE);
-    case 0:
+        extern ARM_DRIVER_USART ARM_Driver_USART_(BOARD_UART3_INSTANCE);
         USARTdrv = &ARM_Driver_USART_(BOARD_UART3_INSTANCE);
         break;
-#endif
-#ifdef BOARD_UART4_INSTANCE
-    extern ARM_DRIVER_USART ARM_Driver_USART_(BOARD_UART4_INSTANCE);
-    case 1:
-        USARTdrv = &ARM_Driver_USART_(BOARD_UART4_INSTANCE);
+#elif defined(BOARD_UARTC_UART_INSTANCE)
+        extern ARM_DRIVER_USART ARM_Driver_USART_(BOARD_UARTC_UART_INSTANCE);
+        USARTdrv = &ARM_Driver_USART_(BOARD_UARTC_UART_INSTANCE);
         break;
 #endif
+    }
+
+    case 1: {
+#ifdef BOARD_UART4_INSTANCE
+        extern ARM_DRIVER_USART ARM_Driver_USART_(BOARD_UART4_INSTANCE);
+        USARTdrv = &ARM_Driver_USART_(BOARD_UART4_INSTANCE);
+        break;
+#elif defined(BOARD_UARTD_UART_INSTANCE)
+        extern ARM_DRIVER_USART ARM_Driver_USART_(BOARD_UARTD_UART_INSTANCE);
+        USARTdrv = &ARM_Driver_USART_(BOARD_UARTD_UART_INSTANCE);
+        break;
+#endif
+    }
     default:
         return ARM_DRIVER_ERROR_UNSUPPORTED;
     }
@@ -99,12 +125,11 @@ int tracelib_init(const char * prefix, ARM_USART_SignalEvent_t cb_event)
         return ret;
     }
 
-    /* Configure UART to 115200 Bits/sec */
     ret =  USARTdrv->Control(ARM_USART_MODE_ASYNCHRONOUS |
                              ARM_USART_DATA_BITS_8       |
                              ARM_USART_PARITY_NONE       |
                              ARM_USART_STOP_BITS_1       |
-                             ARM_USART_FLOW_CONTROL_NONE, 115200);
+                             ARM_USART_FLOW_CONTROL_NONE, TRACELIB_UART_BAUDRATE);
     if (ret != ARM_DRIVER_OK)
     {
         return ret;
@@ -133,6 +158,8 @@ int tracelib_uninit()
     int32_t ret = 0;
     if (initialized)
     {
+        initialized = false;
+
         /* Power down UART peripheral */
         ret = USARTdrv->PowerControl(ARM_POWER_OFF);
         if (ret != ARM_DRIVER_OK)
@@ -145,8 +172,6 @@ int tracelib_uninit()
         {
             return ret;
         }
-
-        initialized = false;
     }
     return ret;
 }
@@ -165,6 +190,8 @@ int receive_str(char* str, uint32_t len)
         {
             while (USARTdrv->GetRxCount() != len);
         }
+    } else {
+        ret = -1;
     }
     return ret;
 }

@@ -10,7 +10,7 @@
 
 #include "uart_tracelib.h"
 #include "fault_handler.h"
-#include "system_utils.h"
+#include "sys_utils.h"
 #include <stdio.h>
 
 #include "hw.h"
