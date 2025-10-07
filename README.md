@@ -105,6 +105,9 @@ To build RAM_LOAD configuration, add parameter `-DMCUBOOT_MODE=RAM_LOAD` to cmak
 
 The RAM_LOAD configuration does not support / require image test and confirmation, the later image is always loaded. All uploads will be stored to the secondary slot preserving the initial flashed application as 'golden image' in primary slot.
 
+### Building with different Alif boards
+Default board is DevKit-7. To build with another Alif board, for example DevKit-e8, add the following after `cmake ..` : ` -DTARGET_BOARD=DevKit-e8`. Available board values: `AppKit-e7`, `DevKit-e1c`, `DevKit-e4`, `DevKit-e7` and `DevKit-e8`.
+
 ## Deployment
 
 1. Build the MCUboot application and example applications, see [Building](#building).
@@ -115,7 +118,7 @@ The RAM_LOAD configuration does not support / require image test and confirmatio
 
 ### Preparations
 1. [Build](#building) the project with selected transport mechanism. Uart is built by default, usb transport mechanism can be configured with `cmake .. -DTRANSPORT=usb`.
-1. Establish connection between your computer and the development board. For uart, UART3 is used by default. This requires attaching an FTDI cable to pins P1_2 and P1_3 on the board. For usb, attach an usb cable to 'SoC USB' port.
+1. Establish connection between your computer and the development board. For uart, UART3 is used by default. This requires attaching an FTDI cable to pins P1_2 and P1_3 (or P2_4 and P2_5 on E1C) on the board. For usb, attach an usb cable to 'SoC USB' port.
 1. Create connection profile for the mcumgr-cli, for example: `mcumgr conn add uart type=serial connstring="dev=/dev/ttyACM0,baud=115200"`. Connection type and baud rate are same for uart and usb connections.
 1. Test the connection between mcumgr-cli and the device: `mcumgr -cuart echo "Echo test"`. The command should print out 'Echo test' to indicate the device returned same string it was sent.
 
@@ -134,12 +137,12 @@ The RAM_LOAD configuration does not support / require image test and confirmatio
         image=0 slot=1
            version: 2.0.0
            bootable: true
-           flags: 
+           flags:
            hash: 5d2f3bf869e7aafd29825a932e285daafc42ac7aaa00958096dfde09dd3c2fb9
        Split status: N/A (0)
 
 ### Setting the update pending and updating the application
-1. Mark the image to be test-booted on next reset: `mcumgr -cuart image test <hash>`.  
+1. Mark the image to be test-booted on next reset: `mcumgr -cuart image test <hash>`.
    * The image hash can be seen in the output of the `mcumgr -cuart image list` command, under image= 0 slot=1
 1. Reset the device: `mcumgr -cuart reset`.
 1. Validate new image is running: `mcumgr -cuart image list`.
@@ -151,7 +154,7 @@ The RAM_LOAD configuration does not support / require image test and confirmatio
 
 ### Setting the updated image as confirmed
 1. After update, query existing images on the device: `mcumgr -cuart image list`.
-1. Confirm the update so it won't be reverted on next reset: `mcumgr -cuart image confirm <hash>`.  
+1. Confirm the update so it won't be reverted on next reset: `mcumgr -cuart image confirm <hash>`.
    * The hash for this command is the same as given to `mcumgr -cuart image test <hash>`-command in [Setting the update pending and updating the application](#setting-the-update-pending-and-updating-the-application)-phase. At this point, it can be seen under image=0 slot=0 in the `mcumgr -cuart image list`-command.
 1. Reset the device: `mcumgr -cuart reset`.
 1. Validate new image is still running: `mcumgr -cuart image list`.
@@ -200,19 +203,22 @@ In this flow, both the 'initial' example application and the update candidate is
 
 ### Example output during normal boot (after writing initial images with Alif Security Toolkit)
 
+    INF: Primary image: magic=unset, swap_type=0x1, copy_done=0x3, image_ok=0x3
+    INF: Scratch: magic=unset, swap_type=0x1, copy_done=0x3, image_ok=0x3
+    INF: Boot source: primary slot
     INF: Image index: 0, Swap type: none            << Internal MCUboot logging
 
     Loading image, version 1.0.0 (build: 0)         << Bootloader app prints, see bootloader_app/src/main.c
-      image size: 29808.
+      image size: 38112.
 
     Example app running!                            << Example app print, see example_app/src/main.c
     PRIMARY slot:
       offset:    0x80010000
       size:      0x10000
-      magic:     1
+      magic:     3
       swap_type: 1
-      copy_done: 2
-      image_ok:  1
+      copy_done: 3
+      image_ok:  3
       image_num: 0
       version:   1.0.0
     SECONDARY slot:
@@ -237,11 +243,11 @@ In this flow, both the 'initial' example application and the update candidate is
     PRIMARY slot:
       offset:    0x80010000
       size:      0x10000
-      magic:     1
+      magic:     3
       swap_type: 1
-      copy_done: 2
-      image_ok:  1
-      image_num: 0
+      copy_done: 3
+      image_ok:  3
+      image_num: 3
       version:   1.0.0
     SECONDARY slot:
       offset:    0x80020000
@@ -274,8 +280,8 @@ In this flow, both the 'initial' example application and the update candidate is
       offset:    0x80010000
       size:      0x10000
       magic:     1
-      swap_type: 1
-      copy_done: 3
+      swap_type: 2
+      copy_done: 1
       image_ok:  3
       image_num: 0
       version:   2.0.0

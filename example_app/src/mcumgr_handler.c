@@ -31,6 +31,7 @@
 #include "services_lib_api.h"
 #include "services_lib_ids.h"
 #include "sys_utils.h"
+#include "hw.h"
 
 // In case HE does both updates, only HE needs to be reset (it needs to anyway signal HP to shut down as
 // it might've received a spurious wakeup).
@@ -408,6 +409,7 @@ void mcumgr_evt_callback(uint8_t opcode, uint16_t group, uint8_t id, void *arg)
 
 void reset_request_callback(void)
 {
+    led_off();
 #if RESET_TYPE_SOC
     MHU->ACCESS_REQUEST = 1;
     while(!MHU->ACCESS_READY); // wait for MHU towards SE to be ready to receive

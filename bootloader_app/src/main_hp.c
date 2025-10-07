@@ -123,6 +123,7 @@ void hw_init(void)
 			PADCTRL_SCHMITT_TRIGGER_ENABLE |
 			PADCTRL_DRIVER_DISABLED_PULL_UP;
 
+    // Same ports and pins with DevKit-e7,DevKit-e8, DevKit-e4 and AppKit-e7. No need for DevKit-e1c as this is HP app.
     pinconf_set(PORT_12, PIN_1, PINMUX_ALTERNATE_FUNCTION_2, config_uart_rx); // P12_1: RX  (mux mode 2)
     pinconf_set(PORT_12, PIN_2, PINMUX_ALTERNATE_FUNCTION_2, 0);              // P12_2: TX  (mux mode 2)
 
@@ -141,6 +142,7 @@ void hw_uninit()
     uint32_t config_default =
             PADCTRL_OUTPUT_DRIVE_STRENGTH_4MA |
             PADCTRL_SCHMITT_TRIGGER_ENABLE;
+    // Same ports and pins with DevKit-e7,DevKit-e8, DevKit-e4 and AppKit-e7. No need for DevKit-e1c as this is HP app.
     pinconf_set(PORT_12, PIN_1, PINMUX_ALTERNATE_FUNCTION_0, config_default);
     pinconf_set(PORT_12, PIN_2, PINMUX_ALTERNATE_FUNCTION_0, config_default);
 }

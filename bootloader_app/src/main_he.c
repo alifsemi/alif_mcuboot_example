@@ -31,6 +31,18 @@
 
 #define SHUTDOWN_MESSAGE 0xDEADBEEF
 
+#ifdef ENSEMBLE_SOC_E1C
+#define UART2_RX_PORT   PORT_5
+#define UART2_TX_PORT   PORT_5
+#define UART2_RX_PIN    PIN_2
+#define UART2_TX_PIN    PIN_3
+#else // Same ports and pins with DevKit-e7,DevKit-e8, DevKit-e4, AppKit-e7
+#define UART2_RX_PORT   PORT_1
+#define UART2_TX_PORT   PORT_1
+#define UART2_RX_PIN    PIN_0
+#define UART2_TX_PIN    PIN_1
+#endif
+
 static volatile bool msg_acked = false;
 static volatile bool hp_updated = false;
 
@@ -234,8 +246,8 @@ void hw_init(void)
 			PADCTRL_SCHMITT_TRIGGER_ENABLE |
 			PADCTRL_DRIVER_DISABLED_PULL_UP;
     // configure UART2 for logging
-    pinconf_set(PORT_1, PIN_0, PINMUX_ALTERNATE_FUNCTION_1, config_uart_rx);  // P1_0:  RX  (mux mode 1)
-    pinconf_set(PORT_1, PIN_1, PINMUX_ALTERNATE_FUNCTION_1, 0);               // P1_1:  TX  (mux mode 1)
+    pinconf_set(UART2_RX_PORT, UART2_RX_PORT, PINMUX_ALTERNATE_FUNCTION_1, config_uart_rx);
+    pinconf_set(UART2_TX_PORT, UART2_TX_PORT, PINMUX_ALTERNATE_FUNCTION_1, 0);
 
 #if HE_UPDATES_BOTH
     hwsem->Initialize(NULL);
@@ -251,8 +263,8 @@ void hw_uninit()
     uint32_t config_default =
             PADCTRL_OUTPUT_DRIVE_STRENGTH_4MA |
             PADCTRL_SCHMITT_TRIGGER_ENABLE;
-    pinconf_set(PORT_1, PIN_0, PINMUX_ALTERNATE_FUNCTION_0, config_default);
-    pinconf_set(PORT_1, PIN_1, PINMUX_ALTERNATE_FUNCTION_0, config_default);
+    pinconf_set(UART2_RX_PORT, UART2_RX_PORT, PINMUX_ALTERNATE_FUNCTION_1, config_default);
+    pinconf_set(UART2_TX_PORT, UART2_TX_PORT, PINMUX_ALTERNATE_FUNCTION_1, 0);
 }
 
 void uninit()

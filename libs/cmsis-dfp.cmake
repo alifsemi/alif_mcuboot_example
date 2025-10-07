@@ -19,9 +19,6 @@ set(ALIF_CORE_STRING "rtss_hp")
 set(ALIF_CORE_DEFINE "RTSS_HP")
 endif()
 
-set(ALIF_DEVICE_SKU "AE722F80F55D5")
-
-
 target_include_directories(${name}_interface INTERFACE
     ${ALIF_DRIVER_DIR}/Include
     ${ALIF_DRIVER_DIR}/Include/config

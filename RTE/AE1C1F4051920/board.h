@@ -8,13 +8,6 @@
  *
  */
 
-/******************************************************************************
- * @file     board.h
- * @brief    BOARD API
- *
- *           copy this file to your project and remove #if 0 / #endif
- ******************************************************************************/
-
 #ifndef __BOARD_LIB_H
 #define __BOARD_LIB_H
 
