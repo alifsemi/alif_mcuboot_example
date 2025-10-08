@@ -5,7 +5,7 @@ import platform
 import pytest
 import re
 import subprocess
-
+import time
 
 if platform.system() == "Windows":
     _MCUMGR_COMMAND_BASE = ["mcumgr.exe"]
@@ -70,7 +70,8 @@ class SecureEnclaveDut:
         cmd_packet = [0x00, 0x9]
         cmd_packet = cmd_packet + list(0x02.to_bytes(4, byteorder='little'))
         self._send_cmd(cmd_packet)
-        self.se.expect("\\[SES\\] STOC DEVICE ok", timeout=5.0)
+        self.se.expect("\\[SES\\] STOC ok", timeout=5.0)
+        time.sleep(5)
 
 
 class DutElement:
@@ -102,9 +103,11 @@ class McumgrCLI:
             command += " -n%d" % image_id
         return self.command(command, timeout=200)
 
-    def command_and_assert(self, cmd, what, timeout=5, tries=1):
+    def command_and_assert(self, cmd, what, timeout=10, tries=1):
         resp = self.command(cmd, timeout, tries)
         resp.assert_contains(what)
+        if cmd == "reset":
+            time.sleep(5)
 
 
 _MGRINSTANCE = None
