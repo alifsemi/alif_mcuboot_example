@@ -19,6 +19,7 @@
 #include "fault_handler.h"
 #include "pinconf.h"
 #include "Driver_HWSEM.h"
+#include "sys_utils.h"
 
 #include "RTE_Components.h"
 #include CMSIS_device_header
@@ -50,7 +51,7 @@ void MPU_Load_Regions(void)
 #define MEMATTRIDX_NORMAL_WB_RA_WA           2
 #define MEMATTRIDX_NORMAL_WT_RA              3
 
-    static const ARM_MPU_Region_t mpu_table[] __STARTUP_RO_DATA_ATTRIBUTE =
+    static const ARM_MPU_Region_t mpu_table[] =
     {
         {   /* Host Peripherals - 16MB : RO-0, NP-1, XN-1 */
             .RBAR = ARM_MPU_RBAR(0x1A000000, ARM_MPU_SH_NON, 0, 1, 1),
@@ -70,7 +71,7 @@ void MPU_Load_Regions(void)
         },
         {   /* MRAM - Application execution area + candidate slot : RO-0, NP-1, XN-0  */
             .RBAR = ARM_MPU_RBAR(MRAM_START + IMAGE_1_START + BOOT_BOOTLOADER_SIZE, ARM_MPU_SH_NON, 0, 1, 0),
-            .RLAR = ARM_MPU_RLAR(MRAM_START + MRAM_SIZE - 1, MEMATTRIDX_DEVICE_nGnRE)
+            .RLAR = ARM_MPU_RLAR(MRAM_START + SOC_FEAT_MRAM_SIZE - 1, MEMATTRIDX_DEVICE_nGnRE)
         },
         {   /* OSPI Regs - 16MB : RO-0, NP-1, XN-1  */
             .RBAR = ARM_MPU_RBAR(0x83000000, ARM_MPU_SH_NON, 0, 1, 1),
@@ -122,6 +123,7 @@ void hw_init(void)
 			PADCTRL_SCHMITT_TRIGGER_ENABLE |
 			PADCTRL_DRIVER_DISABLED_PULL_UP;
 
+    // Same ports and pins with DevKit-e7,DevKit-e8, DevKit-e4 and AppKit-e7. No need for DevKit-e1c as this is HP app.
     pinconf_set(PORT_12, PIN_1, PINMUX_ALTERNATE_FUNCTION_2, config_uart_rx); // P12_1: RX  (mux mode 2)
     pinconf_set(PORT_12, PIN_2, PINMUX_ALTERNATE_FUNCTION_2, 0);              // P12_2: TX  (mux mode 2)
 
@@ -140,6 +142,7 @@ void hw_uninit()
     uint32_t config_default =
             PADCTRL_OUTPUT_DRIVE_STRENGTH_4MA |
             PADCTRL_SCHMITT_TRIGGER_ENABLE;
+    // Same ports and pins with DevKit-e7,DevKit-e8, DevKit-e4 and AppKit-e7. No need for DevKit-e1c as this is HP app.
     pinconf_set(PORT_12, PIN_1, PINMUX_ALTERNATE_FUNCTION_0, config_default);
     pinconf_set(PORT_12, PIN_2, PINMUX_ALTERNATE_FUNCTION_0, config_default);
 }

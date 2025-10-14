@@ -6,9 +6,8 @@
 #include <inttypes.h>
 #include "mcumgr_os_port.h"
 
-
-extern ARM_DRIVER_LPTIMER DRIVER_LPTIMER0;
-static ARM_DRIVER_LPTIMER* timer = &DRIVER_LPTIMER0;
+extern ARM_DRIVER_LPTIMER Driver_LPTIMER0;
+static ARM_DRIVER_LPTIMER* timer = &Driver_LPTIMER0;
 
 #define LPTIMER_CLOCK_FREQUENCY 32768
 

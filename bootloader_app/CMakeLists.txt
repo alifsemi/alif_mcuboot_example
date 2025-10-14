@@ -8,7 +8,7 @@ set(BL_APP_TARGET_HE alif-mcuboot-he)
 set(BL_APP_TARGET_HP alif-mcuboot-hp)
 
 # Set up the project
-project(alif-mcuboot-${ENSEMBLE_CORE}
+project(alif-mcuboot-he
     VERSION 1.0.0
     LANGUAGES C CXX ASM
 )

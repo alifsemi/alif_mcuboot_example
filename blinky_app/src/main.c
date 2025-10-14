@@ -8,7 +8,7 @@
  *
  */
 #include "pinconf.h"
-#include "Driver_GPIO.h"
+#include "Driver_IO.h"
 #include "RTE_Components.h"
 #include CMSIS_device_header
 #include "uart_tracelib.h"
@@ -23,8 +23,8 @@ extern void flush_uart(void);
 
 #define LED_PORT 6
 
-#define LED_PIN_ORIGINAL 2
-#define LED_PIN_UPDATED  6
+#define LED_PIN_ORIGINAL 2 // 6_2, LED1_R, Same ports and pins with DevKit-e7,DevKit-e8, DevKit-e4 and AppKit-e7. No LED_1 on DevKit-e1c and not needed as this is a HP app.
+#define LED_PIN_UPDATED  6 // 6_6, LED1_B, Same ports and pins with DevKit-e7,DevKit-e8, DevKit-e4 and AppKit-e7. No LED_1 on DevKit-e1c and not needed as this is a HP app.
 
 #ifdef BLINKY_APP_UPDATE_TARGET
 #define LED_PIN   LED_PIN_UPDATED
@@ -101,6 +101,7 @@ static void hwinit()
 			PADCTRL_DRIVER_DISABLED_PULL_UP;
 
     // configure UART4 for output (same as HP bootloader has)
+    // Same ports and pins with DevKit-e7,DevKit-e8, DevKit-e4 and AppKit-e7. Not needed for DevKit-e1c as this is a HP app.
     pinconf_set(PORT_12, PIN_1, PINMUX_ALTERNATE_FUNCTION_2, config_uart_rx); // P12_1: RX  (mux mode 2)
     pinconf_set(PORT_12, PIN_2, PINMUX_ALTERNATE_FUNCTION_2, 0);              // P12_2: TX  (mux mode 2)
 }
@@ -129,14 +130,18 @@ int main(void)
     while(ret);
     ret = Led->PowerControl(LED_PIN, ARM_POWER_FULL);
     while(ret);
-    ret = Led->SetDirection(LED_PIN_ORIGINAL, GPIO_PIN_DIRECTION_OUTPUT);
-    while(ret);
+
+#ifdef BLINKY_APP_UPDATE_TARGET
     ret = Led->SetDirection(LED_PIN_UPDATED, GPIO_PIN_DIRECTION_OUTPUT);
     while(ret);
-    ret = Led->SetValue(LED_PIN_ORIGINAL, GPIO_PIN_OUTPUT_STATE_LOW);
+    ret = Led->SetValue(LED_PIN_UPDATED, GPIO_PIN_OUTPUT_STATE_HIGH);
     while(ret);
-    ret = Led->SetValue(LED_PIN_UPDATED, GPIO_PIN_OUTPUT_STATE_LOW);
+#else
+    ret = Led->SetDirection(LED_PIN_ORIGINAL, GPIO_PIN_DIRECTION_OUTPUT);
     while(ret);
+    ret = Led->SetValue(LED_PIN_ORIGINAL, GPIO_PIN_OUTPUT_STATE_HIGH);
+    while(ret);
+#endif
 
     uint32_t start = S32K_CNTRead->CNTCVL;
     printf("Blink start\n");
@@ -152,7 +157,7 @@ int main(void)
         flush_uart();
     }
 
-    Led->SetValue(LED_PIN, GPIO_PIN_OUTPUT_STATE_LOW);
+    Led->SetValue(LED_PIN, GPIO_PIN_OUTPUT_STATE_HIGH);
 
     __disable_irq();
     while(1) {

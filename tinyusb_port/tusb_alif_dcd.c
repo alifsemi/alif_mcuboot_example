@@ -13,20 +13,20 @@
 
 #if CFG_TUD_ENABLED
 
-#if defined(M55_HE)
-#include "M55_HE.h"
-#elif defined(M55_HP)
-#include "M55_HP.h"
-#else
-#error "Unsupported core!"
-#endif
+#include "RTE_Components.h"
+#include CMSIS_device_header
 
 #include "device/dcd.h"
 
 #include "alif_dcd_reg.h"
 
-#include "clk.h"
-#include "power.h"
+#include "sys_clocks.h"
+#include "sys_utils.h"
+
+#define CLK_ENA_CLK20M          (1U << 22) /* Enable USB and 20M_CLK */
+#define PWR_CTRL_UPHY_PWR_MASK  (1U << 16) /* Mask off the power supply for USB PHY */
+#define PWR_CTRL_UPHY_ISO       (1U << 17) /* Enable isolation for USB PHY */
+
 
 // #define TUSB_ALIF_DEBUG
 // #define TUSB_ALIF_DEBUG_DEPTH (2048)
@@ -78,13 +78,13 @@ void dcd_uninit(void);
 void dcd_init(uint8_t rhport)
 {
     // enable 20mhz clock
-    enable_cgu_clk20m();
+    CGU->CLK_ENA |= CLK_ENA_CLK20M;
     // enable usb peripheral clock
     enable_usb_periph_clk();
     // power up usb phy
-    enable_usb_phy_power();
+    VBAT->PWR_CTRL &= ~PWR_CTRL_UPHY_PWR_MASK;
     // disable usb phy isolation
-    disable_usb_phy_isolation();
+    VBAT->PWR_CTRL &= ~PWR_CTRL_UPHY_ISO;
     // clear usb phy power-on-reset signal
     CLKCTL_PER_MST->USB_CTRL2 &= ~(1 << 8);
 
@@ -180,7 +180,7 @@ void dcd_init(uint8_t rhport)
 void dcd_int_handler(uint8_t rhport)
 {
     (void)rhport;
-    LOG("%010u IRQ enter, evntcount %u", DWT->CYCCNT, ugbl->gevntcount0_b.evntcount);
+    LOG("%010lu IRQ enter, evntcount %d", DWT->CYCCNT, ugbl->gevntcount0_b.evntcount);
 
     // process failures first
     if (ugbl->gsts_b.device_ip) {
@@ -198,7 +198,7 @@ void dcd_int_handler(uint8_t rhport)
         RTSS_InvalidateDCache_by_Addr(_evnt_buf, sizeof(_evnt_buf));
         volatile evt_t e = {.val = *_evnt_tail++};
 
-        LOG("%010u IRQ loop, evntcount %u evnt %08x", DWT->CYCCNT,
+        LOG("%010lu IRQ loop, evntcount %d evnt %lx", DWT->CYCCNT,
             ugbl->gevntcount0_b.evntcount, e.val);
 
         // wrap around
@@ -211,7 +211,7 @@ void dcd_int_handler(uint8_t rhport)
             _dcd_handle_devt(e.devt.evt, e.devt.info);
         } else {
             // bad event??
-            LOG("Unknown event %u", e.val);
+            LOG("Unknown event %lu", e.val);
             __BKPT(0);
         }
 
@@ -219,7 +219,7 @@ void dcd_int_handler(uint8_t rhport)
         ugbl->gevntcount0 = 4;
     }
 
-    LOG("%010u IRQ exit, evntcount %u", DWT->CYCCNT, ugbl->gevntcount0_b.evntcount);
+    LOG("%010lu IRQ exit, evntcount %d", DWT->CYCCNT, ugbl->gevntcount0_b.evntcount);
 }
 
 
@@ -248,7 +248,7 @@ void dcd_int_disable(uint8_t rhport)
 // leave this empty and also no queue an event for the corresponding SETUP packet.
 void dcd_set_address(uint8_t rhport, uint8_t dev_addr)
 {
-    LOG("%010u >%s", DWT->CYCCNT, __func__);
+    LOG("%010lu >%s", DWT->CYCCNT, __func__);
 
     udev->dcfg_b.devaddr = dev_addr;
     dcd_edpt_xfer(rhport, tu_edpt_addr(0, TUSB_DIR_IN), NULL, 0);
@@ -258,7 +258,7 @@ void dcd_set_address(uint8_t rhport, uint8_t dev_addr)
 void dcd_remote_wakeup(uint8_t rhport)
 {
     (void)rhport;
-    LOG("%010u >%s", DWT->CYCCNT, __func__);
+    LOG("%010lu >%s", DWT->CYCCNT, __func__);
 }
 
 // Connect by enabling internal pull-up resistor on D+/D-
@@ -282,7 +282,7 @@ void dcd_disconnect(uint8_t rhport)
 // Enable/Disable Start-of-frame interrupt. Default is disabled
 void dcd_sof_enable(uint8_t rhport, bool en)
 {
-    LOG("%010u >%s", DWT->CYCCNT, __func__);
+    LOG("%010lu >%s", DWT->CYCCNT, __func__);
     (void)rhport;
     (void)en;
 }
@@ -296,7 +296,7 @@ void dcd_edpt0_status_complete(uint8_t rhport, tusb_control_request_t const * re
 {
     (void)rhport;
     (void)request;
-    LOG("%010u >%s", DWT->CYCCNT, __func__);
+    LOG("%010lu >%s", DWT->CYCCNT, __func__);
 
     _ctrl_long_data = false;
     _dcd_start_xfer(TUSB_DIR_OUT, _ctrl_buf, 8, TRBCTL_CTL_SETUP);
@@ -312,7 +312,7 @@ void dcd_edpt0_status_complete(uint8_t rhport, tusb_control_request_t const * re
 bool dcd_edpt_open(uint8_t rhport, tusb_desc_endpoint_t const * desc_ep)
 {
     (void)rhport;
-    LOG("%010u >%s %u %s %u %u", DWT->CYCCNT, __func__, desc_ep->bEndpointAddress,
+    LOG("%010lu >%s %u %s %u %u", DWT->CYCCNT, __func__, desc_ep->bEndpointAddress,
         desc_ep->bmAttributes.xfer == TUSB_XFER_BULK ? "bulk" : "int",
         desc_ep->wMaxPacketSize, desc_ep->bInterval);
 
@@ -354,7 +354,7 @@ bool dcd_edpt_open(uint8_t rhport, tusb_desc_endpoint_t const * desc_ep)
 void dcd_edpt_close_all(uint8_t rhport)
 {
     (void)rhport;
-    LOG("%010u >%s", DWT->CYCCNT, __func__);
+    LOG("%010lu >%s", DWT->CYCCNT, __func__);
 }
 
 // Close an endpoint. his function is used for implementing alternate settings.
@@ -371,7 +371,7 @@ bool dcd_edpt_xfer(uint8_t rhport, uint8_t ep_addr, uint8_t * buffer, uint16_t t
 {
     (void)rhport;
     // DEPSTRTXFER command
-    LOG("%010u >%s %u %x %u", DWT->CYCCNT, __func__, ep_addr, (uint32_t) buffer, total_bytes);
+    LOG("%010lu >%s %u %lx %u", DWT->CYCCNT, __func__, ep_addr, (uint32_t) buffer, total_bytes);
 
     uint8_t ep = (tu_edpt_number(ep_addr) << 1) | tu_edpt_dir(ep_addr);
 
@@ -469,8 +469,8 @@ void dcd_edpt_clear_stall(uint8_t rhport, uint8_t ep_addr)
 void dcd_uninit(void)
 {
     CLKCTL_PER_MST->USB_CTRL2 |= 1 << 8; // set usb phy power-on-reset signal
-    enable_usb_phy_isolation(); // enable usb phy isolation
-    disable_usb_phy_power(); // power down usb phy
+    VBAT->PWR_CTRL |= PWR_CTRL_UPHY_ISO; // enable usb phy isolation
+    VBAT->PWR_CTRL |= PWR_CTRL_UPHY_PWR_MASK; // power down usb phy
     disable_usb_periph_clk(); // disable usb peripheral clock
 }
 
@@ -506,7 +506,7 @@ static uint8_t _dcd_cmd_wait(uint8_t ep, uint8_t typ, uint16_t param)
 static void _dcd_handle_depevt(uint8_t ep, uint8_t evt, uint8_t sts, uint16_t par)
 {
     (void)par;
-    LOG("%010u DEPEVT ep%u evt%u sts%u par%u", DWT->CYCCNT, ep, evt, sts, par);
+    LOG("%010lu DEPEVT ep%u evt%u sts%u par%u", DWT->CYCCNT, ep, evt, sts, par);
 
     switch (evt) {
         case DEPEVT_XFERCOMPLETE: {
@@ -514,7 +514,7 @@ static void _dcd_handle_depevt(uint8_t ep, uint8_t evt, uint8_t sts, uint16_t pa
             RTSS_InvalidateDCache_by_Addr(_xfer_trb[ep], sizeof(_xfer_trb[0]));
             if (0 == ep) {
                 uint8_t trbctl = (_xfer_trb[0][3] >> 4) & 0x3F;
-                LOG("ep0 xfer trb3 = %08x", _xfer_trb[0][3]);
+                LOG("ep0 xfer trb3 = %08lx", _xfer_trb[0][3]);
                 if (TRBCTL_CTL_SETUP == trbctl) {
                     RTSS_InvalidateDCache_by_Addr(_ctrl_buf, sizeof(_ctrl_buf));
                     LOG("%02x %02x %02x %02x %02x %02x %02x %02x",
@@ -542,7 +542,7 @@ static void _dcd_handle_depevt(uint8_t ep, uint8_t evt, uint8_t sts, uint16_t pa
                 }
             } else if (1 == ep) {
                 uint8_t trbctl = (_xfer_trb[1][3] >> 4) & 0x3F;
-                LOG("ep1 xfer trb3 = %08x trb2 = %08x", _xfer_trb[1][3], _xfer_trb[1][2]);
+                LOG("ep1 xfer trb3 = %08lx trb2 = %08lx", _xfer_trb[1][3], _xfer_trb[1][2]);
                 if (TRBCTL_CTL_STAT2 != trbctl) { // STATUS IN notification is done at xfer request
                     dcd_event_xfer_complete(TUD_OPT_RHPORT, tu_edpt_addr(0, TUSB_DIR_IN),
                                             _xfer_bytes[1] - (_xfer_trb[1][2] & 0xFFFFFF),
@@ -558,7 +558,7 @@ static void _dcd_handle_depevt(uint8_t ep, uint8_t evt, uint8_t sts, uint16_t pa
                 }
             } else {
                 // [TODO] check if ep is open
-                LOG("ep%u xfer trb3 = %08x trb2 = %08x", ep, _xfer_trb[ep][3], _xfer_trb[ep][2]);
+                LOG("ep%u xfer trb3 = %08lx trb2 = %08lx", ep, _xfer_trb[ep][3], _xfer_trb[ep][2]);
                 if (TUSB_DIR_OUT == tu_edpt_dir(tu_edpt_addr(ep >> 1, ep & 1))) {
                     RTSS_InvalidateDCache_by_Addr((void*) _xfer_trb[ep][0],
                                                   512 - _xfer_trb[ep][2]);
@@ -622,7 +622,7 @@ static void _dcd_handle_depevt(uint8_t ep, uint8_t evt, uint8_t sts, uint16_t pa
 
 static void _dcd_handle_devt(uint8_t evt, uint16_t info)
 {
-    LOG("%010u DEVT evt%u info%u", DWT->CYCCNT, evt, info);
+    LOG("%010lu DEVT evt%u info%u", DWT->CYCCNT, evt, info);
     switch (evt) {
         case DEVT_USBRST: {
             _xfer_cfgd = false;
@@ -646,7 +646,7 @@ static void _dcd_handle_devt(uint8_t evt, uint16_t info)
             _dcd_cmd_wait(1, CMDTYP_DEPCFG, 0);
         } break;
         case DEVT_ULSTCHNG: {
-            LOG("Link status change");
+            LOG("Link status change, info: %u", info);
             switch (info) {
                 case 0x3: { // suspend (L2)
                     dcd_event_bus_signal(TUD_OPT_RHPORT, DCD_EVENT_SUSPEND, true);

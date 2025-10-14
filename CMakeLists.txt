@@ -54,6 +54,31 @@ add_link_options(
     -Wl,--gc-sections
     --entry=Reset_Handler
 )
+# Set board. Can be given with cmake command, for example: -DTARGET_BOARD=DevKit-e8
+set(TARGET_BOARD  "DevKit-e7" CACHE STRING "Alif Board type")
+set_property(CACHE TARGET_BOARD PROPERTY STRINGS "AppKit-e7" "DevKit-e1c" "DevKit-e4" "DevKit-e7" "DevKit-e8")
+
+# Don't change this it is resolved via ALIF_BOARD
+set(ALIF_DEVICE_SKU "AE722F80F55D5" CACHE STRING "Specify Alif SKU part number")
+set_property(CACHE ALIF_DEVICE_SKU PROPERTY STRINGS "AE1C1F4051920" "AE722F80F55D5" "AE822FA0E5597")
+
+ # Sanity check TARGET_BOARD
+if (NOT ((TARGET_BOARD STREQUAL "AppKit-e7") OR (TARGET_BOARD STREQUAL "DevKit-e1c") OR (TARGET_BOARD STREQUAL "DevKit-e4") OR (TARGET_BOARD STREQUAL "DevKit-e7")
+    OR (TARGET_BOARD STREQUAL "DevKit-e8")))
+    message(FATAL_ERROR "Possible TARGET_BOARD values are: AppKit-e7, DevKit-e1c, DevKit-e4, DevKit-e7 and DevKit-e8 but given value was ${TARGET_BOARD}")
+endif()
+
+# resolve correct SKU
+if ((TARGET_BOARD STREQUAL "DevKit-e8") OR (TARGET_BOARD STREQUAL "DevKit-e4")) # Add other Devkits and AppKits which are Ensemble devices with Striping support
+    set(ALIF_DEVICE_SKU "AE822FA0E5597" CACHE STRING "" FORCE)
+    add_compile_definitions(ENSEMBLE_SOC_GEN2)
+elseif ((TARGET_BOARD STREQUAL "AppKit-e7") OR (TARGET_BOARD STREQUAL "DevKit-e7")) # Add other Devkit and AppKits which are Ensemble devices
+    set(ALIF_DEVICE_SKU "AE722F80F55D5" CACHE STRING "" FORCE)
+elseif (TARGET_BOARD STREQUAL "DevKit-e1c") # Add other Devkit and AppKits which are Balletto devices
+    set(ALIF_DEVICE_SKU "AE1C1F4051920" CACHE STRING "" FORCE)
+    add_compile_definitions(ENSEMBLE_SOC_E1C)
+endif()
+
 
 if(NOT CMAKE_BUILD_TYPE)
     message(STATUS "Setting build type to Release.")
@@ -93,14 +118,14 @@ endif()
 set(LIBRARIES_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libs)
 
 # Set up the project
-project(alif-mcuboot-example-${ENSEMBLE_CORE}
+project(alif-mcuboot-example
     VERSION 1.0.0
     LANGUAGES C CXX ASM
 )
 
 add_library(rte_interface INTERFACE)
 target_include_directories(rte_interface INTERFACE
-    ${CMAKE_CURRENT_SOURCE_DIR}/RTE
+    ${CMAKE_CURRENT_SOURCE_DIR}/RTE/${ALIF_DEVICE_SKU}
 )
 
 include(${LIBRARIES_DIR}/cmsis.cmake)

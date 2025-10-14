@@ -30,6 +30,8 @@
 #include "mhu_driver.h"
 #include "services_lib_api.h"
 #include "services_lib_ids.h"
+#include "sys_utils.h"
+#include "hw.h"
 
 // In case HE does both updates, only HE needs to be reset (it needs to anyway signal HP to shut down as
 // it might've received a spurious wakeup).
@@ -56,7 +58,7 @@ static bool packet_receive_ongoing = false;
 static unsigned char smp_buf[MAX_BODY_SIZE_FOR_SINGLE_FRAME];
 
 #define TRANSMIT_BUF_SIZE 121
-// needs to able to hold MAX_BODY_SIZE_FOR_SINGLE_FRAME encoded in BASE64 + null byte that mbedtls_base64encode 
+// needs to able to hold MAX_BODY_SIZE_FOR_SINGLE_FRAME encoded in BASE64 + null byte that mbedtls_base64encode
 // insist on adding (but won't get transmitted)
 static unsigned char transmit_buf[TRANSMIT_BUF_SIZE];
 
@@ -153,7 +155,7 @@ static int smp_init_reader(struct cbor_decoder_reader *reader, void *buf, void *
 {
     struct smp_streamer_ext* streamer = (struct smp_streamer_ext*)arg;
     cbor_buf_reader_init((struct cbor_buf_reader*)reader, buf, *(streamer->len));
-    
+
     return MGMT_ERR_EOK;
 }
 
@@ -407,6 +409,7 @@ void mcumgr_evt_callback(uint8_t opcode, uint16_t group, uint8_t id, void *arg)
 
 void reset_request_callback(void)
 {
+    led_off();
 #if RESET_TYPE_SOC
     MHU->ACCESS_REQUEST = 1;
     while(!MHU->ACCESS_READY); // wait for MHU towards SE to be ready to receive
