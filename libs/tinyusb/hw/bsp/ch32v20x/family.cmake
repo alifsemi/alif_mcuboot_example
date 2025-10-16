@@ -9,7 +9,7 @@ set(SDK_SRC_DIR ${SDK_DIR}/EVT/EXAM/SRC)
 include(${CMAKE_CURRENT_LIST_DIR}/boards/${BOARD}/board.cmake)
 
 # toolchain set up
-set(CMAKE_SYSTEM_PROCESSOR rv32imac-ilp32 CACHE INTERNAL "System Processor")
+set(CMAKE_SYSTEM_CPU rv32imac-ilp32 CACHE INTERNAL "System Processor")
 set(CMAKE_TOOLCHAIN_FILE ${TOP}/examples/build_system/cmake/toolchain/riscv_${TOOLCHAIN}.cmake)
 
 set(FAMILY_MCUS CH32V20X CACHE INTERNAL "")
@@ -72,6 +72,12 @@ function(add_board_target BOARD_TARGET)
 
   update_board(${BOARD_TARGET})
 
+  if (LD_FLASH_SIZE STREQUAL 224K)
+    target_compile_definitions(${BOARD_TARGET} PUBLIC
+      CH32_FLASH_ENHANCE_READ_MODE=1
+      )
+  endif()
+
   if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
     target_compile_options(${BOARD_TARGET} PUBLIC
       -mcmodel=medany
@@ -117,20 +123,20 @@ function(family_configure_example TARGET RTOS)
     )
 
   # Add TinyUSB target and port source
-  family_add_tinyusb(${TARGET} OPT_MCU_CH32V20X ${RTOS})
+  family_add_tinyusb(${TARGET} OPT_MCU_CH32V20X)
 
-  target_sources(${TARGET}-tinyusb PUBLIC
+  target_sources(${TARGET} PUBLIC
     ${TOP}/src/portable/wch/dcd_ch32_usbfs.c
     ${TOP}/src/portable/st/stm32_fsdev/dcd_stm32_fsdev.c
     )
-  target_link_libraries(${TARGET}-tinyusb PUBLIC board_${BOARD})
+  target_link_libraries(${TARGET} PUBLIC board_${BOARD})
 
-  # Link dependencies
-  target_link_libraries(${TARGET} PUBLIC board_${BOARD} ${TARGET}-tinyusb)
+
 
   # Flashing
   family_add_bin_hex(${TARGET})
   family_flash_openocd_wch(${TARGET})
+  family_flash_wlink_rs(${TARGET})
 
   #family_add_uf2(${TARGET} ${UF2_FAMILY_ID})
   #family_flash_uf2(${TARGET} ${UF2_FAMILY_ID})

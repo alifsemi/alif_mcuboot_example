@@ -1,0 +1,36 @@
+&{/soc} {
+    usb0: usb@48200000 {
+        compatible = "alif,xhci";
+        reg = <0x48200000 0x100000>;
+        interrupts = <101 0>;  /* USB IRQ */
+        clocks = <&usb_clk>;
+        status = "okay";
+        label = "USB_0";
+    };	
+};
+
+&{/} {
+	clocks {
+		usb_clk: usb-clk {
+           compatible = "fixed-clock";
+           clock-frequency = <60000000>; /* 60 MHz typical USB clock */
+           #clock-cells = <0>;
+    	};
+	};
+};
+
+&usb0{
+	status = "okay";
+};
+
+&pinctrl_lpgpio {
+	group0 {
+		pinmux = < PIN_P15_4__LPGPIO >;
+		read_enable = < 0x1 >;
+		driver_state_control = <1>;
+	};
+};
+
+&lpgpio{
+	status = "okay";
+};

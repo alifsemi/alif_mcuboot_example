@@ -46,7 +46,9 @@ SRC_C += \
 	src/portable/st/stm32_fsdev/dcd_stm32_fsdev.c
 else
 SRC_C += \
-	src/portable/synopsys/dwc2/dcd_dwc2.c
+	src/portable/synopsys/dwc2/dcd_dwc2.c \
+	src/portable/synopsys/dwc2/hcd_dwc2.c \
+	src/portable/synopsys/dwc2/dwc2_common.c
 endif
 
 INC += \
@@ -54,6 +56,13 @@ INC += \
 	$(TOP)/$(ST_CMSIS)/Include \
 	$(TOP)/$(ST_HAL_DRIVER)/Inc \
 	$(TOP)/$(BOARD_PATH)
+
+# Startup
+SRC_S_GCC += $(ST_CMSIS)/Source/Templates/gcc/startup_$(MCU_VARIANT).s
+SRC_S_IAR += $(ST_CMSIS)/Source/Templates/iar/startup_$(MCU_VARIANT).s
+
+# Linker
+LD_FILE_IAR ?= $(ST_CMSIS)/Source/Templates/iar/linker/$(MCU_VARIANT)_flash.icf
 
 # flash target using on-board stlink
 flash: flash-stlink

@@ -15,7 +15,7 @@ target_sources(${TINYUSB_LIB} PRIVATE
 )
 
 target_include_directories(${TINYUSB_LIB} PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/tinyusb_config    
+    ${CMAKE_CURRENT_SOURCE_DIR}/tinyusb_config
     ${TINYUSB_DIR}/src
     ${TINYUSB_DIR}/hw
 )
@@ -31,6 +31,9 @@ target_compile_definitions(${TINYUSB_LIB} PRIVATE
 
 target_compile_definitions(${TINYUSB_LIB} PUBLIC
     CFG_TUSB_CONFIG_FILE="alif_tinyusb_config.h"
-    TUP_DCD_ENDPOINT_MAX=8
+    TUP_DCD_ENDPOINT_MAX=4
     CFG_TUSB_MCU=OPT_MCU_NONE
+    BOARD_TUD_MAX_SPEED=OPT_MODE_HIGH_SPEED
+    CFG_TUSB_MEM_ALIGN=TU_ATTR_ALIGNED\(32\)
+    CFG_TUSB_MEM_SECTION=__attribute__\(\(section\(\"usb_dma_buf\"\)\)\)
 )
