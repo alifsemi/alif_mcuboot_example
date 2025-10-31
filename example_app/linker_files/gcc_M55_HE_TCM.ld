@@ -34,6 +34,8 @@
 __STACK_SIZE = 0x00008000;
 __HEAP_SIZE  = 0x00008000;
 
+__TGU_BLOCK_SIZE = 16384;
+
 /*
 * This linker script is for application to be executed by the
 * M55-HE core.
@@ -194,6 +196,17 @@ SECTIONS
     *(.bss.*)
     *(COMMON)
     __bss_end__ = .;
+  } > DTCM
+
+  .nonsecure0_region (NOLOAD) :
+  {
+    . = ALIGN(__TGU_BLOCK_SIZE);
+    __ns_region_0_start = .;
+    * (usb_dma_buf)
+    * (sd_dma_buf)
+    * (.driver.usbd0)
+    . = ALIGN(__TGU_BLOCK_SIZE);
+    __ns_region_0_end = .;
   } > DTCM
 
   .heap (NOLOAD) : ALIGN(8)

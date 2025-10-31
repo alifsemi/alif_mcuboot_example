@@ -47,7 +47,12 @@ int32_t get_frame_from_receive_buffer(unsigned char* frame_buf, const uint32_t m
 
 int32_t init_transport()
 {
-    bool ret = tusb_init();
+    // init device stack on configured roothub port
+    tusb_rhport_init_t dev_init = {
+        .role = TUSB_ROLE_DEVICE,
+        .speed = TUSB_SPEED_AUTO
+    };
+    bool ret = tusb_init(BOARD_TUD_RHPORT, &dev_init);
 
     return !ret;
 }

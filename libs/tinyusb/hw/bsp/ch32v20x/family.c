@@ -1,3 +1,7 @@
+/* metadata:
+manufacturer: WCH
+*/
+
 #include <stdio.h>
 
 // https://github.com/openwch/ch32v307/pull/90
@@ -62,7 +66,6 @@ void USBWakeUp_IRQHandler(void) {
 
 
 #if CFG_TUSB_OS == OPT_OS_NONE
-
 volatile uint32_t system_ticks = 0;
 
 __attribute__((interrupt))
@@ -84,7 +87,6 @@ uint32_t SysTick_Config(uint32_t ticks) {
 uint32_t board_millis(void) {
   return system_ticks;
 }
-
 #endif
 
 void board_init(void) {
@@ -94,11 +96,11 @@ void board_init(void) {
   SysTick_Config(SystemCoreClock / 1000);
 #endif
 
-  RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
+  LED_CLOCK_EN();
 
   GPIO_InitTypeDef GPIO_InitStructure = {
     .GPIO_Pin = LED_PIN,
-    .GPIO_Mode = GPIO_Mode_Out_OD,
+    .GPIO_Mode = LED_MODE,
     .GPIO_Speed = GPIO_Speed_10MHz,
   };
   GPIO_Init(LED_PORT, &GPIO_InitStructure);
@@ -139,12 +141,51 @@ void board_init(void) {
   __enable_irq();
 }
 
+void board_reset_to_bootloader(void) {
+//   board_led_write(true);
+//
+//   __disable_irq();
+//
+// #if CFG_TUD_ENABLED
+//   tud_deinit(0);
+//   RCC_APB1PeriphResetCmd(RCC_APB1Periph_USB, ENABLE);
+//   RCC_APB1PeriphResetCmd(RCC_APB1Periph_USB, DISABLE);
+// #endif
+//
+//   SysTick->CTLR = 0;
+//   for (int i = WWDG_IRQn; i< DMA1_Channel8_IRQn; i++) {
+//     NVIC_DisableIRQ(i);
+//   }
+//
+//   __enable_irq();
+//
+//   // define function pointer to BOOT ROM address
+//   void (*bootloader_entry)(void) = (void (*)(void))0x1FFF8000;
+//
+//   bootloader_entry();
+//
+//   board_led_write(false);
+
+  // while(1) { }
+}
+
 void board_led_write(bool state) {
   GPIO_WriteBit(LED_PORT, LED_PIN, state ? LED_STATE_ON : (1-LED_STATE_ON));
 }
 
 uint32_t board_button_read(void) {
   return false;
+}
+
+size_t board_get_unique_id(uint8_t id[], size_t max_len) {
+  (void) max_len;
+  volatile uint32_t* ch32_uuid = ((volatile uint32_t*) 0x1FFFF7E8UL);
+  uint32_t* serial_32 = (uint32_t*) (uintptr_t) id;
+  serial_32[0] = ch32_uuid[0];
+  serial_32[1] = ch32_uuid[1];
+  serial_32[2] = ch32_uuid[2];
+
+  return 12;
 }
 
 int board_uart_read(uint8_t *buf, int len) {
@@ -166,3 +207,7 @@ int board_uart_write(void const *buf, int len) {
 
   return len;
 }
+
+//--------------------------------------------------------------------
+// Neopixel
+//--------------------------------------------------------------------

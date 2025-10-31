@@ -11,7 +11,7 @@ else()
 endif()
 
 # toolchain set up
-set(CMAKE_SYSTEM_PROCESSOR cortex-m0plus CACHE INTERNAL "System Processor")
+set(CMAKE_SYSTEM_CPU cortex-m0plus CACHE INTERNAL "System Processor")
 set(CMAKE_TOOLCHAIN_FILE ${TOP}/examples/build_system/cmake/toolchain/arm_${TOOLCHAIN}.cmake)
 
 set(FAMILY_MCUS LPC11UXX CACHE INTERNAL "")
@@ -30,6 +30,7 @@ function(add_board_target BOARD_TARGET)
     ${SDK_DIR}/../gcc/cr_startup_lpc${LPC_FAMILY}.c
     ${SDK_DIR}/src/chip_${LPC_FAMILY}.c
     ${SDK_DIR}/src/clock_${LPC_FAMILY}.c
+    ${SDK_DIR}/src/iap.c
     ${SDK_DIR}/src/iocon_${LPC_FAMILY}.c
     ${SDK_DIR}/src/sysinit_${LPC_FAMILY}.c
     )
@@ -48,7 +49,10 @@ function(add_board_target BOARD_TARGET)
   update_board(${BOARD_TARGET})
 
   if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
-    target_compile_options(${BOARD_TARGET} PUBLIC -nostdlib)
+    target_compile_options(${BOARD_TARGET} PUBLIC
+      -nostdlib
+      -Wno-error=incompatible-pointer-types
+      )
     target_link_options(${BOARD_TARGET} PUBLIC
       "LINKER:--script=${LD_FILE_GNU}"
       --specs=nosys.specs --specs=nano.specs
@@ -89,16 +93,16 @@ function(family_configure_example TARGET RTOS)
     )
 
   # Add TinyUSB target and port source
-  family_add_tinyusb(${TARGET} OPT_MCU_LPC11UXX ${RTOS})
-  target_sources(${TARGET}-tinyusb PUBLIC
+  family_add_tinyusb(${TARGET} OPT_MCU_LPC11UXX)
+  target_sources(${TARGET} PUBLIC
     ${TOP}/src/portable/nxp/lpc_ip3511/dcd_lpc_ip3511.c
     )
-  target_link_libraries(${TARGET}-tinyusb PUBLIC board_${BOARD})
+  target_link_libraries(${TARGET} PUBLIC board_${BOARD})
 
-  # Link dependencies
-  target_link_libraries(${TARGET} PUBLIC board_${BOARD} ${TARGET}-tinyusb)
+
 
   # Flashing
+  family_add_bin_hex(${TARGET})
   family_flash_jlink(${TARGET})
   #family_flash_nxplink(${TARGET})
 endfunction()

@@ -79,6 +79,8 @@ elseif (TARGET_BOARD STREQUAL "DevKit-e1c") # Add other Devkit and AppKits which
     add_compile_definitions(ENSEMBLE_SOC_E1C)
 endif()
 
+message(STATUS "Using Board: ${TARGET_BOARD}")
+message(STATUS "Using SKU  : ${ALIF_DEVICE_SKU}")
 
 if(NOT CMAKE_BUILD_TYPE)
     message(STATUS "Setting build type to Release.")

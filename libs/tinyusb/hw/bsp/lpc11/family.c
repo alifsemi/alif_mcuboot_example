@@ -24,6 +24,10 @@
  * This file is part of the TinyUSB stack.
  */
 
+/* metadata:
+   manufacturer: NXP
+*/
+
 #ifdef __GNUC__
   #pragma GCC diagnostic push
   #pragma GCC diagnostic ignored "-Wunused-parameter"
@@ -37,6 +41,10 @@
 
 #include "bsp/board_api.h"
 #include "board.h"
+
+extern void USB_IRQHandler(void);
+extern void SysTick_Handler(void);
+void SystemInit(void);
 
 //--------------------------------------------------------------------+
 // Forward USB interrupt events to TinyUSB IRQ Handler
@@ -88,6 +96,13 @@ void board_init(void) {
 
 void board_led_write(bool state) {
   Chip_GPIO_SetPinState(LPC_GPIO, LED_PORT, LED_PIN, state ? LED_STATE_ON : (1 - LED_STATE_ON));
+}
+
+size_t board_get_unique_id(uint8_t id[], size_t max_len) {
+  if ( max_len < 16 ) return 0;
+  uint32_t* id32 = (uint32_t*) (uintptr_t) id;
+  id32[0] = Chip_IAP_ReadUID();
+  return 4;
 }
 
 uint32_t board_button_read(void) {
