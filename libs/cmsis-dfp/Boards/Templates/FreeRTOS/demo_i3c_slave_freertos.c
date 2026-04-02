@@ -42,6 +42,7 @@
 
 /* System Includes */
 #include <stdio.h>
+#include <inttypes.h>
 #include "string.h"
 #include "app_utils.h"
 
@@ -91,7 +92,8 @@ void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer,
 
 void vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName)
 {
-    (void) pxTask;
+    ARG_UNUSED(pxTask);
+    ARG_UNUSED(pcTaskName);
 
     ASSERT_HANG_LOOP
 }
@@ -179,7 +181,7 @@ int32_t hardware_init(void)
     /* pin mux and configuration for all device IOs requested from pins.h*/
     ret = board_pins_config();
     if (ret != ARM_DRIVER_OK) {
-        printf("ERROR: Pin configuration failed: %d\n", ret);
+        printf("ERROR: Pin configuration failed: %" PRId32 "\n", ret);
         return ret;
     }
 
@@ -232,6 +234,7 @@ void i3c_slave_loopback_thread(void *pvParameters)
     int      ret           = 0;
     int      len           = 0;
     uint32_t actual_events = 0;
+    ARG_UNUSED(pvParameters);
 
     ARM_DRIVER_VERSION version;
 
@@ -287,7 +290,7 @@ void i3c_slave_loopback_thread(void *pvParameters)
         }
 
         /* wait for callback event. */
-        xTaskNotifyWait(NULL,
+        xTaskNotifyWait(0,
                         I3C_CB_EVENT_SUCCESS | I3C_CB_EVENT_ERROR,
                         &actual_events,
                         portMAX_DELAY);
@@ -311,7 +314,7 @@ void i3c_slave_loopback_thread(void *pvParameters)
         }
 
         /* wait for callback event. */
-        xTaskNotifyWait(NULL,
+        xTaskNotifyWait(0,
                         I3C_CB_EVENT_SUCCESS | I3C_CB_EVENT_ERROR,
                         &actual_events,
                         portMAX_DELAY);
@@ -343,7 +346,7 @@ error_uninitialize:
     printf("\r\n I3C demo exiting ...\r\n");
 
     /* thread delete */
-    vTaskDelete(NULL);
+    vTaskDelete(0);
 }
 
 /*----------------------------------------------------------------------------
@@ -367,7 +370,7 @@ int main(void)
     BaseType_t xReturned = xTaskCreate(i3c_slave_loopback_thread,
                                        "i3c_slave_loopback_thread",
                                        STACK_SIZE,
-                                       NULL,
+                                       0,
                                        configMAX_PRIORITIES - 1,
                                        &i3c_xHandle);
     if (xReturned != pdPASS) {

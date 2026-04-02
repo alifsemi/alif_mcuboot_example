@@ -159,17 +159,24 @@ DRESULT disk_read(BYTE  pdrv,   /* Physical drive number to identify the drive *
                   UINT  count   /* Number of sectors to read */
 )
 {
+	uint32_t timeout_cnt = 0xFFFF;
     ARG_UNUSED(pdrv);
 
     dma_done_irq = 0;
 
-    (void) p_SD_Driver->disk_read(sector, count, buff);
+    if (p_SD_Driver->disk_read(sector, count, buff)) {
+        return RES_ERROR;
+	}
 
-    while (!dma_done_irq) {
+    while (!dma_done_irq && timeout_cnt--) {
+		sys_busy_loop_us(10);
     }
 
-    RTSS_InvalidateDCache_by_Addr((volatile void *) buff, count * SDMMC_BLK_SIZE_512_Msk);
+	if (!dma_done_irq) {
+		return RES_ERROR;
+	}
 
+    RTSS_InvalidateDCache_by_Addr((volatile void *) buff, count * SDMMC_BLK_SIZE_512_Msk);
     return RES_OK;
 }
 

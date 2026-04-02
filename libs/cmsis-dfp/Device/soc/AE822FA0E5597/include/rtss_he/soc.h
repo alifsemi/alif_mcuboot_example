@@ -479,6 +479,8 @@ typedef enum {
     LPUTIMER_IRQ5_IRQn          = 356, /*!< 356  LPUTIMER interrupt */
     LPUTIMER_IRQ6_IRQn          = 357, /*!< 357  LPUTIMER interrupt */
     LPUTIMER_IRQ7_IRQn          = 358, /*!< 358  LPUTIMER interrupt */
+    ISP_IRQ_IRQn                = 367, /*!< 367  ISP interrupt */
+    ISP_MI_IRQ_IRQn             = 368, /*!< 368  ISP MI interrupt */
     QEC0_CMPA_IRQ_IRQn          = 369, /*!< 369  Channel 12 interrupt request at driver A */
     QEC0_CMPB_IRQ_IRQn          = 370, /*!< 370  Channel 12 interrupt request at driver B */
     QEC1_CMPA_IRQ_IRQn          = 371, /*!< 371  Channel 13 interrupt request at driver A */

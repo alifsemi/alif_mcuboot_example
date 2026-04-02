@@ -104,6 +104,7 @@
 
 /* System Includes */
 #include <stdio.h>
+#include <inttypes.h>
 #include "app_utils.h"
 
 #include "RTE_Components.h"
@@ -145,13 +146,13 @@
 // #define ADC_SCAN       ARM_ADC_MULTIPLE_CH_SCAN
 
 /* Macro */
-#define ADC12                          1
-#define ADC24                          0
+#define ADC_12                         1
+#define ADC_24                         0
 
 /* For ADC12 use ADC_INSTANCE ADC12  */
 /* For ADC24 use ADC_INSTANCE ADC24  */
-#define ADC_INSTANCE                   ADC12
-// #define ADC_INSTANCE         ADC24
+#define ADC_INSTANCE                   ADC_12
+// #define ADC_INSTANCE         ADC_24
 
 /*Define for FreeRTOS*/
 #define TIMER_SERVICE_TASK_STACK_SIZE  configTIMER_TASK_STACK_DEPTH
@@ -177,7 +178,8 @@ void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer,
 
 void vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName)
 {
-    (void) pxTask;
+    ARG_UNUSED(pxTask);
+    ARG_UNUSED(pcTaskName);
 
     ASSERT_HANG_LOOP
 }
@@ -196,7 +198,7 @@ void vApplicationIdleHook(void)
     ASSERT_HANG_LOOP
 }
 
-#if (ADC_INSTANCE == ADC12)
+#if (ADC_INSTANCE == ADC_12)
 /* Instance for ADC12 */
 extern ARM_DRIVER_ADC  ARM_Driver_ADC12(BOARD_ADC12_INSTANCE);
 static ARM_DRIVER_ADC *ADCdrv = &ARM_Driver_ADC12(BOARD_ADC12_INSTANCE);
@@ -223,7 +225,7 @@ uint32_t comp_value[MAX_NUM_THRESHOLD] = {0};
 /* Demo purpose Channel_value*/
 uint32_t adc_samples[NUM_CHANNELS];
 
-volatile uint32_t num_samples = 0;
+volatile uint32_t num_samples;
 
 #if (!USE_CONDUCTOR_TOOL_PINS_CONFIG)
 /**
@@ -235,7 +237,7 @@ volatile uint32_t num_samples = 0;
 static int32_t board_adc_pins_config(void)
 {
     int32_t ret = 0U;
-    if (ADC_INSTANCE == ADC12) {
+    if (ADC_INSTANCE == ADC_12) {
         if (ADC_SCAN == ARM_ADC_SINGLE_CH_SCAN) {
             /* ADC122 channel 0 */
             ret = pinconf_set(PORT_(BOARD_ADC12_CH0_GPIO_PORT),
@@ -311,7 +313,7 @@ static int32_t board_adc_pins_config(void)
         }
     }
 
-    if (ADC_INSTANCE == ADC24) {
+    if (ADC_INSTANCE == ADC_24) {
         if (ADC_SCAN == ARM_ADC_SINGLE_CH_SCAN) {
             /* ADC24 channel 0 */
             ret = pinconf_set(PORT_(BOARD_ADC24_CH0_POS_GPIO_PORT),
@@ -475,6 +477,7 @@ void ADC_Thread(void *pvParameters)
     uint32_t           error_code = SERVICES_REQ_SUCCESS;
     uint32_t           service_error_code;
     ARM_DRIVER_VERSION version;
+    ARG_UNUSED(pvParameters);
 
     /* Initialize the SE services */
     se_services_port_init();
@@ -485,19 +488,19 @@ void ADC_Thread(void *pvParameters)
                                               /*bool enable   */ true,
                                               &service_error_code);
     if (error_code) {
-        printf("SE: clk enable = %d\n", error_code);
+        printf("SE: clk enable = %" PRId32 "\n", error_code);
     }
 
     printf("\r\n >>> ADC demo FreeRtos starting up!!! <<< \r\n");
 
     version = ADCdrv->GetVersion();
-    printf("\r\n ADC version api:%X driver:%X...\r\n", version.api, version.drv);
+    printf("\r\n ADC version api:%" PRIx16 " driver:%" PRIx16 "...\r\n", version.api, version.drv);
 
 #if USE_CONDUCTOR_TOOL_PINS_CONFIG
     /* pin mux and configuration for all device IOs requested from pins.h*/
     ret = board_pins_config();
     if (ret != 0) {
-        printf("Error in pin-mux configuration: %d\n", ret);
+        printf("Error in pin-mux configuration: %" PRId32 "\n", ret);
         return;
     }
 
@@ -508,7 +511,7 @@ void ADC_Thread(void *pvParameters)
      */
     ret = board_adc_pins_config();
     if (ret != 0) {
-        printf("Error in pin-mux configuration: %d\n", ret);
+        printf("Error in pin-mux configuration: %" PRId32 "\n", ret);
         return;
     }
 #endif
@@ -605,7 +608,7 @@ void ADC_Thread(void *pvParameters)
         goto error_poweroff;
     }
 
-    printf(">>> Allocated memory buffer Address is 0x%X <<<\n", (uint32_t) adc_samples);
+    printf(">>> Allocated memory buffer Address is 0x%" PRIx32 " <<<\n", (uint32_t) adc_samples);
     /* Start ADC */
     ret = ADCdrv->Start();
     if (ret != ARM_DRIVER_OK) {
@@ -623,20 +626,20 @@ void ADC_Thread(void *pvParameters)
     }
 
     /* wait till conversion comes ( isr callback ) */
-    if (xTaskNotifyWait(NULL, ADC_INT_AVG_SAMPLE_RDY, NULL, portMAX_DELAY) != pdFALSE) {
+    if (xTaskNotifyWait(0, ADC_INT_AVG_SAMPLE_RDY, 0, portMAX_DELAY) != pdFALSE) {
         /* Stop ADC */
         ret = ADCdrv->Stop();
         if (ret != ARM_DRIVER_OK) {
             printf("\r\n Error: ADC stop failed\n");
             goto error_poweroff;
         }
-        printf("\n >>> ADC conversion completed \n");
+        printf("\n >>> ADC conversion completed\n");
         printf(" Converted value are stored in user allocated memory address.\n");
     } else {
-        printf("\n Error: ADC conversion Failed \n");
+        printf("\n Error: ADC conversion Failed\n");
     }
 
-    printf("\n ---END--- \r\n wait forever >>> \n");
+    printf("\n ---END--- \r\n wait forever >>>\n");
     WAIT_FOREVER_LOOP
 
 error_poweroff:
@@ -661,13 +664,13 @@ error_uninitialize:
                                               /*bool enable   */ false,
                                               &service_error_code);
     if (error_code) {
-        printf("SE: clk enable = %d\n", error_code);
+        printf("SE: clk enable = %" PRId32 "\n", error_code);
     }
 
     printf("\r\n ADC demo Freertos exiting...\r\n");
 
     /* thread delete */
-    vTaskDelete(NULL);
+    vTaskDelete(0);
 }
 
 /*----------------------------------------------------------------------------
@@ -688,7 +691,7 @@ int main(void)
 
     /* Create application main thread */
     BaseType_t xReturned =
-        xTaskCreate(ADC_Thread, "ADC_Thread", 256, NULL, configMAX_PRIORITIES - 1, &adc_xHandle);
+        xTaskCreate(ADC_Thread, "ADC_Thread", 256, 0, configMAX_PRIORITIES - 1, &adc_xHandle);
     if (xReturned != pdPASS) {
         vTaskDelete(adc_xHandle);
         return -1;

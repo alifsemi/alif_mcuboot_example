@@ -205,6 +205,15 @@ static int32_t CMP_PowerControl(ARM_POWER_STATE state, CMP_RESOURCES *CMP)
             cmp_disable_interrupt(CMP->regs);
         }
 
+        if (CMP->drv_instance != CMP_INSTANCE_LP) {
+            /* Disable DAC6 as a negative input reference for HSCMP */
+            disable_dac6_ref_voltage();
+        }
+
+        disable_analog_peripherals();
+
+        disable_analog_periph_clk();
+
         disable_cmp_clk(CMP->drv_instance);
 
         /* Reset the power status of CMP */

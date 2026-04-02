@@ -28,7 +28,7 @@
  *    memory mapped as Device Mode for Cortex-M55 HE.
  */
 
-#include "ospi_hyperram_xip.h"
+#include "ospi_psram_xip.h"
 #include "board_config.h"
 #include "Driver_IO.h"
 #include "RTE_Components.h"
@@ -54,27 +54,27 @@ ARM_DRIVER_GPIO       *GPIODrv = &ARM_Driver_GPIO_(BOARD_IS66_HYPERRAM_RESET_GPI
 /* OSPI0 region index is 5 in mpu table defined in the same testapp */
 #define MPU_OSPI0_REGION_INDEX 5U
 
-#define DDR_DRIVE_EDGE         0
-#define RXDS_DELAY             8
-#define OSPI_BUS_SPEED         80000000 /* 80MHz */
-#define ISSI_WAIT_CYCLES       6
-#define OSPI_DFS               16
+/*
+ * Default OSPI macros are configured for ISSI Flash in RTE_Device.h
+ * Set below configurations for ISSI HyperRAM:
+ *     RTE_OSPI0_SPI_MODE = 0,
+ *     RTE_OSPI0_BUS_SPEED = 80000000,
+ *     RTE_OSPI0_DDR_DRIVE_EDGE = 0,
+ *     RTE_OSPI0_RXDS_DELAY = 8,
+ *     RTE_OSPI0_DFS = 16,
+ *     RTE_OSPI0_CHIP_SELECTION_PIN = 0,
+ *     RTE_OSPI0_WAIT_CYCLES = 6
+ **/
 
 #define HRAM_SIZE_BYTES        (64 * 1024 * 1024) /* 64MB */
 
 #define BUFFER_SIZE            (16 * 1024)
 static uint16_t buff[BUFFER_SIZE / sizeof(uint16_t)]; /* Buffer size of 16KB */
 
-static const ospi_hyperram_xip_config issi_config = {
-    .instance       = BOARD_ISSI_RAM_OSPI_INSTANCE,
-    .bus_speed      = OSPI_BUS_SPEED,
-    .hyperram_init  = NULL, /* No special initialization needed by the hyperram device */
-    .ddr_drive_edge = DDR_DRIVE_EDGE,
-    .rxds_delay     = RXDS_DELAY,
-    .wait_cycles    = ISSI_WAIT_CYCLES,
-    .slave_select   = 0,
-    .dfs            = OSPI_DFS,
-    .spi_mode       = OSPI_SPI_MODE_OCTAL};
+static ospi_psram_xip_config issi_config = {
+    .instance       = BOARD_PSRAM_OSPI_INSTANCE,
+    .ram_init       = NULL, /* No special initialization needed by the hyperram device */
+    .ram_type       = RAM_TYPE_HYPERRAM};
 
 void MPU_Load_Regions(void)
 {
@@ -399,7 +399,7 @@ int main(void)
         goto error_exit;
     }
 
-    if (ospi_hyperram_xip_init(&issi_config) < 0) {
+    if (ospi_psram_xip_init(&issi_config) < 0) {
         printf("Hyperram XIP init failed\n");
         goto error_exit;
     }

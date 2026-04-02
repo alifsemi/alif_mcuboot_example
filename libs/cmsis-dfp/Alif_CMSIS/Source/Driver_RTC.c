@@ -312,6 +312,8 @@ static void RTC_IRQHandler(LPRTC_RESOURCES *LPRTC_RES)
 {
     uint32_t event = 0U; /* callback event */
 
+    NVIC_DisableIRQ(LPRTC_RES->irq_num);
+
     /* Acknowledge the interrupt */
     lprtc_interrupt_ack(LPRTC_RES->regs);
 
@@ -323,8 +325,6 @@ static void RTC_IRQHandler(LPRTC_RESOURCES *LPRTC_RES)
         /* call the user callback */
         LPRTC_RES->cb_event(event);
     }
-
-    NVIC_DisableIRQ(LPRTC_RES->irq_num);
 
     /* Reset lprtc Alarm state. */
     LPRTC_RES->state.alarm = 0;

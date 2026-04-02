@@ -21,6 +21,7 @@
  ******************************************************************************/
 
 #include <stdio.h>
+#include <inttypes.h>
 #include <RTE_Components.h>
 #include CMSIS_device_header
 #include "pinconf.h"
@@ -353,7 +354,7 @@ static void canfd_demo_task(void *pvParameters)
      */
     ret_val = board_canfd_pins_config();
     if (ret_val != 0) {
-        printf("Error in pin-mux configuration: %d\n", ret_val);
+        printf("Error in pin-mux configuration: %" PRId32 "\n", ret_val);
         return;
     }
 #endif
@@ -365,14 +366,14 @@ static void canfd_demo_task(void *pvParameters)
     /* Initializing CANFD Access struct */
     ret_val = CANFD_instance->Initialize(cb_unit_event, cb_object_event);
     if (ret_val != ARM_DRIVER_OK) {
-        printf("ERROR: Failed to initialize the CANFD \n");
+        printf("ERROR: Failed to initialize the CANFD\n");
         return;
     }
 
     /* Powering up CANFD */
     ret_val = CANFD_instance->PowerControl(ARM_POWER_FULL);
     if (ret_val != ARM_DRIVER_OK) {
-        printf("ERROR: Failed to Power up the CANFD \n");
+        printf("ERROR: Failed to Power up the CANFD\n");
         goto uninitialise_canfd;
     }
 
@@ -461,7 +462,7 @@ static void canfd_demo_task(void *pvParameters)
     while (pdTRUE) {
         if (canfd_transmit_message(msg_type) != false) {
             /* wait for Tx success/Errors callback. */
-            if (xTaskNotifyWait(NULL,
+            if (xTaskNotifyWait(0,
                                 CANFD_ALL_NOTIFICATIONS,
                                 &task_notified_value,
                                 portMAX_DELAY) != pdFALSE) {
@@ -482,7 +483,7 @@ static void canfd_demo_task(void *pvParameters)
 
     while (!(stop_execution)) {
         /* wait for receive/error callback. */
-        if (xTaskNotifyWait(NULL, CANFD_ALL_NOTIFICATIONS, &task_notified_value, portMAX_DELAY) !=
+        if (xTaskNotifyWait(0, CANFD_ALL_NOTIFICATIONS, &task_notified_value, portMAX_DELAY) !=
             pdFALSE)
         {
             /* Checks if both callbacks are successful */
@@ -528,7 +529,7 @@ uninitialise_canfd:
     printf("*** CANFD Normal mode Demo is ended ***\r\n");
 
     /* Task delete */
-    vTaskDelete(NULL);
+    vTaskDelete(0);
 }
 
 /**
@@ -557,7 +558,7 @@ int main()
     BaseType_t xReturned = xTaskCreate(canfd_demo_task,
                                        "CANFD_Task",
                                        CANFD_TASK_STACK_SIZE,
-                                       NULL,
+                                       0,
                                        (configMAX_PRIORITIES - 1U),
                                        &canfd_xHandle);
     if (xReturned != pdPASS) {
@@ -741,7 +742,7 @@ static bool canfd_transmit_message(const CANFD_FRAME msg_type)
         }
         printf("\r\n");
     } else {
-        printf("Error: Failed to send message \n");
+        printf("Error: Failed to send message\n");
         stop_execution = true;
         return false;
     }

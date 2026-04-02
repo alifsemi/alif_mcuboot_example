@@ -346,7 +346,7 @@ static int32_t TOUCH_Reset(void)
         return ret;
     }
 
-    sys_busy_loop_us(50000);
+    sys_busy_loop_us(5000);
 
 #if (GT911_SLAVE_ADDR == 0x14)
     ret = GPIO_Driver_INT->SetValue(BOARD_TOUCH_INT_GPIO_PIN, GPIO_PIN_OUTPUT_STATE_LOW);

@@ -95,7 +95,7 @@ endmacro ()
 # MACRO CHECK_MACRO_DEF to see macro is defined or not
 # argv[0] - header file content
 # argv[1] - marco name which will be searched
-# argv[2] - flag : TRUE if macro enable/exit FLASE if not exist
+# argv[2] - flag : TRUE if macro enable/exist FLASE if not exist
 macro (CHECK_MACRO_DEF    file_content      macro_name      macroExist)
 
     set(${macroExist}           OFF)
@@ -221,8 +221,11 @@ macro (BUILD_PROJECT)
     add_executable (${EXECUTABLE} ${testsourcefile}  ${addonsourcefiles})
 
     if (COMPILER STREQUAL GCC)
-        target_link_options(${EXECUTABLE} PRIVATE -Wl,--whole-archive -Wl,--start-group)
-        target_link_libraries(${EXECUTABLE} PRIVATE   -Wl,--whole-archive    PRIVATE     ${COMMON_LIB}   -Wl,--no-whole-archive)
+        #target_link_options(${EXECUTABLE}   PRIVATE   -Wl,--whole-archive    -Wl,--start-group)
+        target_link_libraries(${EXECUTABLE} PRIVATE    -Wl,--start-group)
+        if (${COMMON_LIB_FLAG})
+            target_link_libraries(${EXECUTABLE}   PRIVATE   -Wl,--whole-archive      ${COMMON_LIB}   -Wl,--no-whole-archive)
+        endif()
     endif()
 
     if (OS STREQUAL FREERTOS)
@@ -248,10 +251,14 @@ macro (BUILD_PROJECT)
 
     if (COMPILER STREQUAL GCC)
 
-        target_link_options(${EXECUTABLE} PRIVATE  -Wl,-Map=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${EXECUTABLE}.map)
-        target_link_libraries(${EXECUTABLE} PRIVATE m)
-        target_link_options(${EXECUTABLE} PRIVATE -Wl,--end-group -Wl,--no-whole-archive)
-        set_target_properties(${EXECUTABLE} PROPERTIES OUTPUT_NAME ${EXECUTABLE}.elf)
+        set_target_properties(${EXECUTABLE} PROPERTIES  OUTPUT_NAME ${EXECUTABLE}.elf)
+        target_link_options(${EXECUTABLE}   PRIVATE     -Wl,-Map=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${EXECUTABLE}.map)
+
+        if (${ENABLE_ISP} AND ( (${testname} STREQUAL "demo_camera_arx3a0_freertos") OR (${testname} STREQUAL "demo_camera_mt9m114_freertos")))
+            target_link_libraries(${EXECUTABLE} PRIVATE     m   "${ALIF_DEV_SRC_DIR}/libs/isp/libisp.a"     -Wl,--end-group)
+        else()
+            target_link_libraries(${EXECUTABLE} PRIVATE     m   -Wl,--end-group)
+        endif()
 
         add_custom_command(TARGET  ${EXECUTABLE}
            POST_BUILD
@@ -267,6 +274,9 @@ macro (BUILD_PROJECT)
 
         target_link_options(${EXECUTABLE} PRIVATE  --list=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${EXECUTABLE}.map)
         target_link_libraries(${EXECUTABLE} PRIVATE ${COMMON_LIB})
+        if (${ENABLE_ISP} AND ( (${testname} STREQUAL "demo_camera_arx3a0_freertos") OR (${testname} STREQUAL "demo_camera_mt9m114_freertos")))
+            target_link_libraries(${EXECUTABLE} PRIVATE "${ALIF_DEV_SRC_DIR}/libs/isp/libisp.a")
+        endif()
 
         add_custom_command(TARGET  ${EXECUTABLE}
            POST_BUILD
@@ -280,9 +290,12 @@ macro (BUILD_PROJECT)
 
     elseif (COMPILER STREQUAL CLANG)
 
+        set_target_properties(${EXECUTABLE}     PROPERTIES      OUTPUT_NAME     ${EXECUTABLE}.elf)
         target_link_options(${EXECUTABLE} PRIVATE   -Wl,-Map=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${EXECUTABLE}.map)
         target_link_libraries(${EXECUTABLE} PRIVATE ${COMMON_LIB})
-        set_target_properties(${EXECUTABLE}     PROPERTIES      OUTPUT_NAME     ${EXECUTABLE}.elf)
+        if (${ENABLE_ISP} AND ( (${testname} STREQUAL "demo_camera_arx3a0_freertos") OR (${testname} STREQUAL "demo_camera_mt9m114_freertos")))
+            target_link_libraries(${EXECUTABLE} PRIVATE "${ALIF_DEV_SRC_DIR}/libs/isp/libisp.a")
+        endif()
 
         add_custom_command(TARGET  ${EXECUTABLE}
            POST_BUILD
@@ -382,11 +395,15 @@ endmacro()
 # argv[1] - variable which needs to check whether exist or not
 # argv[2] - msg_key which will be used to message identifier i.e [ERROR] or [WARNING] or etc
 # argv[3] - msg_color which will be used to print message in that color
-macro(ERR_CHECK_MSG     msg_type    var_to_check   msg_key  msg_color)
+# argv[4] - return value
+macro(ERR_CHECK_MSG     msg_type    var_to_check   msg_key  msg_color   retVal)
+    set(${retVal}           "0")
     if(NOT ${var_to_check})
         message(${msg_type}     "${${msg_color}}${msg_key} IS NOT ASSIGNED TO ANY VALUE...${ColourReset}")
+        set(${retVal}           "-1")
     elseif (NOT EXISTS ${${var_to_check}})
         message(${msg_type}     "⛔${${msg_color}}GIVEN ${msg_key} PATH IS NOT AVAILABLE...${ColourReset}")
+        set(${retVal}           "-2")
     endif()
 endmacro()
 
@@ -425,74 +442,72 @@ macro(COND_FILE_ADD     fileNameWithPath    cond    testApp   typeOfFile)
             #message(STATUS        "${Yellow}⚠️[WARNING] ${cond} No proper flags are enabled for file ${fileNameWithPath} ${ColourReset}")
         endif()
     else()
-        message(STATUS        "${Yellow}⚠️[WARNING] ${fileNameWithPath} doesn't exit ${ColourReset}")
+        message(STATUS        "${Yellow}⚠️[WARNING] ${fileNameWithPath} doesn't exist ${ColourReset}")
     endif()
 
 endmacro()
 
 # FUNCTION get_rte_macros will read all defined macros in given file i.e. RTE_components.h
 function(get_rte_macros)
-    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_MHU         ENABLE_MHU          "Enable/disable MHU Driver.")
-
-    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_LL_PINCONF  ENABLE_PIN_CONF     "Enable/disable PinPAD and PinMux Driver.")
-    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_USART       ENABLE_USART        "Enable/disable USART Driver.")
-    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_IO          ENABLE_IO           "Enable/disable IO Driver.")
-
-    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_ADC                        ENABLE_ADC       "Enable/disable ADC Driver.")
-    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_CANFD                      ENABLE_CANFD     "Enable/disable CANFD commands.")
-    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_CDC200                     ENABLE_CDC200    "Enable/disable CDC200 Driver.")
-    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_MIPI_DSI_ILI9806E_PANEL    ENABLE_MIPI_DSI_ILI9806E_PANEL   "Enable/disable MIPI DSI ILI9806E_PANEL Driver.")
-    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_CDC_ILI6122_PANEL          ENABLE_CDC_ILI6122E_PANEL        "Enable/disable CDC ILI6122_PANEL Driver.")
-    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_MIPI_DSI_ILI9488_PANEL     ENABLE_MIPI_DSI_ILI9488E_PANEL   "Enable/disable MIPI DSI ILI9488E_PANEL Driver.")
-    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_CMP             ENABLE_CMP          "Enable/disable Comparator Driver.")
-    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_CRC             ENABLE_CRC          "Enable/disable CRC Driver.")
-    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_DAC             ENABLE_DAC          "Enable/disable DAC Driver.")
-    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_SD              ENABLE_SD           "Enable/disable SD Driver.")
-    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_OSPI            ENABLE_OSPI         "Enable/disable OSPI Driver.")
-    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_XIP_HYPERRAM            ENABLE_XIP_HYPERRAM             "Enable/disable XIP Hyper RAM Driver.")
-    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_ISSI_FLASH_XIP_CORE     ENABLE_ISSI_FLASH_XIP_CORE      "Enable/disable ISSI FLASH XIP CORE Driver.")
-    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_ISSI_FLASH_XIP_UTILITY  ENABLE_ISSI_FLASH_XIP_UTILITY   "Enable/disable ISSI FLASH XIP UTILITY Driver.")
-    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_ISSI_FLASH      ENABLE_ISSI_FLASH   "Enable/disable ISSI FLASH Driver.")
-    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_GT911           ENABLE_GT911        "Enable/disable GT911 Driver.")
-    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_HWSEM           ENABLE_HWSEM        "Enable/disable Hardware Semaphores Driver.")
-    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_SAI             ENABLE_I2S          "Enable/disable I2S Driver.")
-    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_I3C             ENABLE_I3C          "Enable/disable I3C Driver.")
-    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_ICM42670P       ENABLE_ICM42670P    "Enable/disable ICM42670P Driver.")
-    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_I2C_I3C         ENABLE_I2C_I2C      "Enable/disable I3C_I2C Driver.")
-    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_LPI2C           ENABLE_LPI2C        "Enable/disable LPI2C Driver.")
-    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_PDM             ENABLE_PDM          "Enable/disable PDM Driver.")
-    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_SPI             ENABLE_SPI          "Enable/disable SPI Driver.")
-    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_LPTIMER         ENABLE_LPTIMER      "Enable/disable LPTIMER Driver.")
-    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_MRAM            ENABLE_MRAM         "Enable/disable MRAM Driver.")
-    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_RTC             ENABLE_RTC          "Enable/disable RTC Driver.")
-    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_UTIMER          ENABLE_UTIMER       "Enable/disable UTIMER Driver.")
-    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_WDT             ENABLE_WDT          "Enable/disable WDT Driver.")
-    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_WIFI            ENABLE_WIFI         "Enable/disable WIFI Driver.")
-    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_DMA             ENABLE_DMA          "Enable/disable DMA Driver.")
-    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_I2C             ENABLE_I2C          "Enable/disable I2C Driver.")
-
-    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_CAMERA_SENSOR_MT9M114       ENABLE_MT9M114_CAMERA       "Enable/disable MT9M114 Camera Driver.")
-    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_CAMERA_SENSOR_HM0360        ENABLE_HM0360_CAMERA        "Enable/disable HM0360  Camera Driver.")
-    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_CAMERA_SENSOR_ARX3A0        ENABLE_ARX3A0_CAMERA        "Enable/disable ARX3A0  Camera Driver.")
-    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_CAMERA_SENSOR_AR0144        ENABLE_AR0144_CAMERA        "Enable/disable AR0144  Camera Driver.")
-    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_CAMERA_SENSOR_AR0145        ENABLE_AR0145_CAMERA        "Enable/disable AR0145  Camera Driver.")
-    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_CAMERA_SENSOR_AR0246        ENABLE_AR0246_CAMERA        "Enable/disable AR0246  Camera Driver.")
-    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_CAMERA_SENSOR_OV5647        ENABLE_OV5647_CAMERA        "Enable/disable OV5647  Camera Driver.")
-    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_CAMERA_SENSOR_OV5675        ENABLE_OV5675_CAMERA        "Enable/disable OV5675  Camera Driver.")
-    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_MIPI_CSI2                   ENABLE_MIPI_CSI2            "Enable/disable MIPI CSI2 Driver.")
-    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_MIPI_DSI                    ENABLE_MIPI_DSI             "Enable/disable MIPI DSI Driver.")
-    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_MIPI_DSI_CSI2_DPHY          ENABLE_MIPI_DSI_CSI2_DPHY   "Enable/disable MIPI DSI Driver.")
-    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_PHY_GENERIC                 ENABLE_PHY_GENERIC          "Enable/disable MIPI DSI Driver.")
-    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_ETH_MAC                     ENABLE_ETH_MAC              "Enable/disable ETH MAC Driver.")
-    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_CPI                         ENABLE_CPI                  "Enable/disable CPI Driver.")
-    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_GPIO                        ENABLE_GPIO                 "Enable/disable GPIO Driver.")
-    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_WM8904_CODEC                ENABLE_WM8904               "Enable/disable WM8904 Driver.")
-    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_BMI323                      ENABLE_BMI323               "Enable/disable BMI323 Driver.")
-    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_MCI                         ENABLE_MCI                 "Enable/disable MCI Driver.")
-
-    DEF_BOOL_VAR_BASED_ON_DEF_MACRO_ONLY("${RTEcomponentFile}"   RTE_CMSIS_Compiler_STDIN    ENABLE_STDIN    "Enable/disable retarget STDIN  Driver.")
-    DEF_BOOL_VAR_BASED_ON_DEF_MACRO_ONLY("${RTEcomponentFile}"   RTE_CMSIS_Compiler_STDOUT   ENABLE_STDOUT   "Enable/disable retarget STDOUT Driver.")
-    DEF_BOOL_VAR_BASED_ON_DEF_MACRO_ONLY("${RTEcomponentFile}"   RTE_CMSIS_Compiler_STDERR   ENABLE_STDERR   "Enable/disable retarget STDERR Driver.")
+    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_MHU                        ENABLE_MHU                      "Enable/disable MHU Driver.")
+    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_LL_PINCONF                 ENABLE_PIN_CONF                 "Enable/disable PinPAD and PinMux Driver.")
+    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_USART                      ENABLE_USART                    "Enable/disable USART Driver.")
+    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_IO                         ENABLE_IO                       "Enable/disable IO Driver.")
+    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_ADC                        ENABLE_ADC                      "Enable/disable ADC Driver.")
+    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_CANFD                      ENABLE_CANFD                    "Enable/disable CANFD commands.")
+    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_CDC200                     ENABLE_CDC200                   "Enable/disable CDC200 Driver.")
+    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_MIPI_DSI_ILI9806E_PANEL    ENABLE_MIPI_DSI_ILI9806E_PANEL  "Enable/disable MIPI DSI ILI9806E_PANEL Driver.")
+    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_CDC_ILI6122_PANEL          ENABLE_CDC_ILI6122E_PANEL       "Enable/disable CDC ILI6122_PANEL Driver.")
+    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_MIPI_DSI_ILI9488_PANEL     ENABLE_MIPI_DSI_ILI9488E_PANEL  "Enable/disable MIPI DSI ILI9488E_PANEL Driver.")
+    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_CMP                        ENABLE_CMP                      "Enable/disable Comparator Driver.")
+    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_CRC                        ENABLE_CRC                      "Enable/disable CRC Driver.")
+    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_DAC                        ENABLE_DAC                      "Enable/disable DAC Driver.")
+    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_SD                         ENABLE_SD                       "Enable/disable SD Driver.")
+    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_OSPI                       ENABLE_OSPI                     "Enable/disable OSPI Driver.")
+    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_XIP_PSRAM                  ENABLE_XIP_PSRAM                "Enable/disable XIP PSRAM Driver.")
+    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_ISSI_FLASH_XIP_CORE        ENABLE_ISSI_FLASH_XIP_CORE      "Enable/disable ISSI FLASH XIP CORE Driver.")
+    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_ISSI_FLASH_XIP_UTILITY     ENABLE_ISSI_FLASH_XIP_UTILITY   "Enable/disable ISSI FLASH XIP UTILITY Driver.")
+    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_ISSI_FLASH                 ENABLE_ISSI_FLASH               "Enable/disable ISSI FLASH Driver.")
+    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_MX66UW1G_FLASH             ENABLE_MX66UW1G_FLASH           "Enable/disable MX66UW1G FLASH Driver.")
+    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_GT911                      ENABLE_GT911                    "Enable/disable GT911 Driver.")
+    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_HWSEM                      ENABLE_HWSEM                    "Enable/disable Hardware Semaphores Driver.")
+    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_SAI                        ENABLE_I2S                      "Enable/disable I2S Driver.")
+    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_I3C                        ENABLE_I3C                      "Enable/disable I3C Driver.")
+    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_ICM42670P                  ENABLE_ICM42670P                "Enable/disable ICM42670P Driver.")
+    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_I2C_I3C                    ENABLE_I2C_I2C                  "Enable/disable I3C_I2C Driver.")
+    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_LPI2C                      ENABLE_LPI2C                    "Enable/disable LPI2C Driver.")
+    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_PDM                        ENABLE_PDM                      "Enable/disable PDM Driver.")
+    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_SPI                        ENABLE_SPI                      "Enable/disable SPI Driver.")
+    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_LPTIMER                    ENABLE_LPTIMER                  "Enable/disable LPTIMER Driver.")
+    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_MRAM                       ENABLE_MRAM                     "Enable/disable MRAM Driver.")
+    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_RTC                        ENABLE_RTC                      "Enable/disable RTC Driver.")
+    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_UTIMER                     ENABLE_UTIMER                   "Enable/disable UTIMER Driver.")
+    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_WDT                        ENABLE_WDT                      "Enable/disable WDT Driver.")
+    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_WIFI                       ENABLE_WIFI                     "Enable/disable WIFI Driver.")
+    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_DMA                        ENABLE_DMA                      "Enable/disable DMA Driver.")
+    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_I2C                        ENABLE_I2C                      "Enable/disable I2C Driver.")
+    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_CAMERA_SENSOR_MT9M114      ENABLE_MT9M114_CAMERA           "Enable/disable MT9M114 Camera Driver.")
+    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_CAMERA_SENSOR_HM0360       ENABLE_HM0360_CAMERA            "Enable/disable HM0360  Camera Driver.")
+    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_CAMERA_SENSOR_ARX3A0       ENABLE_ARX3A0_CAMERA            "Enable/disable ARX3A0  Camera Driver.")
+    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_CAMERA_SENSOR_AR0144       ENABLE_AR0144_CAMERA            "Enable/disable AR0144  Camera Driver.")
+    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_CAMERA_SENSOR_AR0145       ENABLE_AR0145_CAMERA            "Enable/disable AR0145  Camera Driver.")
+    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_CAMERA_SENSOR_AR0246       ENABLE_AR0246_CAMERA            "Enable/disable AR0246  Camera Driver.")
+    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_CAMERA_SENSOR_OV5647       ENABLE_OV5647_CAMERA            "Enable/disable OV5647  Camera Driver.")
+    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_CAMERA_SENSOR_OV5675       ENABLE_OV5675_CAMERA            "Enable/disable OV5675  Camera Driver.")
+    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_MIPI_CSI2                  ENABLE_MIPI_CSI2                "Enable/disable MIPI CSI2 Driver.")
+    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_MIPI_DSI                   ENABLE_MIPI_DSI                 "Enable/disable MIPI DSI Driver.")
+    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_MIPI_DSI_CSI2_DPHY         ENABLE_MIPI_DSI_CSI2_DPHY       "Enable/disable MIPI DSI Driver.")
+    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_PHY_GENERIC                ENABLE_PHY_GENERIC              "Enable/disable MIPI DSI Driver.")
+    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_ETH_MAC                    ENABLE_ETH_MAC                  "Enable/disable ETH MAC Driver.")
+    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_CPI                        ENABLE_CPI                      "Enable/disable CPI Driver.")
+    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_GPIO                       ENABLE_GPIO                     "Enable/disable GPIO Driver.")
+    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_WM8904_CODEC               ENABLE_WM8904                   "Enable/disable WM8904 Driver.")
+    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_BMI323                     ENABLE_BMI323                   "Enable/disable BMI323 Driver.")
+    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_MCI                        ENABLE_MCI                      "Enable/disable MCI Driver.")
+    DEF_BOOL_VAR_BASED_ON_MACRO("${RTEcomponentFile}"   RTE_Drivers_ISP                        ENABLE_ISP                      "Enable/disable ISP Driver.")
+    DEF_BOOL_VAR_BASED_ON_DEF_MACRO_ONLY("${RTEcomponentFile}"   RTE_CMSIS_Compiler_STDIN      ENABLE_STDIN                    "Enable/disable retarget STDIN  Driver.")
+    DEF_BOOL_VAR_BASED_ON_DEF_MACRO_ONLY("${RTEcomponentFile}"   RTE_CMSIS_Compiler_STDOUT     ENABLE_STDOUT                   "Enable/disable retarget STDOUT Driver.")
+    DEF_BOOL_VAR_BASED_ON_DEF_MACRO_ONLY("${RTEcomponentFile}"   RTE_CMSIS_Compiler_STDERR     ENABLE_STDERR                   "Enable/disable retarget STDERR Driver.")
 
     if(${ENABLE_STDIN})
         CHECK_MACRO_DEF("${RTEcomponentFile}"   RTE_CMSIS_Compiler_STDIN   STDIN_MACRO_DEFINED)
@@ -536,7 +551,8 @@ macro(RESOLVE_TESTAPP_DEPENDANCY testAppNameWithPath macro_name)
         string(FIND     "${TEST_APP}"   ${TEST_APP_FILENAME}  POSITION)
         string(FIND     "${TEST_APP}"   "ALL"           ALL_STR_POSITION)
 
-        if (( "${TEST_APP}" STREQUAL "ALL") OR ( "${TEST_APP}" STREQUAL "${TEST_APP_FILENAME}") OR ( (NOT (POSITION GREATER -1)) AND (ALL_STR_POSITION GREATER -1)))
+        if (( "${TEST_APP}" STREQUAL "ALL") OR ( "${TEST_APP}" STREQUAL "${TEST_APP_FILENAME}")
+            OR ( (NOT (POSITION GREATER -1)) AND (ALL_STR_POSITION GREATER -1)))
             set(${macro_name}    ON      PARENT_SCOPE)
         endif()
     endif()
@@ -580,3 +596,317 @@ function(eval_flags final_res operation)
     set(${final_res}        ${res}          PARENT_SCOPE)
 
 endfunction()
+
+# Macro INSTALL_GIVEN_FILE will install given file in given directory
+# argv[0] - Root Directory where dowloaded and installed files are available
+# argv[1] - Download/Software/Pack Directory where actual file will be there
+# argv[2] - Download/Installation file name
+# Note: It will install given file at given location
+macro(INSTALL_GIVEN_FILE  DST   DOWNLOAD_FOLDER_DIR    DOWNLOADED_FILE)
+    set(BASHRC_FILE             "$ENV{HOME}/.bashrc")
+
+    # Read the .bashrc file into a variable
+    if(EXISTS "${BASHRC_FILE}")
+        file(READ   "${BASHRC_FILE}"    BASHRC_CONTENTS)
+    else()
+        set(BASHRC_CONTENTS     "")
+    endif()
+
+    if( (${PACK_EXEC_NAME} STREQUAL "ALL") OR (${PACK_EXEC_NAME} STREQUAL "COMPILER") )
+        if( "${FILE_NAME}" STREQUAL ${COMPILER_VERSION})
+            # Remove prefix "armds-"
+            string(REGEX REPLACE "^armds-" ""   VERSION_PART    "${FILE_NAME}")
+
+            # Remove suffix ".sh"
+            string(REGEX REPLACE "\\.sh$" ""    VERSION_PART    "${VERSION_PART}")
+
+            #Folder will be created because we have given option -f while installation
+            set(INSTALLATION_DIR    "${DST}/compiler/${COMPILER}/arm/developmentstudio-${VERSION_PART}")
+            set(CUSTOM_PATH         "${INSTALLATION_DIR}/sw/ARMCompiler6.24")
+
+            execute_process(COMMAND bash -c "${${DOWNLOADED_FILE}} --quiet --no-interactive \
+                --i-agree-to-the-contained-eula --skip-post-install -f -d ${INSTALLATION_DIR}")
+
+            # Check if export ARMCLANG_PATH exists
+            string(REGEX MATCH "(^|\n)[ \t]*export[ \t]+ARMCLANG_PATH=.*" FOUND_LINE "${BASHRC_CONTENTS}")
+
+            if(FOUND_LINE)
+                # Replace the existing line
+                string(REGEX REPLACE
+                    "(^|\n)[ \t]*export[ \t]+ARMCLANG_PATH=.*"
+                    "\nexport ARMCLANG_PATH=\"${CUSTOM_PATH}\"\n"
+                    UPDATED_CONTENTS
+                    "${BASHRC_CONTENTS}"
+                )
+                file(WRITE "${BASHRC_FILE}" "${UPDATED_CONTENTS}")
+            else()
+                # Append the new export at the end
+                file(APPEND "${BASHRC_FILE}" "\nexport ARMCLANG_PATH=\"${CUSTOM_PATH}\"\n")
+            endif()
+
+        elseif( "${FILE_NAME}" STREQUAL "arm-gnu-toolchain-14.3.rel1-x86_64-arm-none-eabi.tar.xz")
+            string(REGEX REPLACE    "\\.tar\\.xz$" ""   BASE_NAME   "${FILE_NAME}")
+
+            set(INSTALLATION_DIR    "${DST}/compiler/${COMPILER}/${BASE_NAME}")
+
+            if(NOT EXISTS ${INSTALLATION_DIR})
+                file(MAKE_DIRECTORY         ${INSTALLATION_DIR})
+            endif()
+
+            execute_process(COMMAND tar -xJf "${${DOWNLOADED_FILE}}" -C ${INSTALLATION_DIR}
+                RESULT_VARIABLE result) # COMMAND_ECHO STDOUT)
+
+            # Check if export ARMGCC_PATH exists
+            string(REGEX MATCH "(^|\n)[ \t]*export[ \t]+ARMGCC_PATH=.*" FOUND_LINE "${BASHRC_CONTENTS}")
+
+            if(FOUND_LINE)
+                # Replace the existing line
+                string(REGEX REPLACE
+                    "(^|\n)[ \t]*export[ \t]+ARMGCC_PATH=.*"
+                    "\nexport ARMGCC_PATH=\"${INSTALLATION_DIR}\"\n"
+                    UPDATED_CONTENTS
+                    "${BASHRC_CONTENTS}"
+                )
+                file(WRITE "${BASHRC_FILE}" "${UPDATED_CONTENTS}")
+            else()
+                # Append the new export at the end
+                file(APPEND "${BASHRC_FILE}" "\nexport ARMGCC_PATH=\"${INSTALLATION_DIR}\"\n")
+            endif()
+
+        endif()
+    endif()
+
+    #Assuming in PACK_EXEC_NAME is not equal to CMSIS
+    if ((${PACK_EXEC_NAME} STREQUAL "ALL") OR (${PACK_EXEC_NAME} STREQUAL "CMSIS") )
+        set(INSTALLATION_DIR    "${DST}/packs")
+        set(CUSTOM_PATH         "${INSTALLATION_DIR}/ARM/CMSIS/${PACK_EXEC_VERSION}")
+
+        if(NOT EXISTS ${INSTALLATION_DIR})
+            file(MAKE_DIRECTORY         ${INSTALLATION_DIR})
+        endif()
+
+        execute_process(COMMAND bash -c "./packs_setup.sh PACKS_PATH=${${DOWNLOAD_FOLDER_DIR}} PACKS_INSTALL_DIR=${INSTALLATION_DIR} PACK_NAME=ARM.CMSIS.*"
+             COMMAND_ECHO STDOUT)
+
+        # Check if export CMSIS_CORE_PACK_PATH exists
+        string(REGEX MATCH "(^|\n)[ \t]*export[ \t]+CMSIS_CORE_PACK_PATH=.*" FOUND_LINE "${BASHRC_CONTENTS}")
+
+        if(FOUND_LINE)
+            # Replace the existing line
+            string(REGEX REPLACE
+                "(^|\n)[ \t]*export[ \t]+CMSIS_CORE_PACK_PATH=.*"
+                "\nexport CMSIS_CORE_PACK_PATH=\"${CUSTOM_PATH}\"\n"
+                UPDATED_CONTENTS
+                "${BASHRC_CONTENTS}"
+            )
+            file(WRITE "${BASHRC_FILE}" "${UPDATED_CONTENTS}")
+        else()
+            # Append the new export at the end
+            file(APPEND "${BASHRC_FILE}" "\nexport CMSIS_CORE_PACK_PATH=\"${CUSTOM_PATH}\"\n")
+        endif()
+
+    endif()
+
+    #Assuming in PACK_EXEC_NAME is not equal to CMSIS-COMPILER
+    if ((${PACK_EXEC_NAME} STREQUAL "ALL") OR (${PACK_EXEC_NAME} STREQUAL "CMSIS_COMPILER") )
+        set(INSTALLATION_DIR    "${DST}/packs")
+        set(CUSTOM_PATH         "${INSTALLATION_DIR}/ARM/CMSIS-Compiler/${PACK_EXEC_VERSION}")
+
+        if(NOT EXISTS ${INSTALLATION_DIR})
+            file(MAKE_DIRECTORY         ${INSTALLATION_DIR})
+        endif()
+
+        execute_process(COMMAND bash -c "./packs_setup.sh PACKS_PATH=${${DOWNLOAD_FOLDER_DIR}} PACKS_INSTALL_DIR=${INSTALLATION_DIR} PACK_NAME=ARM.CMSIS-C*"
+             COMMAND_ECHO STDOUT)
+
+        # Check if export CMSIS_COMPILER_PACK_PATH exists
+        string(REGEX MATCH "(^|\n)[ \t]*export[ \t]+CMSIS_COMPILER_PACK_PATH=.*" FOUND_LINE "${BASHRC_CONTENTS}")
+
+        if(FOUND_LINE)
+            # Replace the existing line
+            string(REGEX REPLACE
+                "(^|\n)[ \t]*export[ \t]+CMSIS_COMPILER_PACK_PATH=.*"
+                "\nexport CMSIS_COMPILER_PACK_PATH=\"${CUSTOM_PATH}\"\n"
+                UPDATED_CONTENTS
+                "${BASHRC_CONTENTS}"
+            )
+            file(WRITE "${BASHRC_FILE}" "${UPDATED_CONTENTS}")
+        else()
+            # Append the new export at the end
+            file(APPEND "${BASHRC_FILE}" "\nexport CMSIS_COMPILER_PACK_PATH=\"${CUSTOM_PATH}\"\n")
+        endif()
+
+    endif()
+
+    #Assuming in PACK_EXEC_NAME is not equal to COMPILER
+    if ((${PACK_EXEC_NAME} STREQUAL "ALL") OR (${PACK_EXEC_NAME} STREQUAL "FREERTOS") )
+        set(INSTALLATION_DIR    "${DST}/packs")
+        set(CUSTOM_PATH         "${INSTALLATION_DIR}/ARM/CMSIS-FreeRTOS/${PACK_EXEC_VERSION}")
+
+        if(NOT EXISTS ${INSTALLATION_DIR})
+            file(MAKE_DIRECTORY         ${INSTALLATION_DIR})
+        endif()
+
+        execute_process(COMMAND bash -c "./packs_setup.sh PACKS_PATH=${${DOWNLOAD_FOLDER_DIR}} PACKS_INSTALL_DIR=${INSTALLATION_DIR} PACK_NAME=ARM.CMSIS-F*"
+             COMMAND_ECHO STDOUT)
+
+        # Check if export CMSIS_FREE_RTOS_PACK_PATH exists
+        string(REGEX MATCH "(^|\n)[ \t]*export[ \t]+CMSIS_FREE_RTOS_PACK_PATH=.*" FOUND_LINE "${BASHRC_CONTENTS}")
+
+        if(FOUND_LINE)
+            # Replace the existing line
+            string(REGEX REPLACE
+                "(^|\n)[ \t]*export[ \t]+CMSIS_FREE_RTOS_PACK_PATH=.*"
+                "\nexport CMSIS_FREE_RTOS_PACK_PATH=\"${CUSTOM_PATH}\"\n"
+                UPDATED_CONTENTS
+                "${BASHRC_CONTENTS}"
+            )
+            file(WRITE "${BASHRC_FILE}" "${UPDATED_CONTENTS}")
+        else()
+            # Append the new export at the end
+            file(APPEND "${BASHRC_FILE}" "\nexport CMSIS_FREE_RTOS_PACK_PATH=\"${CUSTOM_PATH}\"\n")
+        endif()
+
+    endif()
+
+endmacro()
+
+# Macro DOWNLOAD_GIVEN_FILE will download given file at given directory
+# argv[0] - URL from where file needs to be downloaded
+# argv[1] - Root Directory where dowloaded file should be placed/stored
+# argv[2] - RETRIES should hold a count of retry of download attempt
+# argv[3] - OUTPUT : It will return the directory/path where downloaded files will be stored
+# argv[4] - OUTPUT : It will return the downloaded file name along with path
+macro(DOWNLOAD_GIVEN_FILE  URL  DST  RETRIES    DOWNLOAD_FOLDER_DIR    DOWNLOADED_FILE)
+
+    set(${DOWNLOAD_FOLDER_DIR}     "${DST}/.downloads")
+    file(MAKE_DIRECTORY             ${${DOWNLOAD_FOLDER_DIR}})
+
+    get_filename_component(FILE_NAME    "${URL}"   NAME)
+    set(${DOWNLOADED_FILE}              "${${DOWNLOAD_FOLDER_DIR}}/${FILE_NAME}")
+
+    set(success     FALSE)
+    set(attempt     1)
+
+    if(NOT EXISTS   ${${DOWNLOADED_FILE}})
+        while(NOT success AND attempt LESS_EQUAL ${RETRIES})
+            message(STATUS "Downloading attempt ${Yellow}${attempt}/${RETRIES} ${ColourReset}from ${Blue}${URL} ${ColourReset} using wget")
+
+            execute_process(COMMAND wget -c --tries=1 --progress=bar:force -P ${${DOWNLOAD_FOLDER_DIR}}  ${URL}
+                RESULT_VARIABLE result COMMAND_ECHO STDOUT)
+
+            if(result EQUAL 0)
+                message(STATUS "✅ Download succeeded: ${FILE_NAME} \n")
+                set(success     TRUE)
+            else()
+                if(attempt LESS ${RETRIES})
+                    message(WARNING "Download failed (code ${result}), retrying...\n")
+                endif()
+                math(EXPR attempt "${attempt} + 1")
+            endif()
+
+        endwhile()
+    endif()
+
+    if(NOT success)
+        message(WARNING     "❌ Failed to download ${url} after ${retries} attempts.\n")
+    endif()
+endmacro()
+
+# Macro setup_cmake_enironment will evaluate all given flags based on given operation
+# No Argument
+# Note: It will install Armclang, GCC, CMSIS, CMSIS-Compiler and Free RTOS
+macro(setup_cmake_enironment)
+
+    # Check if wget exists
+    find_program(WGET_EXE wget)
+    cmake_host_system_information(RESULT  CURR_OS   QUERY     OS_NAME)
+
+    if( ${PACK_EXEC_NAME} STREQUAL  "ALL")
+        if("${COMPILER}" STREQUAL "ARMCLANG")
+            set(COMPILER_VERSION        "armds-2025.0.sh")
+        elseif("${COMPILER}" STREQUAL "GCC")
+            set(COMPILER_VERSION        "arm-gnu-toolchain-14.3.rel1-x86_64-arm-none-eabi.tar.xz")
+        endif()
+
+        set(CMSIS_VERSION                   "6.0.0")
+        set(CMSIS_COMPILER_VERSION          "2.1.0")
+        set(FREE_RTOS_VERSION               "11.2.0")
+
+    else()
+        if(${PACK_EXEC_NAME}     STREQUAL   "COMPILER")
+            set(COMPILER_VERSION            ${PACK_EXEC_VERSION})
+        elseif(${PACK_EXEC_NAME} STREQUAL   "CMSIS")
+            set(CMSIS_VERSION               ${PACK_EXEC_VERSION})
+        elseif(${PACK_EXEC_NAME} STREQUAL   "CMSIS_COMPILER")
+            set(CMSIS_COMPILER_VERSION      ${PACK_EXEC_VERSION})
+        elseif(${PACK_EXEC_NAME} STREQUAL   "FREERTOS")
+            set(FREE_RTOS_VERSION           ${PACK_EXEC_VERSION})
+        else()
+            message(FATAL_ERROR         "${Red} GIVEN PACK IS VERSION IS NOT HANDLED ${ColourReset}")
+
+        endif()
+
+    endif()
+
+    if(NOT WGET_EXE)
+        message(WARNING "wget not found! Trying to install...\n")
+
+        if(${CURR_OS} STREQUAL "Linux")
+            execute_process(COMMAND sudo apt-get update)
+            execute_process(COMMAND sudo apt-get install -y wget)
+            find_program(WGET_EXE wget) # try again
+        elseif(APPLE)
+            message(FATAL_ERROR "Please install wget with: brew install wget")
+        else()
+            message(FATAL_ERROR "wget installation not automated for this OS")
+        endif()
+    endif()
+
+    set(LOCAL_INSTALL_DIR         "${CMAKE_CURRENT_SOURCE_DIR}/.local/arm")
+
+    execute_process(COMMAND ping -c 4 10.10.10.21
+        RESULT_VARIABLE ping_result OUTPUT_QUIET)# ERROR_QUIET)
+
+    if(ping_result EQUAL 0)
+        message(STATUS          "✅ ${Green}ALIF Network is connected...${ColourReset}\n")
+    else()
+        message(FATAL_ERROR     "❌ ${Red}ALIF Network is NOT connected...${ColourReset}\n")
+    endif()
+
+    if(("${COMPILER_BIN_PATH}" STREQUAL "/bin") OR (NOT EXISTS "${COMPILER_BIN_PATH}"))
+        set(FILE_URL    "http://10.10.10.21/SoftwareDevelopmentTools/ARM_DS/${COMPILER_VERSION}")
+        message(STATUS          "✅ ${Green}Downloading compiler executable...${ColourReset}\n")
+        DOWNLOAD_GIVEN_FILE(${FILE_URL}     ${LOCAL_INSTALL_DIR}   3    DOWNLOAD_FOLDER_DIR     DOWNLOADED_FILE)
+        INSTALL_GIVEN_FILE(${LOCAL_INSTALL_DIR} DOWNLOAD_FOLDER_DIR     DOWNLOADED_FILE)
+    endif()
+
+
+    if( (("${CMSIS_PACK_PATH}" STREQUAL "") OR (NOT EXISTS "${CMSIS_PACK_PATH}") ) AND (${PACK_EXEC_NAME} STREQUAL "CMSIS") )
+        message(STATUS          "✅ ${Green}Downloading CMSIS...${ColourReset}\n")
+        set(FILE_URL    "https://www.keil.com/pack/ARM.CMSIS.${CMSIS_VERSION}.pack")
+        DOWNLOAD_GIVEN_FILE(${FILE_URL}     ${LOCAL_INSTALL_DIR}   3    DOWNLOAD_FOLDER_DIR     ${PACK_EXEC_NAME})
+
+    endif()
+
+    if( (("${CMSIS_COMPILER_PATH}" STREQUAL "") OR (NOT EXISTS "${CMSIS_COMPILER_PATH}")) AND (${PACK_EXEC_NAME} STREQUAL "CMSIS_COMPILER") )
+        message(STATUS          "✅ ${Green}Downloading CMSIS-Compiler...${ColourReset}\n")
+        set(FILE_URL    "https://keilpack.azureedge.net/pack/ARM.CMSIS-Compiler.${CMSIS_COMPILER_VERSION}.pack")
+        DOWNLOAD_GIVEN_FILE(${FILE_URL}     ${LOCAL_INSTALL_DIR}   3    DOWNLOAD_FOLDER_DIR     DOWNLOADED_FILE)
+
+    endif()
+
+    if( (("${CMSIS_FREERTOS_PATH}" STREQUAL "") OR (NOT EXISTS "${CMSIS_FREERTOS_PATH}")) AND (${PACK_EXEC_NAME} STREQUAL "FREERTOS") )
+        message(STATUS          "✅ ${Green}Downloading Free-RTOS...${ColourReset}\n")
+        set(FILE_URL    "https://keilpack.azureedge.net/pack/ARM.CMSIS-FreeRTOS.${FREE_RTOS_VERSION}.pack")
+        DOWNLOAD_GIVEN_FILE(${FILE_URL}     ${LOCAL_INSTALL_DIR}   3    DOWNLOAD_FOLDER_DIR     DOWNLOADED_FILE)
+
+    endif()
+
+    if( NOT ${PACK_EXEC_NAME} STREQUAL "COMPILER")
+        INSTALL_GIVEN_FILE(${LOCAL_INSTALL_DIR} DOWNLOAD_FOLDER_DIR     DOWNLOADED_FILE)
+    endif()
+
+    message(FATAL_ERROR     "✅ ${Cyan}SET-UP COMPLETED PLEASE run \"source ~/.bashrc\" command and run cmake again ${ColourReset}\n")
+
+endmacro()

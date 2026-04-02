@@ -1063,7 +1063,7 @@ static int32_t ARM_SPI_Control(SPI_RESOURCES *SPI, uint32_t control, uint32_t ar
         return ARM_DRIVER_ERROR;
     }
 
-    if (SPI->status.busy) {
+    if (SPI->status.busy && ((control & ARM_SPI_CONTROL_Msk) != ARM_SPI_ABORT_TRANSFER)) {
         return ARM_DRIVER_ERROR_BUSY;
     }
 
@@ -1915,7 +1915,7 @@ static SPI_RESOURCES SPI2_RES = {
     .dma_enable       = RTE_SPI2_DMA_ENABLE,
     .dma_irq_priority = RTE_SPI2_DMA_IRQ_PRI,
     .dma_cb           = SPI2_DMACallback,
-    .dma_cfg          = &SPI2_DMA_HW_CONFIG
+    .dma_cfg          = &SPI2_DMA_HW_CONFIG,
 #endif
 #if SPI_BLOCKING_MODE_ENABLE
     .blocking_mode = RTE_SPI2_BLOCKING_MODE_ENABLE,

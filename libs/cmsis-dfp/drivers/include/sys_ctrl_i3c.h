@@ -14,6 +14,7 @@
 #include <stdint.h>
 #include "soc_features.h"
 #include "sys_clocks.h"
+#include "RTE_Device.h"
 
 /**
  * enum I3C_INSTANCE
@@ -85,12 +86,14 @@ static inline void select_i3c_dma2(const I3C_INSTANCE inst)
 }
 
 /**
-  \fn          static inline uint32_t get_i3c_core_clock(void)
+  \fn          static inline uint32_t get_i3c_core_clock(const I3C_INSTANCE inst)
   \brief       Gets I3C input core clock
   \return      Input Core clock value
 */
-static inline uint32_t get_i3c_core_clock(void)
+static inline uint32_t get_i3c_core_clock(const I3C_INSTANCE inst)
 {
+    switch (inst) {
+    case I3C_INSTANCE_0:
 #if SOC_FEAT_I3C_CORE_CLK_AXI
     /* Gets the system AXI clock */
     return GetSystemAXIClock();
@@ -98,6 +101,15 @@ static inline uint32_t get_i3c_core_clock(void)
     /* Gets the system APB clock */
     return GetSystemAPBClock();
 #endif
+    break;
+#if RTE_LPI3C
+    case I3C_INSTANCE_LP_0:
+        return GetSystemRTSSHEClock();
+        break;
+#endif
+    default:
+        return 0;
+    }
 }
 
 #endif /* SYS_CTRL_I3C_H */

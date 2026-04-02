@@ -12,8 +12,8 @@
  * @file     driver_mac.h
  * @author   Silesh C V
  * @email    silesh@alifsemi.com
- * @version  V1.0.0
- * @date     22-Mar-2022
+ * @version  V1.1.0
+ * @date     04-Feb-2026
  * @brief    CMSIS driver for ETH MAC.
  * @bug      None.
  * @Note     None
@@ -27,14 +27,6 @@
 #include "RTE_Device.h"
 #include "RTE_Components.h"
 #include CMSIS_device_header
-
-#if defined(RTE_CMSIS_RTOS2)
-#include <cmsis_os2.h>
-#elif defined(RTE_CMSIS_RTOS)
-#include <cmsis_os.h>
-#else
-#error "Driver needs CMSIS-RTOS or CMSIS-RTOS2."
-#endif
 
 #include "sys_utils.h"
 
@@ -60,18 +52,14 @@ typedef struct {
     uint32_t MAC_CONFIG;
     uint32_t MAC_EXT_CONFIG;
     uint32_t MAC_PACKET_FILTER;
-    uint32_t RESERVED_0;
-    uint32_t MAC_HASH_TAB_0;
-    uint32_t MAC_HASH_TAB_1;
-    uint32_t RESERVED_1[22];
+    uint32_t MAC_WD_JB_TIMEOUT;
+    uint32_t RESERVED_0[16];
+    uint32_t MAC_VLAN_TAG;
+    uint32_t RESERVED_1[7];
     uint32_t MAC_Q0_TX_FLOW_CTRL;
     uint32_t RESERVED[7];
     uint32_t MAC_RX_FLOW_CTRL;
-    uint32_t RESERVED_2[3];
-    uint32_t MAC_RXQ_CTRL_0;
-    uint32_t MAC_RXQ_CTRL_1;
-    uint32_t MAC_RXQ_CTRL_2;
-    uint32_t MAC_RXQ_CTRL_3;
+    uint32_t RESERVED_2[7];
     uint32_t MAC_INT_STATUS;
     uint32_t MAC_INT_ENABLE;
     uint32_t RESERVED_3[2];
@@ -137,38 +125,15 @@ typedef struct {
     IRQn_Type                 irq;          /**< IRQ number of the Ethernet MAC instance */
     uint8_t                   irq_priority; /**< priority of the ETH MAC IRQ */
     uint8_t                   flags;        /**< MAC driver flags */
-    uint8_t                  *frame_end;    /**< Current frame address, to support fragments */
+    uint32_t                  tx_len;       /**< Length of assembled frame fragments */
 } MAC_DEV;
 
 /** \brief Driver state flags */
 #define ETH_INIT                          0x01 /**< Driver initialized */
 #define ETH_POWER                         0x02 /**< Driver power on */
+#define ETH_VLAN                          0x04 /**< VLAN enabled */
 
 /*  MAC register fields */
-
-/* RX Queues Routing */
-#define MAC_RXQCTRL_AVCPQ_MASK            MASK(2, 0)
-#define MAC_RXQCTRL_AVCPQ_SHIFT           0
-#define MAC_RXQCTRL_PTPQ_MASK             MASK(6, 4)
-#define MAC_RXQCTRL_PTPQ_SHIFT            4
-#define MAC_RXQCTRL_DCBCPQ_MASK           MASK(10, 8)
-#define MAC_RXQCTRL_DCBCPQ_SHIFT          8
-#define MAC_RXQCTRL_UPQ_MASK              MASK(14, 12)
-#define MAC_RXQCTRL_UPQ_SHIFT             12
-#define MAC_RXQCTRL_MCBCQ_MASK            MASK(18, 16)
-#define MAC_RXQCTRL_MCBCQ_SHIFT           16
-#define MAC_RXQCTRL_MCBCQEN               BIT(20)
-#define MAC_RXQCTRL_MCBCQEN_SHIFT         20
-#define MAC_RXQCTRL_TACPQE                BIT(21)
-#define MAC_RXQCTRL_TACPQE_SHIFT          21
-#define MAC_RXQCTRL_FPRQ                  MASK(26, 24)
-#define MAC_RXQCTRL_FPRQ_SHIFT            24
-
-#define MAC_RXQ_CTRL0_RXQ0EN_SHIFT        0
-#define MAC_RXQ_CTRL0_RXQ0EN_MASK         3
-#define MAC_RXQ_CTRL0_RXQ0EN_NOT_ENABLED  0
-#define MAC_RXQ_CTRL0_RXQ0EN_ENABLED_DCB  2
-#define MAC_RXQ_CTRL0_RXQ0EN_ENABLED_AV   1
 
 #define MAC_Q0_TX_FLOW_CTRL_PT_SHIFT      16
 #define MAC_Q0_TX_FLOW_CTRL_PT_MASK       0xffff
@@ -196,16 +161,26 @@ typedef struct {
 
 /* MAC Packet Filtering */
 #define MAC_PACKET_FILTER_PR              BIT(0)
-#define MAC_PACKET_FILTER_HMC             BIT(2)
+#define MAC_PACKET_FILTER_DAIF            BIT(3)
 #define MAC_PACKET_FILTER_PM              BIT(4)
 #define MAC_PACKET_FILTER_DBF             BIT(5)
-#define MAC_PACKET_FILTER_PCF             BIT(7)
-#define MAC_PACKET_FILTER_HPF             BIT(10)
+#define MAC_PACKET_FILTER_PCF             MASK(7, 6)
+#define MAC_PACKET_FILTER_PCF_SHIFT       6
 #define MAC_PACKET_FILTER_VTFE            BIT(16)
-#define MAC_PACKET_FILTER_IPFE            BIT(20)
 #define MAC_PACKET_FILTER_RA              BIT(31)
 
 #define MAC_MAX_PERFECT_ADDRESSES         128
+
+/* VLAN Tag */
+#define MAC_VLAN_TAG_EVLRXS               BIT(24)
+#define MAC_VLAN_TAG_EVLS                 MASK(22, 21)
+#define MAC_VLAN_TAG_EVLS_SHIFT           21
+#define MAC_VLAN_TAG_DOVLTC               BIT(20)
+#define MAC_VLAN_TAG_ERSVLM               BIT(19)
+#define MAC_VLAN_TAG_ESVL                 BIT(18)
+#define MAC_VLAN_TAG_VTIM                 BIT(17)
+#define MAC_VLAN_TAG_ETV                  BIT(16)
+#define MAC_VLAN_TAG_VL                   MASK(15, 0)
 
 /* MAC PMT Control Status */
 #define MAC_PMT_CTRL_STS_MGKPKTEN         BIT(1)
@@ -220,16 +195,14 @@ typedef struct {
 
 /* MAC config */
 #define MAC_CONFIG_ARPEN                  BIT(31)
-#define MAC_CONFIG_SARC                   MASK(30, 28)
-#define MAC_CONFIG_SARC_SHIFT             28
 #define MAC_CONFIG_IPC                    BIT(27)
 #define MAC_CONFIG_IPG                    MASK(26, 24)
 #define MAC_CONFIG_IPG_SHIFT              24
+#define MAC_CONFIG_GPSLCE                 BIT(23)
 #define MAC_CONFIG_2K                     BIT(22)
 #define MAC_CONFIG_CST                    BIT(21)
 #define MAC_CONFIG_ACS                    BIT(20)
 #define MAC_CONFIG_WD                     BIT(19)
-#define MAC_CONFIG_BE                     BIT(18)
 #define MAC_CONFIG_JD                     BIT(17)
 #define MAC_CONFIG_JE                     BIT(16)
 #define MAC_CONFIG_PS                     BIT(15)
@@ -237,7 +210,15 @@ typedef struct {
 #define MAC_CONFIG_FES_SHIFT              14
 #define MAC_CONFIG_DM                     BIT(13)
 #define MAC_CONFIG_LM                     BIT(12)
+#define MAC_CONFIG_ECRSFD                 BIT(11)
+#define MAC_CONFIG_DO                     BIT(10)
 #define MAC_CONFIG_DCRS                   BIT(9)
+#define MAC_CONFIG_DR                     BIT(8)
+#define MAC_CONFIG_BL                     MASK(6, 5)
+#define MAC_CONFIG_BL_SHIFT               5
+#define MAC_CONFIG_DC                     BIT(4)
+#define MAC_CONFIG_PRELEN                 MASK(3, 2)
+#define MAC_CONFIG_PRELEN_SHIFT           2
 #define MAC_CONFIG_TE                     BIT(1)
 #define MAC_CONFIG_RE                     BIT(0)
 
@@ -476,6 +457,14 @@ typedef struct {
 #define RDES3_PACKET_SIZE_MASK            MASK(14, 0)
 #define RDES3_ERROR_SUMMARY               BIT(15)
 #define RDES3_PACKET_LEN_TYPE_MASK        MASK(18, 16)
+/* Length/Type packet values */
+#define RDES3_PACKET_LEN_TYPE_LEN         (0x0 << 16)
+#define RDES3_PACKET_LEN_TYPE_TYPE        (0x1 << 16)
+#define RDES3_PACKET_LEN_TYPE_ARP_RQ      (0x3 << 16)
+#define RDES3_PACKET_LEN_TYPE_VLAN        (0x4 << 16)
+#define RDES3_PACKET_LEN_TYPE_DBL_VLAN    (0x5 << 16)
+#define RDES3_PACKET_LEN_TYPE_MAC_CTRL    (0x6 << 16)
+#define RDES3_PACKET_LEN_TYPE_MAC_OAM     (0x7 << 16)
 #define RDES3_DRIBBLE_ERROR               BIT(19)
 #define RDES3_RECEIVE_ERROR               BIT(20)
 #define RDES3_OVERFLOW_ERROR              BIT(21)

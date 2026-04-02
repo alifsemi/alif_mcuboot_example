@@ -22,6 +22,7 @@
 
 /* System Includes */
 #include <stdio.h>
+#include <inttypes.h>
 
 /* Project Includes */
 /* Camera Controller Driver */
@@ -87,7 +88,8 @@ void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer,
 
 void vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName)
 {
-    (void) pxTask;
+    ARG_UNUSED(pxTask);
+    ARG_UNUSED(pcTaskName);
 
     ASSERT_HANG_LOOP
 }
@@ -627,7 +629,7 @@ int32_t camera_image_conversion(IMAGE_CONVERSION image_conversion, uint8_t *src,
     case BAYER_TO_RGB_CONVERSION:
         {
             printf("\r\n Start Bayer to RGB Conversion: \r\n");
-            printf("\t Frame Buffer Addr: 0x%X \r\n \t Bayer_to_RGB Addr: 0x%X\n",
+            printf("\t Frame Buffer Addr: 0x%X \r\n \t Bayer_to_RGB Addr: 0x%" PRIX32 "\n",
                    (uint32_t) src,
                    (uint32_t) dest);
             ret = bayer_to_RGB(src, dest, frame_width, frame_height);
@@ -683,6 +685,7 @@ void camera_demo_thread_entry(void *pvParameters)
     uint32_t actual_events = 0;
 
     ARM_DRIVER_VERSION version;
+    ARG_UNUSED(pvParameters);
 
     printf("\r\n \t\t >>> MT9M114 Camera Sensor demo with FREERTOS is starting up!!! <<< \r\n");
 
@@ -690,9 +693,8 @@ void camera_demo_thread_entry(void *pvParameters)
      *   - Camera frame buffer and
      *   - (Optional) Camera frame buffer for Bayer to RGB Conversion.
      */
-    printf("\n \t frame buffer        pool size: 0x%0X  pool addr: 0x%0X \r\n ",
-           FRAMEBUFFER_POOL_SIZE,
-           (uint32_t) framebuffer_pool);
+    printf("\n \t frame buffer        pool size: %u  pool addr: 0x%08" PRIX32 " \r\n ",
+            FRAMEBUFFER_POOL_SIZE, (uint32_t) framebuffer_pool);
 
 #if IMAGE_CONVERSION_BAYER_TO_RGB_EN
     printf("\n \t bayer_to_rgb buffer pool size: 0x%0X  pool addr: 0x%0X \r\n ",
@@ -704,7 +706,7 @@ void camera_demo_thread_entry(void *pvParameters)
     /* pin mux and configuration for all device IOs requested from pins.h */
     ret = board_pins_config();
     if (ret != 0) {
-        printf("Error in pin-mux configuration: %d\n", ret);
+        printf("Error in pin-mux configuration: %" PRId32 "\n", ret);
         return;
     }
 #else
@@ -714,14 +716,16 @@ void camera_demo_thread_entry(void *pvParameters)
      */
     ret = hardware_init();
     if (ret != 0) {
-        printf("Error: CAMERA Hardware Initialize failed: %d\n", ret);
+        printf("Error: CAMERA Hardware Initialize failed: %" PRId32 "\n", ret);
         return;
     }
 #endif
 
     version = CAMERAdrv->GetVersion();
-    printf("\r\n Camera driver version api:0x%X driver:0x%X \r\n", version.api, version.drv);
+    printf("\r\n Camera driver version api:0x%" PRIx16 " driver:0x%" PRIx16 " \r\n", version.api,
+            version.drv);
 
+    /* Initialize Camera peripheral */
     ret = CAMERAdrv->Initialize(camera_callback);
     if (ret != ARM_DRIVER_OK) {
         printf("\r\n Error: CAMERA Initialize failed.\r\n");
@@ -790,7 +794,7 @@ void camera_demo_thread_entry(void *pvParameters)
     }
 
     /* wait till any event to comes in isr callback */
-    xTaskNotifyWait(NULL,
+    xTaskNotifyWait(0,
                     CAM_CB_EVENT_CAPTURE_STOPPED | CAM_CB_EVENT_ERROR,
                     &actual_events,
                     portMAX_DELAY);
@@ -853,12 +857,13 @@ void camera_demo_thread_entry(void *pvParameters)
     printf("\n  Use below command in Commands tab: update user directory name \r\n");
 
 #if IMAGE_CONVERSION_BAYER_TO_RGB_EN
-    printf("\n   dump binary memory /home/user/camera_dump/cam_image0_Bayer_to_RGB_640p.tif 0x%X "
-           "0x%X \r\n",
+    printf("\n   dump binary memory /home/user/camera_dump/cam_image0_Bayer_to_RGB_640p.tif"
+            "0x% " PRIX32 "0x%" PRIX32 " \r\n",
            (uint32_t) bayer_to_rgb_buffer_pool,
            (uint32_t) (bayer_to_rgb_buffer_pool + BAYER_TO_RGB_BUFFER_POOL_SIZE - 1));
 #else
-    printf("\n   dump binary memory /home/user/camera_dump/cam_image0_640p.bin 0x%X 0x%X \r\n",
+    printf("\n   dump binary memory /home/user/camera_dump/cam_image0_640p.bin "
+           "0x%" PRIX32 " 0x%" PRIX32 " \r\n",
            (uint32_t) framebuffer_pool,
            (uint32_t) (framebuffer_pool + FRAMEBUFFER_POOL_SIZE - 1));
 #endif
@@ -911,7 +916,7 @@ int main(void)
     BaseType_t xReturned = xTaskCreate(camera_demo_thread_entry,
                                        "camera_demo_thread_entry",
                                        216,
-                                       NULL,
+                                       0,
                                        configMAX_PRIORITIES - 1,
                                        &camera_xHandle);
     if (xReturned != pdPASS) {

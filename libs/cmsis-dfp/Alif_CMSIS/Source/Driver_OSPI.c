@@ -809,6 +809,10 @@ static int32_t ARM_OSPI_Control(OSPI_RESOURCES *OSPI, uint32_t control, uint32_t
     int32_t  ret = ARM_DRIVER_OK;
     uint32_t clk;
 
+    if (OSPI->state.powered == 0) {
+        return ARM_DRIVER_ERROR;
+    }
+
     if (ospi_busy(OSPI->regs)) {
         return ARM_DRIVER_ERROR_BUSY;
     }

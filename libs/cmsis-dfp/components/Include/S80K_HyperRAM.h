@@ -34,13 +34,13 @@ extern "C" {
 #define S80K_RAM_OPERATION_MODE_POS    15
 
 /**
-  \fn          void s80k_hyperram_init(OSPI_Type *ospi, uint8_t wait_cycles)
+  \fn          int32_t s80k_hyperram_init(OSPI_Type *ospi, AES_Type *aes)
   \brief       S80K HyperRAM init function.
-  \param[in]   ospi : Pointer to the OSPI register map.
-  \param[in]   wait_cycles  : hyperram wait cycle value.
-  \return      none
+  \param[in]   ospi    : Pointer to the OSPI register map.
+  \param[in]   aes     : Pointer to the AES register map.
+  \return      status
  */
-void s80k_hyperram_init(OSPI_Type *ospi, uint8_t wait_cycles);
+int32_t s80k_hyperram_init(OSPI_Type *ospi, AES_Type *aes);
 
 #ifdef __cplusplus
 }

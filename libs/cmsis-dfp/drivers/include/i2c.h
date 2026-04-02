@@ -209,8 +209,13 @@ extern "C" {
 #define I2C_MIN_FS_PLUS_HIGH_TIME_NS         (290)
 #define I2C_MIN_FS_PLUS_LOW_TIME_NS          (550)
 
-#define I2C_MIN_HS_HIGH_TIME_NS              (10)
-#define I2C_MIN_HS_LOW_TIME_NS               (120)
+/* For 3.4 MHz SCL period is 290ns.
+ * As per I2C Spec:
+ * SCL High period = HCNT(60) + Spike Len (10) + 30 (Offset) = 100ns
+ * SCL Low period  = LCNT = 190ns
+ */
+#define I2C_MIN_HS_HIGH_TIME_NS              (60)
+#define I2C_MIN_HS_LOW_TIME_NS               (190)
 
 /* Macros for write-read mode */
 #define I2C_WRITE_READ_MODE_EN               0x80U

@@ -61,12 +61,6 @@ typedef struct _CPI_VERTICAL_CONFIG {
 } CPI_VERTICAL_CONFIG;
 #endif
 
-/** \brief CPI Frame Configuration */
-typedef struct _CPI_FRAME_CONFIG {
-    uint16_t width;  /**< Frame Width(Column)                                  */
-    uint16_t height; /**< Frame Height(Row)                                    */
-} CPI_FRAME_CONFIG;
-
 /** \brief CPI FIFO Configuration */
 typedef struct _CPI_FIFO_CONFIG {
     uint8_t read_watermark;  /**< FIFO Read  Water mark 0,1: illegal           */
@@ -83,7 +77,6 @@ typedef struct _CPI_CONFIG {
     CPI_HORIZONTAL_CONFIG *horizontal_cfg; /**< Horizontal Configuration                        */
     CPI_VERTICAL_CONFIG   *vertical_cfg;   /**< Vertical Configuration                          */
 #endif
-    CPI_FRAME_CONFIG      frame;           /**< Frame Configuration                             */
     uint32_t              framebuff_saddr; /**< Frame Buffer Start Address Configuration        */
     CPI_FIFO_CONFIG       *fifo;           /**< FIFO Configuration                              */
 } CPI_CONFIG;

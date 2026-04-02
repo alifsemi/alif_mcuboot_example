@@ -28,6 +28,7 @@
 
 /* IMU Driver */
 #include "Driver_IMU.h"
+#include "sensor_utils.h"
 
 /* I3C Driver */
 #include "Driver_I3C.h"
@@ -38,10 +39,15 @@
 extern ARM_DRIVER_GPIO  ARM_Driver_GPIO_(RTE_BMI323_INT_IO_PORT);
 static ARM_DRIVER_GPIO *IO_Driver_INT = &ARM_Driver_GPIO_(RTE_BMI323_INT_IO_PORT);
 
-#define ARM_IMU_DRV_VERSION            ARM_DRIVER_VERSION_MAJOR_MINOR(1, 0)
+#define ARM_IMU_DRV_VERSION            ARM_DRIVER_VERSION_MAJOR_MINOR(1, 1)
 
 /* Timeout in Microsec */
 #define IMU_I3C_TIMEOUT_US             (100000)
+
+#define BMI323_CFG_DELAY_US            10
+#define DELAY_1US                      1
+
+#define BMI323_DATA_HIGHER_BYTE_Pos     (8)
 
 /* BMI323 dummy bytes*/
 #define BMI323_INITIAL_DUMMY_BYTES_LEN (2)
@@ -102,15 +108,20 @@ static ARM_DRIVER_GPIO *IO_Driver_INT = &ARM_Driver_GPIO_(RTE_BMI323_INT_IO_PORT
 #define BMI323_INT1_STATUS_GYRO_DRDY   (0x1000) /* Gyroscope data is ready     */
 #define BMI323_INT1_STATUS_ACCEL_DRDY  (0x2000) /* Accelerometer data is ready */
 
-#define BMI323_ACCEL_CALIB_VAL         (2048U) /*Calibration for full scale output selection of +-16g */
-#define BMI323_GYRO_CALIB_VAL          (16.384) /*Calibration for full scale output selection of +-2kdps */
+/*Calibration for full scale output selection of +-16g */
+#define BMI323_ACCEL_CALIB_VAL         (2048)
+/*Calibration for full scale output selection of +-2kdps */
+#define BMI323_GYRO_CALIB_VAL          (16.384)
+/* Temperature sensitivity */
+#define BMI323_TEMP_SENSITIVITY        (512)
 
-#define BMI323_ACCEL_VAL(x)            ((x * 1000) / (BMI323_ACCEL_CALIB_VAL)) /* Acceleration value in mg*/
-#define BMI323_GYRO_VAL(x)             ((x * 1000) / (BMI323_GYRO_CALIB_VAL)) /* Gyro value in mdps */
-#define BMI323_TEMPERATURE(x)          ((x / 512.0) + 23)                     /* Temp value in C */
-
-#define BMI323_CFG_DELAY_US            10
-#define DELAY_1US                      1
+/* Acceleration value in ug */
+#define BMI323_ACCEL_VAL(x)            (((x) * MICROS_PER_UNIT) / (BMI323_ACCEL_CALIB_VAL))
+/* Gyro value in udps */
+#define BMI323_GYRO_VAL(x)             (((x) * MICROS_PER_UNIT) / (BMI323_GYRO_CALIB_VAL))
+/* Temp value in uC */
+#define BMI323_TEMPERATURE(x)          ((((x) * MICROS_PER_UNIT) / BMI323_TEMP_SENSITIVITY) + \
+                                          (23 * MICROS_PER_UNIT))
 
 /* BMI323 driver Info variable */
 static struct BMI323_DRV_INFO {
@@ -703,20 +714,27 @@ static uint8_t IMU_GetDataStatus(void)
 */
 static int32_t IMU_GetAccelData(ARM_IMU_COORDINATES *accel_data)
 {
-    ARM_IMU_COORDINATES data;
     __ALIGNED(4) uint8_t buf[BMI323_ACCEL_DATA_SIZE];
+    int64_t      conv_val;
 
     /* Reads Acceleromter data */
     IMU_Read(bmi323_drv_info.target_addr, BMI323_ACCEL_DATA_REG, buf, BMI323_ACCEL_DATA_SIZE);
 
     /* Processes Accelerometer data */
-    data.x        = buf[BMI323_ACCEL_DATA_X_OFFSET];
-    data.y        = buf[BMI323_ACCEL_DATA_Y_OFFSET];
-    data.z        = buf[BMI323_ACCEL_DATA_Z_OFFSET];
+    conv_val = BMI323_ACCEL_VAL((int16_t)(buf[BMI323_ACCEL_DATA_X_OFFSET] |
+                                (buf[BMI323_ACCEL_DATA_X_OFFSET + 1] <<
+                                 BMI323_DATA_HIGHER_BYTE_Pos)));
+    SENSOR_EXTRACT_INT_FRACT_PART(accel_data->x, conv_val);
 
-    accel_data->x = BMI323_ACCEL_VAL(data.x);
-    accel_data->y = BMI323_ACCEL_VAL(data.y);
-    accel_data->z = BMI323_ACCEL_VAL(data.z);
+    conv_val = BMI323_ACCEL_VAL((int16_t)(buf[BMI323_ACCEL_DATA_Y_OFFSET] |
+                                (buf[BMI323_ACCEL_DATA_Y_OFFSET + 1] <<
+                                 BMI323_DATA_HIGHER_BYTE_Pos)));
+    SENSOR_EXTRACT_INT_FRACT_PART(accel_data->y, conv_val);
+
+    conv_val = BMI323_ACCEL_VAL((int16_t)(buf[BMI323_ACCEL_DATA_Z_OFFSET] |
+                                (buf[BMI323_ACCEL_DATA_Z_OFFSET + 1] <<
+                                 BMI323_DATA_HIGHER_BYTE_Pos)));
+    SENSOR_EXTRACT_INT_FRACT_PART(accel_data->z, conv_val);
 
     return ARM_DRIVER_OK;
 }
@@ -729,43 +747,50 @@ static int32_t IMU_GetAccelData(ARM_IMU_COORDINATES *accel_data)
 */
 static int32_t IMU_GetGyroData(ARM_IMU_COORDINATES *gyro_data)
 {
-    ARM_IMU_COORDINATES data;
     __ALIGNED(4) uint8_t buf[BMI323_GYRO_DATA_SIZE];
+    int64_t      conv_val;
 
     /* Reads Gyroscope data */
-    IMU_Read(bmi323_drv_info.target_addr, BMI323_GYRO_DATA_REG,
-             buf, BMI323_GYRO_DATA_SIZE);
+    IMU_Read(bmi323_drv_info.target_addr, BMI323_GYRO_DATA_REG, buf, BMI323_GYRO_DATA_SIZE);
 
     /* Processes Gyroscope data */
-    data.x       = buf[BMI323_GYRO_DATA_X_OFFSET];
-    data.y       = buf[BMI323_GYRO_DATA_X_OFFSET];
-    data.z       = buf[BMI323_GYRO_DATA_X_OFFSET];
+    conv_val = BMI323_GYRO_VAL((int16_t)(buf[BMI323_GYRO_DATA_X_OFFSET] |
+                               (buf[BMI323_GYRO_DATA_X_OFFSET + 1] <<
+                                BMI323_DATA_HIGHER_BYTE_Pos)));
+    SENSOR_EXTRACT_INT_FRACT_PART(gyro_data->x, conv_val);
 
-    gyro_data->x = BMI323_GYRO_VAL(data.x);
-    gyro_data->y = BMI323_GYRO_VAL(data.y);
-    gyro_data->z = BMI323_GYRO_VAL(data.z);
+    conv_val = BMI323_GYRO_VAL((int16_t)(buf[BMI323_GYRO_DATA_Y_OFFSET] |
+                               (buf[BMI323_GYRO_DATA_Y_OFFSET + 1] <<
+                                BMI323_DATA_HIGHER_BYTE_Pos)));
+    SENSOR_EXTRACT_INT_FRACT_PART(gyro_data->y, conv_val);
+
+    conv_val = BMI323_GYRO_VAL((int16_t)(buf[BMI323_GYRO_DATA_Z_OFFSET] |
+                               (buf[BMI323_GYRO_DATA_Z_OFFSET + 1] <<
+                                BMI323_DATA_HIGHER_BYTE_Pos)));
+    SENSOR_EXTRACT_INT_FRACT_PART(gyro_data->z, conv_val);
 
     return ARM_DRIVER_OK;
 }
 
 /**
-  \fn          int32_t IMU_GetTempData(float *temp_data)
+  \fn          int32_t IMU_GetTempData(ARM_IMU_SENSOR_VALUE *temp_data)
   \brief       Gets Temperature sensor data from IMU driver.
   \param[in]   temp_data : Temperature sensor data
   \return      \ref Execution status.
 */
-static int32_t IMU_GetTempData(float *temp_data)
+static int32_t IMU_GetTempData(ARM_IMU_SENSOR_VALUE *temp_data)
 {
-    int16_t ltemp;
     __ALIGNED(4) uint8_t buf[BMI323_TEMP_DATA_SIZE];
+    int64_t      conv_val;
 
     /* Reads Temperature Sensor data */
-    IMU_Read(bmi323_drv_info.target_addr, BMI323_TEMP_DATA_REG,
-             buf, BMI323_TEMP_DATA_SIZE);
+    IMU_Read(bmi323_drv_info.target_addr, BMI323_TEMP_DATA_REG, buf, BMI323_TEMP_DATA_SIZE);
 
     /* Processes Temp data */
-    ltemp      = buf[BMI323_TEMP_DATA_OFFSET];
-    *temp_data = BMI323_TEMPERATURE(ltemp);
+    conv_val = BMI323_TEMPERATURE((int16_t)(buf[BMI323_TEMP_DATA_OFFSET] |
+                                  (buf[BMI323_TEMP_DATA_OFFSET + 1] <<
+                                   BMI323_DATA_HIGHER_BYTE_Pos)));
+    SENSOR_EXTRACT_INT_FRACT_PART(*temp_data, conv_val);
 
     return ARM_DRIVER_OK;
 }
@@ -903,7 +928,6 @@ static int32_t ARM_IMU_PowerControl(ARM_POWER_STATE state)
 static int32_t ARM_IMU_Control(uint32_t control, uint32_t arg)
 {
     void  *ptr;
-    float *temp_data;
 
     switch (control) {
     case IMU_GET_ACCELEROMETER_DATA:
@@ -938,10 +962,10 @@ static int32_t ARM_IMU_Control(uint32_t control, uint32_t arg)
         if (!arg) {
             return ARM_DRIVER_ERROR;
         }
-        temp_data = (float *) arg;
+        ptr = (ARM_IMU_SENSOR_VALUE *) arg;
 
         /* Gets Temperature data */
-        IMU_GetTempData(temp_data);
+        IMU_GetTempData(ptr);
 
         /* Resets data status */
         CLEAR_BIT(bmi323_drv_info.status.drdy_status, IMU_TEMPERATURE_DATA_READY);

@@ -372,6 +372,9 @@ void canfd_demo_thread_entry(void)
         goto power_off_canfd;
     }
 
+    /* Initially prepare and send first message */
+    canfd_transmit_message(msg_type++);
+
     while (!(stop_execution)) {
         if (msg_tx_complete) {
             msg_tx_complete = false;

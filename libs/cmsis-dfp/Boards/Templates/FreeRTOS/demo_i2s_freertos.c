@@ -25,6 +25,7 @@
 /*System Includes */
 #include <stdio.h>
 #include <string.h>
+#include <inttypes.h>
 
 /* Project Includes */
 #include <Driver_SAI.h>
@@ -241,7 +242,7 @@ static void prvDacTask(void *pvParameters)
                            /*bool enable   */ true,
                                               &service_error_code);
     if (error_code) {
-        printf("SE: clk enable = %d\n", error_code);
+        printf("SE: clk enable = %" PRIu32 "\n", error_code);
     }
 #endif
 
@@ -253,7 +254,7 @@ static void prvDacTask(void *pvParameters)
     /* pin mux and configuration for all device IOs requested from pins.h*/
     lStatus = board_pins_config();
     if (lStatus != 0) {
-        printf("Error in pin-mux configuration: %d\n", lStatus);
+        printf("Error in pin-mux configuration: %" PRId32 "\n", lStatus);
         return;
     }
 
@@ -264,7 +265,7 @@ static void prvDacTask(void *pvParameters)
      */
     lStatus = board_i2s_dac_pins_config();
     if (lStatus != 0) {
-        printf("Error in pin-mux configuration: %d\n", lStatus);
+        printf("Error in pin-mux configuration: %" PRId32 "\n", lStatus);
         return;
     }
 
@@ -282,13 +283,13 @@ static void prvDacTask(void *pvParameters)
     /* WM8904 codec init */
     lStatus = wm8904->Initialize();
     if (lStatus) {
-        printf("WM8904 codec Init failed status = %d\n", lStatus);
+        printf("WM8904 codec Init failed status = %" PRId32 "\n", lStatus);
         goto error_codec_initialize;
     }
 
     lStatus = wm8904->PowerControl(ARM_POWER_FULL);
     if (lStatus) {
-        printf("WM8904 codec Power up failed status = %d\n", lStatus);
+        printf("WM8904 codec Power up failed status = %" PRId32 "\n", lStatus);
         goto error_codec_power;
     }
 #endif
@@ -310,14 +311,14 @@ static void prvDacTask(void *pvParameters)
     /* Initializes I2S interface */
     lStatus = xI2SDrv->Initialize(prvDacCallback);
     if (lStatus) {
-        printf("DAC Init failed Status = %d\n", lStatus);
+        printf("DAC Init failed Status = %" PRId32 "\n", lStatus);
         goto error_initialize;
     }
 
     /* Enable the power for I2S */
     lStatus = xI2SDrv->PowerControl(ARM_POWER_FULL);
     if (lStatus) {
-        printf("DAC Power Failed Status = %d\n", lStatus);
+        printf("DAC Power Failed Status = %" PRId32 "\n", lStatus);
         goto error_power;
     }
 
@@ -327,14 +328,14 @@ static void prvDacTask(void *pvParameters)
                                (ulWlen * 2),
                                ulSamplingRate);
     if (lStatus) {
-        printf("DAC Control Status = %d\n", lStatus);
+        printf("DAC Control Status = %" PRId32 "\n", lStatus);
         goto error_control;
     }
 
     /* enable Transmitter */
     lStatus = xI2SDrv->Control(ARM_SAI_CONTROL_TX, 1, 0);
     if (lStatus) {
-        printf("DAC TX status = %d\n", lStatus);
+        printf("DAC TX status = %" PRId32 "\n", lStatus);
         goto error_control;
     }
 
@@ -347,7 +348,7 @@ static void prvDacTask(void *pvParameters)
         /* Transmit the samples */
         lStatus = xI2SDrv->Send(xSamplesMsg.pvBuf, xSamplesMsg.ulNumItems);
         if (lStatus) {
-            printf("DAC Send status = %d\n", lStatus);
+            printf("DAC Send status = %" PRId32 "\n", lStatus);
             goto error_send;
         }
 
@@ -371,7 +372,7 @@ static void prvDacTask(void *pvParameters)
             /* Transmit the samples */
             lStatus = xI2SDrv->Send(xSamplesMsg.pvBuf, xSamplesMsg.ulNumItems);
             if (lStatus) {
-                printf("DAC Send status = %d\n", lStatus);
+                printf("DAC Send status = %" PRId32 "\n", lStatus);
 
                 vPortFree(xSamplesMsg.pvBuf);
                 goto error_send;
@@ -399,7 +400,7 @@ static void prvDacTask(void *pvParameters)
     /* Stop the TX */
     lStatus = xI2SDrv->Control(ARM_SAI_CONTROL_TX, 0, 0);
     if (lStatus) {
-        printf("DAC TX status = %d\n", lStatus);
+        printf("DAC TX status = %" PRId32 "\n", lStatus);
         goto error_control;
     }
 
@@ -521,7 +522,7 @@ static void prvAdcTask(void *pvParameters)
      */
     lStatus = board_i2s_adc_pins_config();
     if (lStatus != 0) {
-        printf("Error in pin-mux configuration: %d\n", lStatus);
+        printf("Error in pin-mux configuration: %" PRId32 "\n", lStatus);
         return;
     }
 #endif
@@ -542,14 +543,14 @@ static void prvAdcTask(void *pvParameters)
     /* Initializes I2S interface */
     lStatus = xI2SDrv->Initialize(prvAdcCallback);
     if (lStatus) {
-        printf("ADC Init failed Status = %d\n", lStatus);
+        printf("ADC Init failed Status = %" PRId32 "\n", lStatus);
         goto error_adc_initialize;
     }
 
     /* Enable the power for I2S */
     lStatus = xI2SDrv->PowerControl(ARM_POWER_FULL);
     if (lStatus) {
-        printf("ADC Power failed Status = %d\n", lStatus);
+        printf("ADC Power failed Status = %" PRId32 "\n", lStatus);
         goto error_adc_power;
     }
 
@@ -559,14 +560,14 @@ static void prvAdcTask(void *pvParameters)
                                (ulWlen * 2),
                                ulSamplingRate);
     if (lStatus) {
-        printf("ADC Control Status = %d\n", lStatus);
+        printf("ADC Control Status = %" PRId32 "\n", lStatus);
         goto error_adc_control;
     }
 
     /* enable Receiver */
     lStatus = xI2SDrv->Control(ARM_SAI_CONTROL_RX, 1, 0);
     if (lStatus) {
-        printf("ADC RX Status = %d\n", lStatus);
+        printf("ADC RX Status = %" PRId32 "\n", lStatus);
         goto error_adc_control;
     }
 
@@ -584,7 +585,7 @@ static void prvAdcTask(void *pvParameters)
         /* Receive data */
         lStatus = xI2SDrv->Receive(xSamplesMsg.pvBuf, xSamplesMsg.ulNumItems);
         if (lStatus) {
-            printf("ADC Receive status = %d\n", lStatus);
+            printf("ADC Receive status = %" PRId32 "\n", lStatus);
 
             vPortFree(xSamplesMsg.pvBuf);
             goto error_adc_receive;
@@ -624,7 +625,7 @@ static void prvAdcTask(void *pvParameters)
     /* Stop the RX */
     lStatus = xI2SDrv->Control(ARM_SAI_CONTROL_RX, 0, 0);
     if (lStatus) {
-        printf("DAC RX lStatus = %d\n", lStatus);
+        printf("DAC RX lStatus = %" PRId32 "\n", lStatus);
         goto error_adc_control;
     }
 
@@ -664,7 +665,7 @@ int main(void)
     /* Allocate the message queues for Rx */
     xQueueRx = xQueueCreate(SAMPLES_POOL_CNT, sizeof(SamplesMsgq_t));
     if (!xQueueRx) {
-        printf("Could not create RX Queue \n");
+        printf("Could not create RX Queue\n");
 
         return -1;
     }
@@ -678,7 +679,7 @@ int main(void)
         xEventGroupHandleAdc = xEventGroupCreate();
 
         if (!xEventGroupHandleAdc) {
-            printf("Could not create ADC Event Group \n");
+            printf("Could not create ADC Event Group\n");
 
             return -1;
         }
@@ -687,12 +688,12 @@ int main(void)
         xStatus = xTaskCreate(prvAdcTask,
                               "ADC Task",
                               ADC_STACK_SIZE / sizeof(size_t),
-                              NULL,
+                              0,
                               ADC_TASK_PRIORITY,
                               &xAdcHandle);
         if (xStatus != pdPASS) {
             vTaskDelete(xAdcHandle);
-            printf("Could not create ADC Task \n");
+            printf("Could not create ADC Task\n");
 
             return -1;
         }
@@ -703,7 +704,7 @@ int main(void)
     xEventGroupHandleDac = xEventGroupCreate();
 
     if (!xEventGroupHandleDac) {
-        printf("Could not create DAC Event Group \n");
+        printf("Could not create DAC Event Group\n");
 
         return -1;
     }
@@ -712,12 +713,12 @@ int main(void)
     xStatus = xTaskCreate(prvDacTask,
                           "DAC TASK",
                           DAC_STACK_SIZE / sizeof(size_t),
-                          NULL,
+                          0,
                           DAC_TASK_PRIORITY,
                           &xDacHandle);
     if (xStatus != pdPASS) {
         vTaskDelete(xDacHandle);
-        printf("Could not create DAC Task \n");
+        printf("Could not create DAC Task\n");
 
         return -1;
     }

@@ -80,7 +80,7 @@ elseif(COMPILER STREQUAL CLANG)
     set (CMAKE_ASM_COMPILER             clang)
     set (CMAKE_ASM_COMPILER_AR          llvm-ar)
 
-    set (COMPILER_VERSION               18.0.0)
+    set (COMPILER_VERSION               20.0.0)
     set (TARGET_NAME                    arm-none-eabi)
 
     # Flags for C and Assembly source files
@@ -89,10 +89,8 @@ elseif(COMPILER STREQUAL CLANG)
     set(CMAKE_ASM_FLAGS                 "${ASM_FLAGS} ${HW_FLAGS} --target=${TARGET_NAME}")
     add_compile_options(-fdiagnostics-color=always)
 
-    if(${RETARGET_EN_NO_SEMIHOSTING})
-        set(CRT_LIBS                    -lcrt0)
-    else()
-        set(CRT_LIBS                    -lcrt0-semihost  -lsemihost)
+    if(NOT (${RETARGET_EN_NO_SEMIHOSTING}))
+        set(CRT_LIBS                    -lsemihost)
     endif()
 
     # Tell linker that reset interrupt handler is our entry point

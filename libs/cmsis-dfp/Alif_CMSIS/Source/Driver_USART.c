@@ -333,6 +333,10 @@ static int32_t ARM_USART_PowerControl(ARM_POWER_STATE state, UART_RESOURCES *uar
 {
     switch (state) {
     case ARM_POWER_OFF:
+        if (uart->state.powered == 0) {
+            return ARM_DRIVER_OK;
+        }
+
         /* Disable uart IRQ */
         NVIC_DisableIRQ(uart->irq_num);
 

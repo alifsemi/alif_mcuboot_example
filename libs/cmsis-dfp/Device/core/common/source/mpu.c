@@ -26,6 +26,7 @@
 #include <stdint.h>
 #include "soc.h"
 #include "core_defines.h"
+#include "app_mem_regions.h"
 
 /* Public functions ----------------------------------------------------------*/
 /**
@@ -51,29 +52,44 @@ __attribute__((weak)) void MPU_Load_Regions(void)
 #define MEMATTRIDX_NORMAL_WT_RA           3
 
     static const ARM_MPU_Region_t mpu_table[] = {
+#if defined(APP_SRAM0_BASE) && defined(APP_SRAM1_BASE)
+#if defined(SRAM0_SRAM1_COMBINED) && (SRAM0_SRAM1_COMBINED == 1)
+        {/* SRAM - 8MB : RO-0, NP-1, XN-0 */
+         .RBAR = ARM_MPU_RBAR(APP_SRAM_BASE, ARM_MPU_SH_NON, 0, 1, 0),
+         .RLAR = ARM_MPU_RLAR((APP_SRAM_BASE + APP_SRAM_SIZE - 1),
+                              MEMATTRIDX_NORMAL_WT_RA_TRANSIENT)},
+#else
         {/* SRAM0 - 4MB : RO-0, NP-1, XN-0 */
-         .RBAR = ARM_MPU_RBAR(0x02000000, ARM_MPU_SH_NON, 0, 1, 0),
-         .RLAR = ARM_MPU_RLAR(0x023FFFFF, MEMATTRIDX_NORMAL_WT_RA_TRANSIENT)},
+         .RBAR = ARM_MPU_RBAR(APP_SRAM0_BASE, ARM_MPU_SH_NON, 0, 1, 0),
+         .RLAR = ARM_MPU_RLAR((APP_SRAM0_BASE + APP_SRAM0_SIZE - 1),
+                              MEMATTRIDX_NORMAL_WT_RA_TRANSIENT)},
         {/* SRAM1 - 2.5MB : RO-0, NP-1, XN-0 */
-         .RBAR = ARM_MPU_RBAR(0x08000000, ARM_MPU_SH_NON, 0, 1, 0),
-         .RLAR = ARM_MPU_RLAR(0x0827FFFF, MEMATTRIDX_NORMAL_WB_RA_WA)},
+         .RBAR = ARM_MPU_RBAR(APP_SRAM1_BASE, ARM_MPU_SH_NON, 0, 1, 0),
+         .RLAR = ARM_MPU_RLAR((APP_SRAM1_BASE + APP_SRAM1_SIZE - 1),
+                              MEMATTRIDX_NORMAL_WB_RA_WA)},
+#endif
+#endif
         {/* Host Peripherals - 16MB : RO-0, NP-1, XN-1 */
          .RBAR = ARM_MPU_RBAR(0x1A000000, ARM_MPU_SH_NON, 0, 1, 1),
          .RLAR = ARM_MPU_RLAR(0x1AFFFFFF, MEMATTRIDX_DEVICE_nGnRE)},
 #if defined(RTSS_HP)
         {/* RTSS HE ITCM - 256K(SRAM4) : RO-0, NP-1, XN-0  */
-         .RBAR = ARM_MPU_RBAR(0x58000000, ARM_MPU_SH_OUTER, 0, 1, 0),
-         .RLAR = ARM_MPU_RLAR(0x5803FFFF, MEMATTRIDX_NORMAL_WB_RA_WA)},
+         .RBAR = ARM_MPU_RBAR(APP_SRAM4_BASE, ARM_MPU_SH_OUTER, 0, 1, 0),
+         .RLAR = ARM_MPU_RLAR((APP_SRAM4_BASE + APP_SRAM4_SIZE - 1),
+                              MEMATTRIDX_NORMAL_WB_RA_WA)},
         {/* RTSS HE DTCM - 256K(SRAM5) : RO-0, NP-1, XN-0  */
-         .RBAR = ARM_MPU_RBAR(0x58800000, ARM_MPU_SH_OUTER, 0, 1, 0),
-         .RLAR = ARM_MPU_RLAR(0x5883FFFF, MEMATTRIDX_NORMAL_WB_RA_WA)},
-#elif defined(RTSS_HE)
+         .RBAR = ARM_MPU_RBAR(APP_SRAM5_BASE, ARM_MPU_SH_OUTER, 0, 1, 0),
+         .RLAR = ARM_MPU_RLAR((APP_SRAM5_BASE + APP_SRAM5_SIZE - 1),
+                              MEMATTRIDX_NORMAL_WB_RA_WA)},
+#elif defined(RTSS_HE) && defined(APP_SRAM2_BASE) && defined(APP_SRAM3_BASE)
         {/* RTSS HP ITCM - 256K(SRAM2) : RO-0, NP-1, XN-0  */
-         .RBAR = ARM_MPU_RBAR(0x50000000, ARM_MPU_SH_OUTER, 0, 1, 0),
-         .RLAR = ARM_MPU_RLAR(0x5003FFFF, MEMATTRIDX_NORMAL_WB_RA_WA)},
+         .RBAR = ARM_MPU_RBAR(APP_SRAM2_BASE, ARM_MPU_SH_OUTER, 0, 1, 0),
+         .RLAR = ARM_MPU_RLAR((APP_SRAM2_BASE + APP_SRAM2_SIZE - 1),
+                              MEMATTRIDX_NORMAL_WB_RA_WA)},
         {/* RTSS HP DTCM - 1MB(SRAM3) : RO-0, NP-1, XN-0  */
-         .RBAR = ARM_MPU_RBAR(0x50800000, ARM_MPU_SH_OUTER, 0, 1, 0),
-         .RLAR = ARM_MPU_RLAR(0x508FFFFF, MEMATTRIDX_NORMAL_WB_RA_WA)},
+         .RBAR = ARM_MPU_RBAR(APP_SRAM3_BASE, ARM_MPU_SH_OUTER, 0, 1, 0),
+         .RLAR = ARM_MPU_RLAR((APP_SRAM3_BASE + APP_SRAM3_SIZE - 1),
+                              MEMATTRIDX_NORMAL_WB_RA_WA)},
 #endif
         {/* MRAM - 5.5MB : RO-1, NP-1, XN-0  */
          .RBAR = ARM_MPU_RBAR(0x80000000, ARM_MPU_SH_NON, 1, 1, 0),

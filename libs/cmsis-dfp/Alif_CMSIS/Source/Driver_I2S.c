@@ -2240,7 +2240,7 @@ static I2S_DMA_HW_CONFIG LPI2S_DMA_HW_CONFIG = {
         .evtrtr_cfg     = {
             .instance         = LPI2S_DMA,
             .group            = LPI2S_DMA_GROUP,
-            .cha nnel          = LPI2S_DMA_RX_PERIPH_REQ,
+            .channel          = LPI2S_DMA_RX_PERIPH_REQ,
             .enable_handshake = LPI2S_DMA_HANDSHAKE_ENABLE,
         },
     },

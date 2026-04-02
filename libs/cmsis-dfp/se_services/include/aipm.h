@@ -219,10 +219,7 @@ typedef enum {
  * @brief Memory Blocks
  */
 typedef enum {
-    MB_SRAM0_1 = 0, /**< MB_SRAM0 */
-    MB_SRAM0_2, /**< MB_SRAM0 */
-    MB_SRAM0_3, /**< MB_SRAM0 */
-    MB_SRAM0_4, /**< MB_SRAM0 */
+    MB_SRAM0 = 0,   /**< MB_SRAM0 */
     MB_SRAM1,       /**< MB_SRAM1 */
     MB_SRAM2,       /**< MB_SRAM2 */
     MB_SRAM3,       /**< MB_SRAM3 */
@@ -243,14 +240,16 @@ typedef enum {
     MB_SERAM_1,
     MB_SERAM_2,
     MB_FWRAM,   /**< MB_FWRAM */
-    MB_BACKUP4K /**< MB_BACKUP4K */
+    MB_BACKUP4K, /**< MB_BACKUP4K */
+    MB_SRAM0_1_RET, // MB_SRAM0_1_RET
+    MB_SRAM0_2_RET, // MB_SRAM0_2_RET
+    MB_SRAM0_3_RET, // MB_SRAM0_3_RET
+    MB_SRAM0_4_RET, // MB_SRAM0_4_RET
+    MB_SRAM1_RET,   // MB_SRAM1_RET
 } memory_block_t;
 
 /* Memory block bit mask */
-#define SRAM0_1_MASK  (1 << MB_SRAM0_1)   // bit0
-#define SRAM0_2_MASK  (1 << MB_SRAM0_2)   // bit1
-#define SRAM0_3_MASK  (1 << MB_SRAM0_3)   // bit2
-#define SRAM0_4_MASK  (1 << MB_SRAM0_4)   // bit3
+#define SRAM0_MASK  (1 << MB_SRAM0)   // bit0
 #define SRAM1_MASK    (1 << MB_SRAM1)     // bit4
 #define SRAM2_MASK    (1 << MB_SRAM2)     // bit5
 #define SRAM3_MASK    (1 << MB_SRAM3)     // bit6
@@ -272,9 +271,13 @@ typedef enum {
 #define SERAM_2_MASK  (1 << MB_SERAM_2)   // bit22
 #define FWRAM_MASK    (1 << MB_FWRAM)     // bit23
 #define BACKUP4K_MASK (1 << MB_BACKUP4K)  // bit24
+#define SRAM0_1_RET_MASK    (1 << MB_SRAM0_1_RET)    // bit22
+#define SRAM0_2_RET_MASK    (1 << MB_SRAM0_2_RET)    // bit23
+#define SRAM0_3_RET_MASK    (1 << MB_SRAM0_3_RET)    // bit24
+#define SRAM0_4_RET_MASK    (1 << MB_SRAM0_4_RET)    // bit25
+#define SRAM1_RET_MASK      (1 << MB_SRAM1_RET)      // bit26
 
 #define SERAM_MASK    (SERAM_1_MASK | SERAM_2_MASK)
-#define SRAM0_MASK    (SRAM0_1_MASK | SRAM0_2_MASK | SRAM0_3_MASK | SRAM0_4_MASK)
 
 #else
 /**

@@ -19,6 +19,7 @@
  * @Note     : None
  ******************************************************************************/
 #include <stdio.h>
+#include <inttypes.h>
 #include "FreeRTOS.h"
 #include "FreeRTOSConfig.h"
 #include "task.h"
@@ -158,31 +159,31 @@ static int32_t led_init(uint8_t channel)
 
     ret         = ptrUTIMER->Initialize(channel, utimer_led_cb_func);
     if (ret != ARM_DRIVER_OK) {
-        printf("utimer channel %d failed initialize \n", channel);
+        printf("utimer channel %" PRIu8 " failed initialize\n", channel);
         return -1;
     }
 
     ret = ptrUTIMER->PowerControl(channel, ARM_POWER_FULL);
     if (ret != ARM_DRIVER_OK) {
-        printf("utimer channel %d failed power up \n", channel);
+        printf("utimer channel %" PRIu8 " failed power up\n", channel);
         return -1;
     }
 
     ret = ptrUTIMER->ConfigCounter(channel, ARM_UTIMER_MODE_COMPARING, ARM_UTIMER_COUNTER_UP);
     if (ret != ARM_DRIVER_OK) {
-        printf("utimer channel %d mode configuration failed \n", channel);
+        printf("utimer channel %" PRIu8 " mode configuration failed\n", channel);
         return -1;
     }
 
     ret = ptrUTIMER->SetCount(channel, ARM_UTIMER_CNTR, UT_INIT_COUNTER_VALUE);
     if (ret != ARM_DRIVER_OK) {
-        printf("utimer channel %d set count failed \n", channel);
+        printf("utimer channel %" PRIu8 " set count failed\n", channel);
         return -1;
     }
 
     ret = ptrUTIMER->SetCount(channel, ARM_UTIMER_CNTR_PTR, UT_MAX_COUNTER_VALUE);
     if (ret != ARM_DRIVER_OK) {
-        printf("utimer channel %d set count failed \n", channel);
+        printf("utimer channel %" PRIu8 " set count failed\n", channel);
         return -1;
     }
 
@@ -202,7 +203,7 @@ static int32_t led_start(uint8_t channel)
 
     ret         = ptrUTIMER->Start(channel);
     if (ret != ARM_DRIVER_OK) {
-        printf("utimer channel %d failed to start \n", channel);
+        printf("utimer channel %" PRIu8 " failed to start\n", channel);
         return -1;
     }
     return 0;
@@ -224,7 +225,7 @@ static int32_t led_set_brightness(uint8_t channel, ARM_UTIMER_COUNTER counter, u
 
     ret         = ptrUTIMER->SetCount(channel, counter, duty_cycle);
     if (ret != ARM_DRIVER_OK) {
-        printf("utimer channel %d set count failed \n", channel);
+        printf("utimer channel %" PRIu8 " set count failed\n", channel);
         return -1;
     }
 
@@ -244,7 +245,7 @@ static int32_t led_stop(uint8_t channel)
 
     ret         = ptrUTIMER->Stop(channel, ARM_UTIMER_COUNTER_CLEAR);
     if (ret != ARM_DRIVER_OK) {
-        printf("utimer channel %d failed to stop \n", channel);
+        printf("utimer channel %" PRIu8 " failed to stop\n", channel);
         return -1;
     }
 
@@ -263,6 +264,7 @@ static void led_breathe_thread(void *pvParameters)
     int32_t            ret;
     uint8_t            channel;
     ARM_UTIMER_COUNTER counter_type;
+    ARG_UNUSED(pvParameters);
 
     printf("*** utimer FreeRTOS demo application for LED brightness control ***\n");
 
@@ -277,7 +279,7 @@ static void led_breathe_thread(void *pvParameters)
     ret = board_utimer_pins_config();
 #endif
     if (ret != 0) {
-        printf("Error in pin-mux configuration: %d\n", ret);
+        printf("Error in pin-mux configuration: %" PRId32 "\n", ret);
         return;
     }
 
@@ -379,7 +381,7 @@ int main(void)
     BaseType_t xReturned = xTaskCreate(led_breathe_thread,
                                        "LED_Breathe_Thread",
                                        216,
-                                       NULL,
+                                       0,
                                        configMAX_PRIORITIES - 1,
                                        &led_demo_xHandle);
     if (xReturned != pdPASS) {

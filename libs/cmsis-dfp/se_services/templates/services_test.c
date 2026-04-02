@@ -72,6 +72,7 @@ static uint32_t test_services_set_ES1_frequency(char *p_test_name, uint32_t serv
 static uint32_t test_services_select_a32_source(char *p_test_name, uint32_t services_handle);
 static uint32_t test_services_select_aclk_source(char *p_test_name, uint32_t services_handle);
 static uint32_t test_services_set_divider(char *p_test_name, uint32_t services_handle);
+static uint32_t test_services_aclk_configure(char *p_test_name, uint32_t services_handle);
 
 static uint32_t test_services_pll_deinit(char *p_test_name, uint32_t services_handle);
 static uint32_t test_services_pll_initialize(char *p_test_name, uint32_t services_handle);
@@ -94,6 +95,8 @@ static uint32_t test_services_get_eui(char *p_test_name, uint32_t services_handl
 static uint32_t test_services_get_device_id(char *p_test_name, uint32_t services_handle);
 static uint32_t test_services_get_ecc_public_key(char *p_test_name, uint32_t services_handle);
 
+static uint32_t test_services_verify_image(char *p_test_name, uint32_t services_handle);
+
 /*******************************************************************************
  *  M A C R O   D E F I N E S
  ******************************************************************************/
@@ -105,6 +108,7 @@ static uint32_t test_services_get_ecc_public_key(char *p_test_name, uint32_t ser
 #define PLL_XTAL_TESTS_ENABLE         0
 #define CPU_BOOT_SEQUENCE_TEST_ENABLE 0 /* Boot a CPU core using the low level APIs */
 #define EXTSYS0_RELEASE_ENABLE        0 /* Test BLE subsystem release on SPARK */
+#define VERIFY_IMAGE_ENABLE           0 /* Verify an image signed with a content certificate chain */
 
 #if defined(RTSS_HE)
 #define CPU_STRING "M55_HE"
@@ -156,7 +160,80 @@ typedef struct {
  *  G L O B A L   V A R I A B L E S
  ******************************************************************************/
 
-static services_test_t s_tests[] = {
+typedef enum {
+    TEST_HEARTBEAT = 0,
+    TEST_PINMUX,
+    TEST_PADCONTROL,
+
+    TEST_CRYPTO_TRNG64_1,
+    TEST_CRYPTO_TRNG32,
+    TEST_CRYPTO_TRNG64_2,
+    TEST_MBEDTLS_SHA,
+    TEST_CRYPTO_LCS,
+
+    TEST_GET_SE_REVISION,
+    TEST_GET_SOCID,
+    TEST_GET_DEVICE_DATA,
+
+    TEST_OTP_READ,
+    TEST_OTP_READ_ILLEGAL,
+
+    TEST_GETTOC,
+    TEST_GETTOC_VIA_NAME_M55_HE,
+    TEST_GETTOC_VIA_NAME_M55_HP,
+    TEST_GETTOC_VIA_CPUID_HE,
+    TEST_GETTOC_VIA_CPUID_HP,
+    TEST_GETTOC_VIA_CPUID_A32,
+    TEST_GETTOC_VERSION,
+    TEST_GETTOC_DATA,
+
+    TEST_BOOT_TOC_A32,
+    TEST_BOOT_CPU,
+    TEST_BOOT_RESET_CPU,
+    TEST_BOOT_RELEASE_EXTSYS0,
+
+    TEST_MBEDTLS_AES,
+    TEST_BOUNDS,
+    TEST_MEM_RETENTION_CONFIG,
+    TEST_EWIC_CONFIG,
+    TEST_VBAT_WAKEUP_CONFIG,
+    TEST_PLL_DEINIT,
+    TEST_PLL_INITIALIZE,
+    TEST_XTAL_IS_STARTED,
+    TEST_CLKPLL_IS_LOCKED,
+    TEST_OSPI_WRITE_KEY,
+    TEST_SET_ES0_FREQUENCY,
+    TEST_SET_ES1_FREQUENCY,
+    TEST_SELECT_OSC_SOURCE,
+    TEST_SELECT_PLL_SOURCE,
+    TEST_ENABLE_CLOCK,
+    TEST_SELECT_A32_SOURCE,
+    TEST_SELECT_ACLK_SOURCE,
+    TEST_SET_DIVIDER,
+    TEST_BOOT_RESET_SOC,
+    TEST_ACLK_CONFIGURE,
+
+    TEST_PLL_XTAL,
+    TEST_CLKPLL_START,
+    TEST_CLKPLL_STOP,
+    TEST_XTAL_START,
+    TEST_XTAL_STOP,
+
+    TEST_CPU_BOOT_SEQUENCE,
+    TEST_DCDC_VOLTAGE,
+    TEST_LDO_VOLTAGE,
+    TEST_BOR_EN,
+    TEST_GET_BUS_FREQUENCIES,
+    TEST_GET_EUI,
+    TEST_GET_DEVICE_ID,
+    TEST_GET_ECC_PUBLIC_KEY,
+
+    TEST_VERIFY_IMAGE,
+
+    TEST_COUNT /* keep this last */
+} test_index_t;
+
+static services_test_t s_tests[TEST_COUNT] = {
     {test_services_heartbeat, "heartbeat       ", false},  /*0*/
     {test_services_pinmux, "pinmux          ", false},     /*1*/
     {test_services_padcontrol, "padcontrol      ", false}, /*2*/
@@ -206,21 +283,23 @@ static services_test_t s_tests[] = {
     {test_services_select_aclk_source, "Select ACLK source      ", false},     /*41*/
     {test_services_set_divider, "Set a clock divider     ", false},            /*42*/
     {test_services_boot_reset_soc, "Reset SOC               ", false},         /*43*/
+    {test_services_aclk_configure, "Configure ACLK          ", false},         /*44*/
 
-    {test_services_pll_xtal, "Test PLL/XTAL sequences", false},     /*44*/
-    {test_services_clkpll_start, "Test CLK/PLL start     ", false}, /*45*/
-    {test_services_clkpll_stop, "Test CLK/PLL stop      ", false},  /*46*/
-    {test_services_xtal_start, "Test XTAL start        ", false},   /*47*/
-    {test_services_xtal_stop, "Test XTAL stop         ", false},    /*48*/
+    {test_services_pll_xtal, "Test PLL/XTAL sequences", false},     /*45*/
+    {test_services_clkpll_start, "Test CLK/PLL start     ", false}, /*46*/
+    {test_services_clkpll_stop, "Test CLK/PLL stop      ", false},  /*47*/
+    {test_services_xtal_start, "Test XTAL start        ", false},   /*48*/
+    {test_services_xtal_stop, "Test XTAL stop         ", false},    /*49*/
 
-    {test_services_cpu_boot_sequence, "Test CPU boot sequence ", false},        /*49*/
-    {test_services_dcdc_voltage, "DCDC voltage control   ", false},             /*50*/
-    {test_services_ldo_voltage, "LDO voltage control    ", false},              /*51*/
-    {test_services_bor_en, "BOR_EN control", false},                            /*52*/
-    {test_services_get_bus_frequencies, "Get BUS frequencies    ", false},      /*53*/
-    {test_services_get_eui, "Get EUI-48/EUI-64 extensions", false},             /*54*/
-    {test_services_get_device_id, "Get 64-bit unique Device ID ", false},       /*55*/
-    {test_services_get_ecc_public_key, "Get the device ECC public key", false}, /*56*/
+    {test_services_cpu_boot_sequence, "Test CPU boot sequence ", false},        /*50*/
+    {test_services_dcdc_voltage, "DCDC voltage control   ", false},             /*51*/
+    {test_services_ldo_voltage, "LDO voltage control    ", false},              /*52*/
+    {test_services_bor_en, "BOR_EN control", false},                            /*53*/
+    {test_services_get_bus_frequencies, "Get BUS frequencies    ", false},      /*54*/
+    {test_services_get_eui, "Get EUI-48/EUI-64 extensions", false},             /*55*/
+    {test_services_get_device_id, "Get 64-bit unique Device ID ", false},       /*56*/
+    {test_services_get_ecc_public_key, "Get the device ECC public key", false}, /*57*/
+    {test_services_verify_image, "Verify an image        ", false},             /*58*/
 };
 
 static SERVICES_toc_data_t     toc_info;    /*!< Global to test harness */
@@ -254,7 +333,7 @@ static char *CPUID_to_string(uint32_t cpu_id)
         p_str = "M55_HE";
         break;
     case 7:
-        p_str = "EXT0";
+        p_str = "RISC-V";
         break;
     case 15:
         p_str = "CM0+  ";
@@ -1377,9 +1456,8 @@ static uint32_t test_services_ospi_write_key(char *p_test_name, uint32_t service
 {
     uint32_t error_code         = SERVICES_REQ_SUCCESS;
     uint32_t service_error_code = 0;
-    uint8_t  key[16] = {
-        0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xA, 0xB, 0xC, 0xD, 0xE, 0xF
-    };
+    uint8_t  key[16] =
+        {0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xA, 0xB, 0xC, 0xD, 0xE, 0xF};
     uint32_t commands[4] = {
     OSPI_WRITE_OTP_KEY_OSPI0,
     OSPI_WRITE_OTP_KEY_OSPI1,
@@ -1535,6 +1613,71 @@ static uint32_t test_services_set_divider(char *p_test_name, uint32_t services_h
                                              0x0,  // divide by 0
                                              &service_error_code);
     PRINT_TEST_RESULT;
+
+    return error_code;
+}
+
+/**
+ * @brief ACLK Configure test
+ */
+static uint32_t test_services_aclk_configure(char *p_test_name, uint32_t services_handle)
+{
+    uint32_t error_code = SERVICES_REQ_SUCCESS;
+    uint32_t service_error_code;
+    uint32_t aclk_entry_delay_orig, aclk_force_st_orig;
+    uint32_t aclk_entry_delay = 5, aclk_force_st = 0;
+
+    TEST_print(services_handle, "** TEST %s:\n", p_test_name);
+
+    // Original values
+    SERVICES_clocks_setting_get(services_handle,
+                                CLOCK_SETTING_ACLK_FORCE_EN,
+                                &aclk_force_st_orig,
+                                &service_error_code);
+    TEST_print(services_handle, "ACLK Force Enable Original: %d\n", aclk_force_st_orig);
+
+    SERVICES_clocks_setting_get(services_handle,
+                                CLOCK_SETTING_ACLK_ENTRY_DELAY,
+                                &aclk_entry_delay_orig,
+                                &service_error_code);
+    TEST_print(services_handle, "ACLK Entry Delay Original: %d\n", aclk_entry_delay_orig);
+
+    // New values
+    SERVICES_clocks_set_aclk(services_handle,
+                             &aclk_entry_delay,
+                             &aclk_force_st,
+                             &service_error_code);
+
+    SERVICES_clocks_setting_get(services_handle,
+                                CLOCK_SETTING_ACLK_FORCE_EN,
+                                &aclk_force_st,
+                                &service_error_code);
+    TEST_print(services_handle, "ACLK Force Enable New: %d\n", aclk_force_st);
+
+    SERVICES_clocks_setting_get(services_handle,
+                                CLOCK_SETTING_ACLK_ENTRY_DELAY,
+                                &aclk_entry_delay,
+                                &service_error_code);
+    TEST_print(services_handle, "ACLK Entry Delay New: %d\n", aclk_entry_delay);
+
+    // Restore original values
+    SERVICES_clocks_set_aclk(services_handle,
+                             &aclk_entry_delay_orig,
+                             &aclk_force_st_orig,
+                             &service_error_code);
+
+    TEST_print(services_handle, "After restoring original values:\n");
+    SERVICES_clocks_setting_get(services_handle,
+                                CLOCK_SETTING_ACLK_FORCE_EN,
+                                &aclk_force_st_orig,
+                                &service_error_code);
+    TEST_print(services_handle, "ACLK Force Enable: %d\n", aclk_force_st_orig);
+
+    SERVICES_clocks_setting_get(services_handle,
+                                CLOCK_SETTING_ACLK_ENTRY_DELAY,
+                                &aclk_entry_delay_orig,
+                                &service_error_code);
+    TEST_print(services_handle, "ACLK Entry Delay: %d\n", aclk_entry_delay_orig);
 
     return error_code;
 }
@@ -1979,23 +2122,28 @@ static uint32_t test_services_get_bus_frequencies(char *p_test_name, uint32_t se
                                 &frequency,
                                 &service_error_code);
     TEST_print(services_handle, "APB frequency: %d\n", frequency);
+
   SERVICES_clocks_set_divider(services_handle, DIVIDER_ACLK, 1, &service_error_code);
   TEST_print(services_handle, "Reduced AXI frequency:\n");
 
   SERVICES_clocks_setting_get(services_handle,
-                              CLOCK_SETTING_AXI_FREQ, &frequency,
-                              &service_error_code);
+                                CLOCK_SETTING_AXI_FREQ,
+                                &frequency,
+                                &service_error_code);
   TEST_print(services_handle, "AXI frequency: %d\n", frequency);
 
   SERVICES_clocks_setting_get(services_handle,
-                              CLOCK_SETTING_AHB_FREQ, &frequency,
-                              &service_error_code);
+                                CLOCK_SETTING_AHB_FREQ,
+                                &frequency,
+                                &service_error_code);
   TEST_print(services_handle, "AHB frequency: %d\n", frequency);
 
   SERVICES_clocks_setting_get(services_handle,
-                              CLOCK_SETTING_APB_FREQ, &frequency,
-                              &service_error_code);
+                                CLOCK_SETTING_APB_FREQ,
+                                &frequency,
+                                &service_error_code);
   TEST_print(services_handle, "APB frequency: %d\n", frequency);
+
     SERVICES_clocks_setting_get(services_handle,
                                 CLOCK_SETTING_SYSREF_FREQ,
                                 &frequency,
@@ -2103,6 +2251,28 @@ static uint32_t test_services_get_ecc_public_key(char *p_test_name, uint32_t ser
 }
 
 /**
+ * @brief Test the service SERVICES_application_verify_image
+ */
+static uint32_t test_services_verify_image(char *p_test_name, uint32_t services_handle)
+{
+    uint32_t error_code = SERVICES_REQ_SUCCESS;
+    uint32_t service_error_code;
+
+    // The image must be loaded at 0x02000000 and its certificate chain at 0x02100000
+    error_code = SERVICES_application_verify_image(services_handle,
+                                                   0x02000000,
+                                                   0x02100000,
+                                                   &service_error_code);
+    TEST_print(services_handle,
+               "** TEST %s error_code=%s service_resp=0x%08X\n",
+               p_test_name,
+               SERVICES_error_to_string(error_code),
+               service_error_code);
+
+    return error_code;
+}
+
+/**
  * @fn    void setup_tests(void)
  * @brief enable/disable individual tests based on configuration
  */
@@ -2116,44 +2286,50 @@ static void setup_tests(void)
 
 #if A32_BOOT_WORKAROUND == 1
     // these tests crash the current B0 device
-    s_tests[21].enabled = false; /*test_services_boot_toc_a32*/
-    s_tests[22].enabled = false; /*test_services_boot_cpu*/
-    s_tests[23].enabled = false; /*test_services_boot_reset_cpu*/
-#endif                           // A32_BOOT_WORKAROUND
+    s_tests[TEST_BOOT_TOC_A32].enabled   = false;
+    s_tests[TEST_BOOT_CPU].enabled       = false;
+    s_tests[TEST_BOOT_RESET_CPU].enabled = false;
+#endif  // A32_BOOT_WORKAROUND
 
 #if EXTSYS0_RELEASE_ENABLE != 1
-    s_tests[24].enabled = false; /*test_services_boot_release_extsys0*/
+    s_tests[TEST_BOOT_RELEASE_EXTSYS0].enabled = false;
 #endif
 
     // disable tests not part of the 'sanity tests' group
-    s_tests[44].enabled = false; /*test_services_pll_xtal*/
-#endif                           // SANITY_TESTS_ENABLE
+    s_tests[TEST_PLL_XTAL].enabled = false;
+#endif  // SANITY_TESTS_ENABLE
 
 #if PLL_XTAL_TESTS_ENABLE == 1
-    s_tests[0].enabled  = true; /*test_services_heartbeat*/
-    s_tests[44].enabled = true; /*test_services_pll_xtal*/
+    s_tests[TEST_HEARTBEAT].enabled = true;
+    s_tests[TEST_PLL_XTAL].enabled  = true;
 #else
 #if PLATFORM_TYPE == FPGA
     /*PLL tests will not work on an FPGA*/
-    s_tests[30].enabled = false; /*test_services_pll_deinit*/
-    s_tests[31].enabled = false; /*test_services_pll_initialize*/
-    s_tests[33].enabled = false; /*test_services_clkpll_is_locked*/
-    s_tests[38].enabled = false; /*test_services_select_pll_source*/
+    s_tests[TEST_PLL_DEINIT].enabled        = false;
+    s_tests[TEST_PLL_INITIALIZE].enabled    = false;
+    s_tests[TEST_CLKPLL_IS_LOCKED].enabled  = false;
+    s_tests[TEST_SELECT_PLL_SOURCE].enabled = false;
 #endif
 #endif
 
-    s_tests[43].enabled = false; /*test_services_boot_reset_soc*/
+    s_tests[TEST_BOOT_RESET_SOC].enabled = false;
 
     /*these static functions were not being called*/
-    s_tests[45].enabled = false; /*test_services_clkpll_start*/
-    s_tests[46].enabled = false; /*test_services_clkpll_stop*/
-    s_tests[47].enabled = false; /*test_services_xtal_start*/
-    s_tests[48].enabled = false; /*test_services_xtal_stop*/
+    s_tests[TEST_CLKPLL_START].enabled   = false;
+    s_tests[TEST_CLKPLL_STOP].enabled    = false;
+    s_tests[TEST_XTAL_START].enabled     = false;
+    s_tests[TEST_XTAL_STOP].enabled      = false;
 
 #if CPU_BOOT_SEQUENCE_TEST_ENABLE == 1
-    s_tests[49].enabled = true; /*test_services_cpu_boot_sequence*/
+    s_tests[TEST_CPU_BOOT_SEQUENCE].enabled = true;
 #else
-    s_tests[49].enabled = false; /*test_services_cpu_boot_sequence*/
+    s_tests[TEST_CPU_BOOT_SEQUENCE].enabled = false;
+#endif
+
+#if VERIFY_IMAGE_ENABLE == 1
+    s_tests[TEST_VERIFY_IMAGE].enabled = true;
+#else
+    s_tests[TEST_VERIFY_IMAGE].enabled = false;
 #endif
 }
 

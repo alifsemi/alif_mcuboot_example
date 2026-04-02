@@ -143,7 +143,11 @@ static void CDC_demo()
      * remove the request altogether to use the default setting that turns on
      * almost everything.
      */
-    runp.memory_blocks  = MRAM_MASK | SRAM0_MASK;
+    #if defined(SRAM0_MASK)
+        runp.memory_blocks  = MRAM_MASK | SRAM0_MASK;
+    #else
+        runp.memory_blocks  = MRAM_MASK;
+    #endif
 
     runp.phy_pwr_gating = MIPI_PLL_DPHY_MASK | MIPI_TX_DPHY_MASK | MIPI_RX_DPHY_MASK | LDO_PHY_MASK;
 

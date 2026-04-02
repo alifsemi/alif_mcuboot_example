@@ -30,6 +30,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <inttypes.h>
 
 /* Project Includes */
 /* include for UART Driver */
@@ -100,7 +101,8 @@ void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer,
 
 void vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName)
 {
-    (void) pxTask;
+    ARG_UNUSED(pxTask);
+    ARG_UNUSED(pcTaskName);
     ASSERT_HANG_LOOP
 }
 
@@ -209,6 +211,7 @@ void Uart_Thread(void *pvParameters)
     uint32_t           ret = 0;
     uint32_t           ulNotificationValue;
     ARM_DRIVER_VERSION version;
+    ARG_UNUSED(pvParameters);
 
 #if (RTE_UART4_CLK_SOURCE == 0) /* CLK_38.4MHz */
     uint32_t service_error_code;
@@ -235,7 +238,7 @@ void Uart_Thread(void *pvParameters)
     /* pin mux and configuration for all device IOs requested from pins.h*/
     ret = board_pins_config();
     if (ret != ARM_DRIVER_OK) {
-        printf("ERROR: Pin configuration failed: %d\n", ret);
+        printf("ERROR: Pin configuration failed: %" PRIu32 "\n", ret);
         return;
     }
 
@@ -283,7 +286,7 @@ void Uart_Thread(void *pvParameters)
         printf("\r\n Error in UART Send.\r\n");
         goto error_poweroff;
     }
-    xTaskNotifyWait(NULL, UART_CB_TX_EVENT, NULL, portMAX_DELAY);
+    xTaskNotifyWait(0, UART_CB_TX_EVENT, 0, portMAX_DELAY);
 
     while (1) {
         /* Get byte from UART */
@@ -295,7 +298,7 @@ void Uart_Thread(void *pvParameters)
         }
 
         /* wait till Receive complete or Receive timeout event comes in isr callback */
-        xTaskNotifyWait(NULL,
+        xTaskNotifyWait(0,
                         (UART_CB_RX_EVENT | UART_CB_RX_TIMEOUT | UART_CB_RX_BREAK),
                         &ulNotificationValue,
                         portMAX_DELAY);
@@ -331,7 +334,7 @@ void Uart_Thread(void *pvParameters)
             } else /* else send back received character. */ {
                 USARTdrv->Send(&cmd, 1);
             }
-            xTaskNotifyWait(NULL, UART_CB_TX_EVENT, NULL, portMAX_DELAY);
+            xTaskNotifyWait(0, UART_CB_TX_EVENT, 0, portMAX_DELAY);
         }
     }
 
@@ -365,7 +368,7 @@ error_uninitialize:
 #endif
 
     /* thread delete */
-    vTaskDelete(NULL);
+    vTaskDelete(0);
 }
 
 /*----------------------------------------------------------------------------
@@ -388,7 +391,7 @@ int main(void)
 
     /* Create application main thread */
     BaseType_t xReturned =
-        xTaskCreate(Uart_Thread, "UartThread", 256, NULL, configMAX_PRIORITIES - 1, &Uart_xHandle);
+        xTaskCreate(Uart_Thread, "UartThread", 256, 0, configMAX_PRIORITIES - 1, &Uart_xHandle);
     if (xReturned != pdPASS) {
         vTaskDelete(Uart_xHandle);
         return -1;

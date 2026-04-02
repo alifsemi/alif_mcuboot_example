@@ -26,6 +26,7 @@
 #include CMSIS_device_header
 
 #include <stdio.h>
+#include <inttypes.h>
 #include "string.h"
 
 /* Project Includes */
@@ -65,7 +66,8 @@ void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer,
 
 void vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName)
 {
-    (void) pxTask;
+    ARG_UNUSED(pxTask);
+    ARG_UNUSED(pcTaskName);
     ASSERT_HANG_LOOP
 }
 
@@ -125,6 +127,7 @@ void MRAM_Thread_entry(void *pvParameters)
     uint32_t addr    = MRAM_ADDR_OFFSET;
     int      cmp     = 0;
     int      err_cnt = 0;
+    ARG_UNUSED(pvParameters);
 
     /* Fill buffer data which needs to write to MRAM. */
     memset(buff_TX, BUFFER_VALUE, sizeof(buff_TX));
@@ -154,7 +157,7 @@ void MRAM_Thread_entry(void *pvParameters)
     for (int i = 0; i < 16; i++) {
         ret = MRAM_drv->ProgramData(addr, buff_TX, BUFFER_SIZE);
         if (ret != BUFFER_SIZE) {
-            printf("\r\n Error: MRAM ProgramData failed: addr:0x%X data:%0x.\r\n",
+            printf("\r\n Error: MRAM ProgramData failed: addr:0x%" PRIX32 "data:0x%08" PRIX32"\r\n",
                    addr,
                    (uint32_t) buff_TX);
             goto error_poweroff;
@@ -168,7 +171,7 @@ void MRAM_Thread_entry(void *pvParameters)
     for (int i = 0; i < 16; i++) {
         ret = MRAM_drv->ReadData(addr, buff_RX, BUFFER_SIZE);
         if (ret != BUFFER_SIZE) {
-            printf("\r\n Error: MRAM ReadData failed: addr:0x%X data:%0x.\r\n",
+            printf("\r\n Error: MRAM ReadData failed: addr:0x%" PRIX32 "data:0x%08" PRIX32"\r\n",
                    addr,
                    (uint32_t) buff_RX);
             goto error_poweroff;
@@ -177,7 +180,7 @@ void MRAM_Thread_entry(void *pvParameters)
         /* compare write and read. */
         cmp = memcmp(buff_TX, buff_RX, BUFFER_SIZE);
         if (cmp != 0) {
-            printf("\r\n Error: MRAM write-read failed: addr:0x%X data:%0x.\r\n",
+            printf("\r\n Error: MRAM write-read failed: addr:0x%" PRIX32 "data:0x%08" PRIX32"\r\n",
                    addr,
                    (uint32_t) buff_RX);
             err_cnt++;
@@ -210,7 +213,7 @@ error_uninitialize:
     }
 
     /* thread delete */
-    vTaskDelete(NULL);
+    vTaskDelete(0);
 
     printf("\r\n XXX MRAM demo thread exiting XXX...\r\n");
 }
@@ -235,7 +238,7 @@ int main(void)
     BaseType_t xReturned = xTaskCreate(MRAM_Thread_entry,
                                        "MRAM_Thread_entry",
                                        256,
-                                       NULL,
+                                       0,
                                        configMAX_PRIORITIES - 1,
                                        &MRAM_xHandle);
     if (xReturned != pdPASS) {

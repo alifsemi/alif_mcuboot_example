@@ -251,8 +251,6 @@ void i3c_master_loopback_demo(void)
         goto error_poweroff;
     }
 
-    sys_busy_loop_us(1000);
-
     /* Reset all slaves' address */
     i3c_cmd.rw     = 0U;
     i3c_cmd.cmd_id = I3C_CCC_RSTDAA(true);
@@ -305,8 +303,6 @@ void i3c_master_loopback_demo(void)
         ((RTE_I3C_BLOCKING_MODE_ENABLE && (ret != ARM_DRIVER_OK))))
     {
         printf("\r\n Error: First attempt failed. retrying \r\n");
-        /* Delay */
-        sys_busy_loop_us(1000);
 
         /* clear callback event flag. */
         cb_event = 0;
@@ -349,13 +345,8 @@ void i3c_master_loopback_demo(void)
     /* i3c Speed Mode Configuration: Normal I3C mode */
     ret = I3Cdrv->Control(I3C_MASTER_SET_BUS_MODE, I3C_BUS_NORMAL_MODE);
 
-    sys_busy_loop_us(1000);
-
     while (1) {
         len = 4;
-
-        /* Delay */
-        sys_busy_loop_us(100);
 
         /* fill any random TX data. */
         tx_data[0] += 1;
@@ -385,7 +376,7 @@ void i3c_master_loopback_demo(void)
         tx_cnt += 1;
 
         /* Delay */
-        sys_busy_loop_us(1000);
+        sys_busy_loop_us(1);
 
         /* clear rx_data buffer */
         rx_data[0] = 0x00;

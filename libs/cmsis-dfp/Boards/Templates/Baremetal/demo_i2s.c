@@ -319,8 +319,8 @@ void DAC_Init(void)
     do {
 #ifdef DAC_PREDEFINED_SAMPLES
         /* Using predefined samples */
-        buf_len = sizeof(hello_samples_24bit_48khz) / sizeof(hello_samples_24bit_48khz[0]);
-        buf     = (uint32_t *) hello_samples_24bit_48khz;
+        buf_len = sizeof(ulHelloSamples24bit48khz) / sizeof(ulHelloSamples24bit48khz[0]);
+        buf     = (uint32_t *) ulHelloSamples24bit48khz;
 #else
         buf_len = NUM_SAMPLES;
         buf     = (uint32_t *) sample_buf;

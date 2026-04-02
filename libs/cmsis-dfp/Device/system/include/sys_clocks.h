@@ -13,8 +13,6 @@
 
 #include "soc.h"
 
-#define PERIPH_CLK_ENA_USB_CKEN (1U << 20) /* Enable clock supply for USB */
-
 #if SOC_FEAT_FORCE_ENABLE_SYSTEM_CLOCKS
 
 #define EXPMST0_CTRL_IPCLK_FORCE (1U << 31) /* Force peripherals functional clocks ON  */
@@ -38,16 +36,6 @@ static inline void enable_force_apb_interface_clk(void)
 static inline void disable_force_apb_interface_clk(void)
 {
     CLKCTL_PER_SLV->EXPMST0_CTRL &= ~EXPMST0_CTRL_PCLK_FORCE;
-}
-
-static inline void enable_usb_periph_clk(void)
-{
-    CLKCTL_PER_MST->PERIPH_CLK_ENA |= PERIPH_CLK_ENA_USB_CKEN;
-}
-
-static inline void disable_usb_periph_clk(void)
-{
-    CLKCTL_PER_MST->PERIPH_CLK_ENA &= ~PERIPH_CLK_ENA_USB_CKEN;
 }
 #endif
 
@@ -75,6 +63,11 @@ extern uint32_t SystemREFClock;
   \brief System HFOSC Clock Frequency (HFOSC Clock)
 */
 extern uint32_t SystemHFOSCClock;
+
+/**
+ * brief System RTSS HE Clock Frequency (RTSS HE Clock)
+ */
+extern uint32_t SystemRTSSHEClock;
 
 /**
   \brief  Get System AXI Clock value.
@@ -110,5 +103,12 @@ uint32_t GetSystemREFClock(void);
    returns the currently configured HFOSC clock value.
  */
 uint32_t GetSystemHFOSClock(void);
+
+/**
+ * brief  Get System RTSS HE Clock value.
+ *
+ * returns the currently configured RTSS HE clock value.
+ */
+uint32_t GetSystemRTSSHEClock(void);
 
 #endif /* SYS_CLOCKS_H */

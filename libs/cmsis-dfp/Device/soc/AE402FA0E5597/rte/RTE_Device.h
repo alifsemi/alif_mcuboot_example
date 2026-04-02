@@ -2560,13 +2560,29 @@
 #define RTE_OSPI0_IRQ_PRIORITY                    0
 
 // <o> OSPI0 Frame format
-//    <0=> Standard
-//    <1=> Dual
-//    <2=> Quad
-//    <3=> Octal
+//    <0=> Standard SPI FRF
+//    <1=> Dual SPI FRF
+//    <2=> Quad SPI FRF
+//    <3=> Octal SPI FRF
+//    <3=> Dual Octal SPI FRF
 // <i> Defines OSPI0 Frame format
-// <i> Default: Octal
+// <i> Default: Octal SPI FRF
 #define RTE_OSPI0_SPI_FRAME_FORMAT                3
+
+// <o> OSPI0 Bus speed
+// <i> Defines the OSPI0 Bus speed
+// <i> Default: 100000000
+#define RTE_OSPI0_BUS_SPEED                       100000000
+
+// <o> OSPI0 Wait Cycles
+// <i> Defines the OSPI0 Wait Cycles for connected device
+// <i> Default: 6
+#define RTE_OSPI0_WAIT_CYCLES                     6
+
+// <o> OSPI0 DFS
+// <i> Defines OSPI0 Data Frame Size
+// <i> Default: 32
+#define RTE_OSPI0_DFS                             32
 
 // <o> OSPI0 TX FIFO Start level <0-255>
 // <i> Defines TX FIFO transfer start level for OSPI0
@@ -2629,17 +2645,17 @@
 // <o> OSPI0 DDR DRIVE EDGE
 // <i> Defines DDR DRIVE EDGE for OSPI0
 // <i> Default: 0
-#define RTE_OSPI0_DDR_DRIVE_EDGE     0
+#define RTE_OSPI0_DDR_DRIVE_EDGE     1
 
 // <o> OSPI0 RXDS Delay <0-23>
 // <i> Defines the delay applied to the RXDS signal of OSPI0
 // <i> Default: 0
-#define RTE_OSPI0_RXDS_DELAY         0
+#define RTE_OSPI0_RXDS_DELAY         11
 
 // <o> OSPI0 Signal Delay <0-23>
 // <i> Defines the delay applied to signals of OSPI0
 // <i> Default: 0
-#define RTE_OSPI0_SIGNAL_DELAY       0
+#define RTE_OSPI0_SIGNAL_DELAY       22
 #endif
 // </e> OSPI0 (Octal Serial Peripheral Interface 0) [Driver_OSPI]
 
@@ -2653,13 +2669,29 @@
 #define RTE_OSPI1_IRQ_PRIORITY                    0
 
 // <o> OSPI1 Frame format
-//    <0=> Standard
-//    <1=> Dual
-//    <2=> Quad
-//    <3=> Octal
+//    <0=> Standard SPI FRF
+//    <1=> Dual SPI FRF
+//    <2=> Quad SPI FRF
+//    <3=> Octal SPI FRF
+//    <3=> Dual Octal SPI FRF
 // <i> Defines OSPI0 Frame format
-// <i> Default: Octal
+// <i> Default: Octal SPI FRF
 #define RTE_OSPI1_SPI_FRAME_FORMAT                3
+
+// <o> OSPI1 Bus speed
+// <i> Defines the OSPI1 Bus speed
+// <i> Default: 100000000
+#define RTE_OSPI1_BUS_SPEED                       100000000
+
+// <o> OSPI1 Wait Cycles
+// <i> Defines the OSPI1 Wait Cycles for connected device
+// <i> Default: 16
+#define RTE_OSPI1_WAIT_CYCLES                     3
+
+// <o> OSPI1 DFS
+// <i> Defines OSPI1 Data Frame Size
+// <i> Default: 32
+#define RTE_OSPI1_DFS                             32
 
 // <o> OSPI1 TX FIFO Start level <0-255>
 // <i> Defines TX FIFO transfer start level for OSPI1
@@ -2735,8 +2767,9 @@
 #define RTE_OSPI1_SIGNAL_DELAY       0
 #endif
 // </e> OSPI1 (Octal Serial Peripheral Interface 1) [Driver_OSPI]
+// </h> OSPI  (Octal Serial Peripheral Interface)
 
-//</h>
+// <h> FLASH
 // <e> FLASH (ISSI FLASH) [Driver_Flash]
 // <i> Configuration settings for Driver_Flash in component ::Drivers:Flash
 #define RTE_ISSI_FLASH 1
@@ -2761,9 +2794,85 @@
 // <i> Defines the number of wait (dummy) cycles needed for fast read operations
 // <i> Default: 16
 #define RTE_ISSI_FLASH_WAIT_CYCLES    16
-
 #endif
 // </e> FLASH (ISSI FLASH) [Driver_Flash]
+
+// <e> FLASH (MX66UW1G FLASH) [Driver_MX66UW1G_FLASH]
+// <i> Configuration settings for Driver_MX66UW1G_FLASH in component ::Drivers:Flash
+#define RTE_MX66UW1G_FLASH 1
+#if RTE_MX66UW1G_FLASH
+
+// <o> MX66UW1G FLASH SIZE
+// <i> MX66UW1G flash density in bytes
+// <i> Default: 0x4000000
+#define RTE_MX66UW1G_FLASH_SIZE           0x4000000
+
+// <o> MX66UW1G FLASH OSPI Instance
+// <i> Defines the OSPI controller instance the MX66UW1G flash is connected to
+// <i> Default: 1
+#define RTE_MX66UW1G_FLASH_OSPI_DRV_NUM   1
+
+// <o> MX66UW1G FLASH OSPI Bus speed
+// <i> Defines the OSPI Bus speed
+// <i> Default: 100000000
+#define RTE_MX66UW1G_FLASH_OSPI_BUS_SPEED 100000000
+
+// <o> MX66UW1G FLASH Wait cycles
+// <i> Defines the number of wait (dummy) cycles needed for fast read operations
+// <i> Default: 10
+#define RTE_MX66UW1G_FLASH_WAIT_CYCLES    10
+#endif
+// </e> FLASH (MX66UW1G FLASH) [Driver_MX66UW1G_FLASH]
+// </h> FLASH
+
+// <h> APS512XXN PSRAM
+// <e> APS512XXN PSRAM [Driver_APS512XXN_PSRAM]
+// <i> Configuration settings for Driver_APS512XXN_PSRAM in component ::Drivers:APS512XXN_PSRAM
+#define RTE_APS512XXN_PSRAM 1
+#if RTE_APS512XXN_PSRAM
+
+// <o> APS512XXN PSRAM Wait cycles
+// <i> Defines the number of wait cycles needed for fast read write operations.
+// <i> Default: 4
+#define RTE_APS512XXN_PSRAM_WAIT_CYCLES            4
+
+// <o> APS512XXN PSRAM Enable Dual Octal Mode
+//    <0=> Disable
+//    <1=> Enable
+// <i> Defines APS512XXN PSRAM SPI Mode.
+// <i> Default: 0
+#define RTE_APS512XXN_PSRAM_DUAL_OCTAL_MODE_ENABLE 1
+
+// <o> APS512XXN PSRAM OSPI slave selection
+//    <0=> SS_0
+//    <1=> SS_1
+// <i> Defines the slave select line for APS512XXN PSRAM.
+// <i> Default: 0
+#define RTE_APS512XXN_PSRAM_OSPI_SS_LINE           0
+#endif
+// </e> APS512XXN PSRAM [Driver_APS512XXN_PSRAM]
+// </h> APS512XXN PSRAM
+
+// <h> S80K HYPERRAM
+// <e> S80K HYPERRAM [Driver_S80K_HYPERRAM]
+// <i> Configuration settings for Driver_S80K_HYPERRAM in component ::Drivers:S80K_HYPERRAM
+#define RTE_S80K_HYPERRAM 1
+#if RTE_S80K_HYPERRAM
+
+// <o> S80K HYPERRAM Wait cycles
+// <i> Defines the number of wait cycles needed for fast read write operations.
+// <i> Default: 3
+#define RTE_S80K_HYPERRAM_WAIT_CYCLES             3
+
+// <o> S80K HYPERRAM SPI MODE
+//    <0=> Octal mode
+//    <1=> Dual Octal mode
+// <i> Defines S80K HYPERRAM SPI Mode.
+// <i> Default: 0
+#define RTE_S80K_HYPERRAM_SPI_MODE                1
+#endif
+// </e> S80K HYPERRAM [Driver_S80K_HYPERRAM]
+// </h> S80K HYPERRAM
 
 // <h> I2S  (Integrated Interchip Sound)
 // <e> I2S0 (Integrated Interchip Sound 0) [Driver_SAI0]
@@ -8053,7 +8162,7 @@
 // <o> Number of bits to shift <0-8>
 // <i> Defines How much bit to shift before storing in sample register.
 // <i> Default: 8
-#define RTE_ADC120_SHIFT_N_BIT         (0)
+#define RTE_ADC120_SHIFT_N_BIT         (8)
 
 // <o> Left or Right shift
 //     <0=> LEFT SHIFT
@@ -9129,6 +9238,36 @@
 // </e> LPI2C (Low Power Inter Integrated Circuit) [Driver_LPI2C1]
 #endif  // defined(RTSS_HE)
 // </h> I2C (Inter Integrated Circuit)
+
+// <h> RANGE_SENSOR (Range Sensor)
+// <e> RANGE_SENSOR (Object Range Measurement Unit) [Driver_RANGE_SENSOR]
+// <i> Configuration settings for Driver_RANGE_SENSOR in component::Drivers:RANGE_SENSOR
+#define RTE_RANGE_SENSOR 1
+
+#if RTE_RANGE_SENSOR
+
+// <e> CH201 (Time of Flight Sensor) [Driver_CH201]
+// <i> Configuration settings for Driver_CH201 in component::Drivers:CH201
+#define RTE_CH201 1
+
+#if RTE_CH201
+
+// <o> CH201 I2C Bus speed range <0-400000>
+// <i> Defines CH201 I2C speed in Hertz
+// <i> Default: 400000
+#define RTE_CH201_I2C_SPEED_HZ   400000
+
+// <o> CH201 RTC calibration pulse range <1-1000>
+// <i> Defines CH201 sensor's internal RTC calculation pulse in millisec
+// <i> Default: 100
+#define RTE_CH201_RTC_CAL_PULSE_MS 100
+
+#endif
+//</e> CH201 (Time of Flight Sensor) [Driver_CH201]
+
+#endif
+//</e> RANGE_SENSOR (Object Range Measurement Unit) [Driver_RANGE_SENSOR]
+//</h> RANGE_SENSOR (Range Sensor)
 
 // <e> DMA0 (Direct Memory Access Controller) [Driver_DMA0]
 // <i> Configuration settings for Driver_DMA0 in component ::Drivers:DMA

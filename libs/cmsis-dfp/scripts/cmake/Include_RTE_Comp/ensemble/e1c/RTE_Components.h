@@ -22,8 +22,18 @@
 /* AlifSemiconductor::CMSIS Driver.SOC Peripherals.IO */
 #define RTE_Drivers_IO                      1 /* Driver IO                                */
 
+/* AlifSemiconductor::Device.SOC Peripherals.ADC */
+#define RTE_Drivers_ADC                     1 /* Driver ADC                               */
 /* AlifSemiconductor::Device.SOC Peripherals.CANFD */
 #define RTE_Drivers_CANFD                   1 /* Driver CANFD                             */
+/* AlifSemiconductor::Device.SOC Peripherals.CDC200 */
+#define RTE_Drivers_CDC200                  1 /* Driver CDC200                            */
+/* AlifSemiconductor::BSP.External peripherals.ILI9806E LCD panel  */
+#define RTE_Drivers_MIPI_DSI_ILI9806E_PANEL 1 /* Driver ILI9806E LCD panel                */
+/* AlifSemiconductor::BSP.External peripherals.ILI6122 LCD panel   */
+#define RTE_Drivers_CDC_ILI6122_PANEL       1 /* Driver ILI6122  LCD panel                */
+/* AlifSemiconductor::BSP.External peripherals.ILI6122 LCD panel   */
+#define RTE_Drivers_MIPI_DSI_ILI9488_PANEL  1 /* Driver ILI9488  LCD panel                */
 /* AlifSemiconductor::CMSIS Driver.CMP */
 #define RTE_Drivers_CMP                     1 /* Driver CMP                               */
 /* AlifSemiconductor::Device.SOC Peripherals.CRC */
@@ -34,14 +44,16 @@
 #define RTE_Drivers_SD                      1 /* Driver SD                                */
 /* AlifSemiconductor::Device.SOC Peripherals.OSPI Controller */
 #define RTE_Drivers_OSPI                    1 /* Driver OSPI                              */
-/* AlifSemiconductor::BSP.OSPI Hyper RAM XIP     */
-#define RTE_Drivers_XIP_HYPERRAM            1 /* Driver Hyper RAM XIP                     */
+/* AlifSemiconductor::BSP.OSPI PSRAM XIP     */
+#define RTE_Drivers_XIP_PSRAM               1 /* Driver PSRAM XIP                         */
 /* AlifSemiconductor::BSP.OSPI FLASH XIP Core   */
 #define RTE_Drivers_ISSI_FLASH_XIP_CORE     1 /* Driver OSPI XIP CORE                     */
 /* AlifSemiconductor::BSP.OSPI FLASH XIP Utility  */
 #define RTE_Drivers_ISSI_FLASH_XIP_UTILITY  1 /* Driver OSPI XIP UTILITY                  */
 /* AlifSemiconductor::BSP.External peripherals.OSPI Flash ISSI     */
-#define RTE_Drivers_ISSI_FLASH   1 /* Driver Flash ISSI                        */
+#define RTE_Drivers_ISSI_FLASH              1 /* Driver Flash ISSI                        */
+/* AlifSemiconductor::CMSIS Driver.Touchscreen.GT911 */
+#define RTE_Drivers_GT911                   1 /* Driver GT911                             */
 /* AlifSemiconductor::CMSIS Driver.SAI.I2S */
 #define RTE_Drivers_SAI                     1 /* Driver SAI                               */
 /* AlifSemiconductor::CMSIS Driver.SOC Peripherals.I3C */
@@ -64,14 +76,24 @@
 #define RTE_Drivers_RTC                     1 /* Driver RTC                               */
 /* AlifSemiconductor::CMSIS Driver.SOC Peripherals.UTIMER */
 #define RTE_Drivers_UTIMER                  1 /* Driver UTIMER                            */
+/* AlifSemiconductor::CMSIS Driver.SOC Peripherals.WDT */
+#define RTE_Drivers_WDT                     1 /* Driver WDT                               */
+/* AlifSemiconductor::Device.SOC Peripherals.WiFi */
+#define RTE_Drivers_WIFI                    0 /* Driver WiFi                              */
+/* AlifSemiconductor::Device.SOC Peripherals.DMA */
+#define RTE_Drivers_DMA                     1 /* Driver DMA                               */
 /* AlifSemiconductor::Device.SOC Peripherals.I2C */
 #define RTE_Drivers_I2C                     1 /* Driver I2C                               */
 /* AlifSemiconductor::Device.SOC Peripherals.MIPI DSI */
 #define RTE_Drivers_MIPI_DSI                1 /* Driver MIPI DSI                          */
+/* AlifSemiconductor::Device.SOC Peripherals MIPI_DSI_CSI2_DPHY */
+#define RTE_Drivers_MIPI_DSI_CSI2_DPHY      1 /* Driver MIPI DSI CSI2 DHY                 */
 /* AlifSemiconductor::BSP.External peripherals Ethernet PHY */
 #define RTE_Drivers_PHY_GENERIC             1 /* Driver Phy generic                       */
 /* AlifSemiconductor::BSP.External peripherals Ethernet MAC */
 #define RTE_Drivers_ETH_MAC                 1 /* Driver Ethernet MAC                      */
+/* AlifSemiconductor::Device.SOC Peripherals.CPI */
+#define RTE_Drivers_CPI                     1 /* Driver CPI                               */
 /* AlifSemiconductor::CMSIS Driver.GPIO */
 #define RTE_Drivers_GPIO                    1 /* Driver GPIO                              */
 /* AlifSemiconductor::Device.SOC Peripherals.WM8904 */

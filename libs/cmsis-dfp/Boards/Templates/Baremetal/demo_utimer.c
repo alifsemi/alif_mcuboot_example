@@ -74,7 +74,7 @@ ARM_DRIVER_GPIO       *ptrCapt1GPO = &ARM_Driver_GPIO_(BOARD_UT_CAPTURE_MODE_GPO
 #endif
 
 /* Delay to wait for UTIMER interrupt */
-#define UTIMER_DELAY_MS(n)      for (uint32_t count = 0; count < (n + 20); count++) {  \
+#define UTIMER_DELAY_MS(n)      for (uint32_t count = 0; count < (n + 50); count++) {  \
                                     sys_busy_loop_us(1000); \
                                 }
 

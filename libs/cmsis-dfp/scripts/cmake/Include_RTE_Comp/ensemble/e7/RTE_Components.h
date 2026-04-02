@@ -44,8 +44,8 @@
 #define RTE_Drivers_SD                      1 /* Driver SD                                */
 /* AlifSemiconductor::Device.SOC Peripherals.OSPI Controller */
 #define RTE_Drivers_OSPI                    1 /* Driver OSPI                              */
-/* AlifSemiconductor::BSP.OSPI Hyper RAM XIP     */
-#define RTE_Drivers_XIP_HYPERRAM            1 /* Driver Hyper RAM XIP                     */
+/* AlifSemiconductor::BSP.OSPI PSRAM XIP     */
+#define RTE_Drivers_XIP_PSRAM               1 /* Driver PSRAM XIP                         */
 /* AlifSemiconductor::BSP.OSPI FLASH XIP Core   */
 #define RTE_Drivers_ISSI_FLASH_XIP_CORE     1 /* Driver OSPI XIP CORE                     */
 /* AlifSemiconductor::BSP.OSPI FLASH XIP Utility  */
@@ -122,10 +122,10 @@
 #define RTE_Drivers_BMI323                  1 /* Driver BMI323                            */
 /* AlifSemiconductor::CMSIS Driver.MCI                */
 #define RTE_Drivers_MCI                     1 /* Driver MCI                               */
-/* AlifSemiconductor::Device.SOC STDIN Retargetting */
-//#define RTE_CMSIS_Compiler_STDIN            /* Enable/Disable Re targetting for STDIN   */
-/* AlifSemiconductor::Device.SOC STDOUT Retargetting */
-//#define RTE_CMSIS_Compiler_STDOUT           /* Enable/Disable Re targetting for STDOUT  */
-/* AlifSemiconductor::Device.SOC STDERR Retargetting */
-//define RTE_CMSIS_Compiler_STDERR            /* Enable/Disable Re targetting for STDERR  */
+/* AlifSemiconductor::Device.SOC STDIN Retargeting    */
+//#define RTE_CMSIS_Compiler_STDIN            /* Enable/Disable Re-targeting for STDIN    */
+/* AlifSemiconductor::Device.SOC STDOUT Retargeting   */
+//#define RTE_CMSIS_Compiler_STDOUT           /* Enable/Disable Re-targeting for STDOUT   */
+/* AlifSemiconductor::Device.SOC STDERR Retargeting   */
+//#define RTE_CMSIS_Compiler_STDERR           /* Enable/Disable Re-targeting for STDERR   */
 #endif /* RTE_COMPONENTS_H */

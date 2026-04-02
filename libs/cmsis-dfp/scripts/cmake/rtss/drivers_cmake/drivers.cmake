@@ -3,7 +3,8 @@ set (DRIVERS_INC            "${ALIF_CMSIS_DRIVER_DIR}/Include;\
                              ${ALIF_CMSIS_DRIVER_DIR}/Source;\
                              ${ALIF_ENSEMBLE_DRIVERS_DIR}/include;\
                              ${ALIF_CMSIS_DRIVER_DIR}/Include/config;\
-                             ${ALIF_COMPONENTS_DIR}/Include")
+                             ${ALIF_COMPONENTS_DIR}/Include;\
+                             ${ALIF_DEV_SRC_DIR}/libs/isp/inc")
 
 # Setting variables for OSPI drivers
 set (OSPI_XIP_DIR                       "${ALIF_DEV_SRC_DIR}/ospi_xip")
@@ -49,6 +50,9 @@ target_sources(${DRIVER_LIB} PRIVATE
     #IO Driver
     $<$<BOOL:${ENABLE_IO}>:${ALIF_CMSIS_DRIVER_SRC_DIR}/Driver_IO.c>
 
+    #Common file for ADC, DAC and CMP
+    $<$<OR:$<BOOL:${ENABLE_CMP}>,$<BOOL:${ENABLE_ADC}>,$<BOOL:${ENABLE_DAC}>>:${ALIF_ENSEMBLE_DRIVERS_SRC_DIR}/sys_ctrl_analog.c>
+
     #ADC Driver
     $<$<BOOL:${ENABLE_ADC}>:${ALIF_ENSEMBLE_DRIVERS_SRC_DIR}/adc.c>
     $<$<BOOL:${ENABLE_ADC}>:${ALIF_CMSIS_DRIVER_SRC_DIR}/Driver_ADC.c>
@@ -86,9 +90,10 @@ target_sources(${DRIVER_LIB} PRIVATE
     $<$<BOOL:${ENABLE_OSPI}>:${ALIF_ENSEMBLE_DRIVERS_SRC_DIR}/ospi.c>
     $<$<BOOL:${ENABLE_OSPI}>:${ALIF_CMSIS_DRIVER_SRC_DIR}/Driver_OSPI.c>
 
-    #Hyper RAM XIP Driver
-    $<$<BOOL:${ENABLE_XIP_HYPERRAM}>:${ALIF_ENSEMBLE_DRIVERS_SRC_DIR}/ospi_hyperram_xip.c>
-    $<$<BOOL:${ENABLE_XIP_HYPERRAM}>:${ALIF_COMPONENTS_SRC_DIR}/S80K_HyperRAM.c>
+    #PSRAM XIP Driver
+    $<$<BOOL:${ENABLE_XIP_PSRAM}>:${ALIF_ENSEMBLE_DRIVERS_SRC_DIR}/ospi_psram_xip.c>
+    $<$<AND:$<BOOL:${ENABLE_XIP_PSRAM}>,$<OR:$<BOOL:${ENABLE_E4_DEVKIT}>,$<BOOL:${ENABLE_E8_DEVKIT}>>>:${ALIF_COMPONENTS_SRC_DIR}/S80K_HyperRAM.c>
+    $<$<AND:$<BOOL:${ENABLE_XIP_PSRAM}>,$<OR:$<BOOL:${ENABLE_E4_DEVKIT}>,$<BOOL:${ENABLE_E8_DEVKIT}>>>:${ALIF_COMPONENTS_SRC_DIR}/APS512XXN_PSRAM.c>
 
     #ISSI Flash XIP Core
     $<$<BOOL:${ENABLE_ISSI_FLASH_XIP_CORE}>:${OSPI_SRC_DIR}/ospi/ospi_drv.c>
@@ -99,6 +104,9 @@ target_sources(${DRIVER_LIB} PRIVATE
 
     #ISSI FLASH Driver ENABLE_ISSI_FLASH
     $<$<BOOL:${ENABLE_ISSI_FLASH}>:${ALIF_COMPONENTS_SRC_DIR}/IS25WX256.c>
+
+    #MX66UW1G FLASH Driver ENABLE_MX66UW1G_FLASH
+    $<$<AND:$<BOOL:${ENABLE_MX66UW1G_FLASH}>,$<OR:$<BOOL:${ENABLE_E4_DEVKIT}>,$<BOOL:${ENABLE_E8_DEVKIT}>>>:${ALIF_COMPONENTS_SRC_DIR}/MX66UW1G.c>
 
     #GT911 Driver
     $<$<BOOL:${ENABLE_GT911}>:${ALIF_COMPONENTS_SRC_DIR}/GT911_touch_driver.c>
@@ -221,4 +229,7 @@ target_sources(${DRIVER_LIB} PRIVATE
 
     #MCI Driver
     $<$<AND:$<BOOL:${ENABLE_MCI}>,$<STREQUAL:${OS},FREE-RTOS>>:${ALIF_CMSIS_DRIVER_SRC_DIR}/Driver_MCI.c>
+
+    #ISP Driver
+    $<$<BOOL:${ENABLE_ISP}>:${ALIF_CMSIS_DRIVER_SRC_DIR}/Driver_ISP.c>
 )

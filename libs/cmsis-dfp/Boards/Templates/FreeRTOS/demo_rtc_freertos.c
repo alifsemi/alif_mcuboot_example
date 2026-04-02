@@ -24,6 +24,7 @@
 /* System Includes */
 #include <stdio.h>
 #include <stdlib.h>
+#include <inttypes.h>
 
 /*RTOS Includes */
 #include "RTE_Components.h"
@@ -66,7 +67,8 @@ void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer,
 
 void vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName)
 {
-    (void) pxTask;
+    ARG_UNUSED(pxTask);
+    ARG_UNUSED(pcTaskName);
 
     ASSERT_HANG_LOOP
 }
@@ -137,6 +139,7 @@ void rtc_demo_Thread(void *pvParameters)
     uint32_t   timeout = 5;
     int        ret     = 0;
     BaseType_t xReturned;
+    ARG_UNUSED(pvParameters);
 
     ARM_DRIVER_VERSION   version;
     ARM_RTC_CAPABILITIES capabilities;
@@ -173,7 +176,7 @@ void rtc_demo_Thread(void *pvParameters)
             goto error_poweroff;
         }
 
-        printf("\r\n Setting alarm after %d counts into the future: \r\n", timeout);
+        printf("\r\n Setting alarm after %" PRIu32 " counts into the future: \r\n", timeout);
         ret = RTCdrv->Control(ARM_RTC_SET_ALARM, val + timeout);
         if (ret != ARM_DRIVER_OK) {
             printf("\r\n Error: RTC Could not set alarm\n");
@@ -181,7 +184,7 @@ void rtc_demo_Thread(void *pvParameters)
         }
 
         /* wait till alarm event comes in isr callback */
-        xReturned = xTaskNotifyWait(NULL, RTC_ALARM_EVENT, NULL, portMAX_DELAY);
+        xReturned = xTaskNotifyWait(0, RTC_ALARM_EVENT, 0, portMAX_DELAY);
         if (xReturned != pdTRUE) {
             printf("Error: RTC tx_event_flags_get\n");
             goto error_poweroff;
@@ -210,7 +213,7 @@ error_uninitialize:
     printf("\r\n XXX RTC demo thread exiting XXX...\r\n");
 
     /* thread delete */
-    vTaskDelete(NULL);
+    vTaskDelete(0);
 }
 
 /*----------------------------------------------------------------------------
@@ -232,7 +235,7 @@ int main(void)
     BaseType_t xReturned = xTaskCreate(rtc_demo_Thread,
                                        "rtc_demo_Thread",
                                        256,
-                                       NULL,
+                                       0,
                                        configMAX_PRIORITIES - 1,
                                        &rtc_xHandle);
     if (xReturned != pdPASS) {

@@ -189,6 +189,7 @@ if [ $ARGUMENTS_PASSED -gt 0 ] ; then
     declare -a cfg_build_presets=(
         "armclang,armclang_build,armclang_build_test"
         "gcc,gcc_build,gcc_build_test"
+        "clang,clang_build,clang_build_test"
     )
 
     # Check if str is empty AND num is greater than zero

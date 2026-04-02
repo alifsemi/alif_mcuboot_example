@@ -346,7 +346,7 @@ static void I2C_Thread(void *pvParameters)
                                  portMAX_DELAY);
 
     if (events != I2C_TWO_WAY_TRANSFER_DONE) {
-        printf("Error: Master transmit/slave receive failed \n");
+        printf("Error: Master transmit/slave receive failed\n");
     }
 
     /* Compare received data. */
@@ -356,8 +356,8 @@ static void I2C_Thread(void *pvParameters)
     if (memcmp(&SLV_RX_BUF, &MST_TX_BUF, MST_BYTE_TO_TRANSMIT))
 #endif
     {
-        printf("\n Error: Master transmit/slave receive failed \n");
-        printf("\n ---Stop--- \r\n wait forever >>> \n");
+        printf("\n Error: Master transmit/slave receive failed\n");
+        printf("\n ---Stop--- \r\n wait forever >>>\n");
         WAIT_FOREVER_LOOP
     }
 
@@ -391,7 +391,7 @@ static void I2C_Thread(void *pvParameters)
                                  portMAX_DELAY);
 
     if (events != I2C_TWO_WAY_TRANSFER_DONE) {
-        printf("Error: Master receive/slave transmit failed \n");
+        printf("Error: Master receive/slave transmit failed\n");
     }
 
     /* Compare received data. */
@@ -402,10 +402,10 @@ static void I2C_Thread(void *pvParameters)
 #endif
     {
         printf("\n Error: Master receive/slave transmit failed\n");
-        printf("\n ---Stop--- \r\n wait forever >>> \n");
+        printf("\n ---Stop--- \r\n wait forever >>>\n");
         WAIT_FOREVER_LOOP
     }
-    printf("\n >>> I2C Communication completed without any error <<< \n");
+    printf("\n >>> I2C Communication completed without any error <<<\n");
 
 error_poweroff:
     /* Power off I2C peripheral */
@@ -432,7 +432,7 @@ error_uninitialize:
     }
 
     printf("\r\n >>> I2C demo thread exiting <<<\r\n");
-    printf("\n ---END--- \r\n wait forever >>> \n");
+    printf("\n ---END--- \r\n wait forever >>>\n");
     WAIT_FOREVER_LOOP
 }
 
@@ -461,7 +461,7 @@ int main(void)
     BaseType_t xReturned = xTaskCreate(I2C_Thread,
                                        "I2C_Thread",
                                        TASK_STACK_SIZE,
-                                       NULL,
+                                       0,
                                        configMAX_PRIORITIES - 1,
                                        &i2c_xHandle);
     if (xReturned != pdPASS) {

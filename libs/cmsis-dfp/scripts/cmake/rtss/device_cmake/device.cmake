@@ -112,5 +112,41 @@ include_directories (${DEVICE_INC})
 # Collecting Source files
 file (GLOB DEVICE_SRC           "${DEVICE_COMMON_SRC}/*.c" "${DEVICE_SYSTEM_SRC}/*.c")
 
+if(${CFG_DMA_ENABLE})
+    message(STATUS              "${Yellow}📣 ⚡⚡⚡ DMA ENABLE CHANGE STARTS⚡⚡⚡${ColourReset}")
+    set(RTE_DEVICE_FILE         "${DEVICE_SKU_RTE}/RTE_Device.h")
+    file(READ   ${RTE_DEVICE_FILE}  FILE_CONTENTS)
+    set(DMA_TEXT   "_DMA_ENABLE")
+
+    # Match: #define <NAME>    0
+    string(REGEX REPLACE
+        "(#define[ \t]+RTE_[A-Z0-9_]+${DMA_TEXT}[ \t]+)0"
+        "\\11"
+        FILE_CONTENTS
+        "${FILE_CONTENTS}"
+    )
+
+    file(WRITE  ${RTE_DEVICE_FILE}  "${FILE_CONTENTS}")
+    message(STATUS              "${Yellow}📣 ⚡⚡⚡ DMA ENABLE CHANGE ENDS  ⚡⚡⚡${ColourReset}")
+endif()
+
+if(${CFG_BLOCKING_MODE_ENABLE})
+    message(STATUS              "${Yellow}📣 ⚡⚡⚡ BLOCKING MODE ENABLE CHANGE STARTS⚡⚡⚡${ColourReset}")
+    set(RTE_DEVICE_FILE         "${DEVICE_SKU_RTE}/RTE_Device.h")
+    file(READ   ${RTE_DEVICE_FILE}  FILE_CONTENTS)
+    set(BLOCKING_MODE_ENABLE_TEXT   "_BLOCKING_MODE_ENABLE")
+
+    # Match: #define <NAME>    0
+    string(REGEX REPLACE
+        "(#define[ \t]+RTE_[A-Z0-9_]+${BLOCKING_MODE_ENABLE_TEXT}[ \t]+)0"
+        "\\11"
+        FILE_CONTENTS
+        "${FILE_CONTENTS}"
+    )
+
+    file(WRITE  ${RTE_DEVICE_FILE}  "${FILE_CONTENTS}")
+    message(STATUS              "${Yellow}📣 ⚡⚡⚡ BLOCKING MODE ENABLE CHANGE ENDS  ⚡⚡⚡${ColourReset}")
+endif()
+
 set (DEVICE_LIB     "DEVICE")
-add_library (${DEVICE_LIB} STATIC ${DEVICE_SRC})
+add_library (${DEVICE_LIB}  STATIC  ${DEVICE_SRC})

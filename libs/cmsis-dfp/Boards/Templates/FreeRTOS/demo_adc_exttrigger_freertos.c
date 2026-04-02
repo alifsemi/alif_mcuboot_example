@@ -35,6 +35,7 @@
 
 /* Include */
 #include <stdio.h>
+#include <inttypes.h>
 #include "string.h"
 #include "app_utils.h"
 
@@ -60,23 +61,23 @@
 // Set to 1: Use Conductor-generated pin configuration (from pins.h).
 #define USE_CONDUCTOR_TOOL_PINS_CONFIG 0
 
-static volatile uint32_t cb_compare_a_status = 0;
+//static volatile uint32_t cb_compare_a_status;
 
 /* UTIMER0 Driver instance */
 extern ARM_DRIVER_UTIMER Driver_UTIMER0;
 ARM_DRIVER_UTIMER       *pxUTIMERDrv = &Driver_UTIMER0;
 
 /* Macro for ADC12 and ADC24 */
-#define ADC12        1
-#define ADC24        0
+#define ADC_12        1
+#define ADC_24        0
 
-/* For ADC12 use ADC_INSTANCE ADC12  */
-/* For ADC24 use ADC_INSTANCE ADC24  */
+/* For ADC_12 use ADC_INSTANCE ADC12  */
+/* For ADC_24 use ADC_INSTANCE ADC24  */
 
-#define ADC_INSTANCE ADC12
-// #define ADC_INSTANCE         ADC24
+#define ADC_INSTANCE ADC_12
+// #define ADC_INSTANCE         ADC_24
 
-#if (ADC_INSTANCE == ADC12)
+#if (ADC_INSTANCE == ADC_12)
 /* Instance for ADC12 */
 extern ARM_DRIVER_ADC  ARM_Driver_ADC12(BOARD_ADC12_INSTANCE);
 static ARM_DRIVER_ADC *pxADCDrv = &ARM_Driver_ADC12(BOARD_ADC12_INSTANCE);
@@ -123,7 +124,8 @@ void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer,
 
 void vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName)
 {
-    (void) pxTask;
+    ARG_UNUSED(pxTask);
+    ARG_UNUSED(pcTaskName);
 
     ASSERT_HANG_LOOP
 }
@@ -215,7 +217,7 @@ static int32_t board_adc_pins_config(void)
 {
     int32_t ret = 0U;
 
-    if (ADC_INSTANCE == ADC12) {
+    if (ADC_INSTANCE == ADC_12) {
         /* ADC122 channel 0 */
         ret = pinconf_set(PORT_(BOARD_ADC12_CH0_GPIO_PORT),
                           BOARD_ADC12_CH0_GPIO_PIN,
@@ -227,7 +229,7 @@ static int32_t board_adc_pins_config(void)
         }
     }
 
-    if (ADC_INSTANCE == ADC24) {
+    if (ADC_INSTANCE == ADC_24) {
         /* ADC24 channel 0 */
         ret = pinconf_set(PORT_(BOARD_ADC24_CH0_POS_GPIO_PORT),
                           BOARD_ADC24_CH0_POS_GPIO_PIN,
@@ -264,6 +266,7 @@ static void prvUtimerCompareModeDemo(void *pvParameters)
     uint8_t    ucChannel = 0;
     uint32_t   ulCountArray[3];
     BaseType_t xReturned;
+    ARG_UNUSED(pvParameters);
 
     /*
      * utimer channel 0 is configured for utimer compare mode (driver A).
@@ -287,78 +290,78 @@ static void prvUtimerCompareModeDemo(void *pvParameters)
     ulCountArray[1] = 0x17D78400;  /*< over flow count value >*/
     ulCountArray[2] = 0xBEBC200;   /*< compare a/b value>*/
 
-    xReturned       = xTaskNotifyWait(NULL, UTIMER_TASK_START, NULL, portMAX_DELAY);
+    xReturned       = xTaskNotifyWait(0, UTIMER_TASK_START, 0, portMAX_DELAY);
     if (xReturned != pdTRUE) {
-        printf("\n\r Task Wait Time out expired \n\r");
+        printf("\n\r Task Wait Time out expired\n\r");
         WAIT_FOREVER_LOOP
     }
 
     lRet = pxUTIMERDrv->Initialize(ucChannel, prvUtimerCompareModeCallBack);
     if (lRet != ARM_DRIVER_OK) {
-        printf("utimer channel %d failed initialize \n", ucChannel);
+        printf("utimer channel %" PRId8 " failed initialize\n", ucChannel);
         return;
     }
 
     lRet = pxUTIMERDrv->PowerControl(ucChannel, ARM_POWER_FULL);
     if (lRet != ARM_DRIVER_OK) {
-        printf("utimer channel %d failed power up \n", ucChannel);
+        printf("utimer channel %" PRId8 " failed power up\n", ucChannel);
         goto error_compare_mode_uninstall;
     }
 
     lRet = pxUTIMERDrv->ConfigCounter(ucChannel, ARM_UTIMER_MODE_COMPARING, ARM_UTIMER_COUNTER_UP);
     if (lRet != ARM_DRIVER_OK) {
-        printf("utimer channel %d mode configuration failed \n", ucChannel);
+        printf("utimer channel %" PRId8 " mode configuration failed\n", ucChannel);
         goto error_compare_mode_poweroff;
     }
 
     lRet = pxUTIMERDrv->SetCount(ucChannel, ARM_UTIMER_CNTR, ulCountArray[0]);
     if (lRet != ARM_DRIVER_OK) {
-        printf("utimer channel %d set count failed \n", ucChannel);
+        printf("utimer channel %" PRId8 " set count failed\n", ucChannel);
         goto error_compare_mode_poweroff;
     }
 
     lRet = pxUTIMERDrv->SetCount(ucChannel, ARM_UTIMER_CNTR_PTR, ulCountArray[1]);
     if (lRet != ARM_DRIVER_OK) {
-        printf("utimer channel %d set count failed \n", ucChannel);
+        printf("utimer channel %" PRId8 " set count failed\n", ucChannel);
         goto error_compare_mode_poweroff;
     }
 
     lRet = pxUTIMERDrv->SetCount(ucChannel, ARM_UTIMER_COMPARE_A, ulCountArray[2]);
     if (lRet != ARM_DRIVER_OK) {
-        printf("utimer channel %d set count failed \n", ucChannel);
+        printf("utimer channel %" PRId8 " set count failed\n", ucChannel);
         goto error_compare_mode_poweroff;
     }
 
     lRet = pxUTIMERDrv->Start(ucChannel);
     if (lRet != ARM_DRIVER_OK) {
-        printf("utimer channel %d failed to start \n", ucChannel);
+        printf("utimer channel %" PRId8 " failed to start\n", ucChannel);
         goto error_compare_mode_poweroff;
     }
 
     /* Waiting for the callback */
-    xReturned = xTaskNotifyWait(NULL, UTIMER_COMPARE_A, NULL, portMAX_DELAY);
+    xReturned = xTaskNotifyWait(0, UTIMER_COMPARE_A, 0, portMAX_DELAY);
     if (xReturned != pdTRUE) {
-        printf("\n\r Task Wait Time out expired \n\r");
+        printf("\n\r Task Wait Time out expired\n");
         WAIT_FOREVER_LOOP
     }
 
     lRet = pxUTIMERDrv->Stop(ucChannel, ARM_UTIMER_COUNTER_CLEAR);
     if (lRet != ARM_DRIVER_OK) {
-        printf("utimer channel %d failed to stop \n", ucChannel);
+        printf("utimer channel %" PRId8 " failed to stop\n", ucChannel);
     }
 
 error_compare_mode_poweroff:
 
     lRet = pxUTIMERDrv->PowerControl(ucChannel, ARM_POWER_OFF);
     if (lRet != ARM_DRIVER_OK) {
-        printf("utimer channel %d failed power off \n", ucChannel);
+        printf("utimer channel %" PRId8 " failed power off\n", ucChannel);
     }
 
 error_compare_mode_uninstall:
 
     lRet = pxUTIMERDrv->Uninitialize(ucChannel);
     if (lRet != ARM_DRIVER_OK) {
-        printf("utimer channel %d failed to un-initialize \n", ucChannel);
+        printf("utimer channel %" PRId8 " failed to un-initialize\n", ucChannel);
     }
 
     /* Task delete */
@@ -382,12 +385,13 @@ static void prvAdcExtTriggerDemo(void *pvParameters)
     BaseType_t         xReturned;
     BaseType_t         xResult = pdFALSE;
     ARM_DRIVER_VERSION xVersion;
+    ARG_UNUSED(pvParameters);
 
 #if USE_CONDUCTOR_TOOL_PINS_CONFIG
     /* pin mux and configuration for all device IOs requested from pins.h*/
     lRet = board_pins_config();
     if (lRet != 0) {
-        printf("Error in pin-mux configuration: %d\n", lRet);
+        printf("Error in pin-mux configuration: %" PRId32 "\n", lRet);
         return;
     }
 
@@ -398,7 +402,7 @@ static void prvAdcExtTriggerDemo(void *pvParameters)
      */
     lRet = board_adc_pins_config();
     if (lRet != 0) {
-        printf("Error in pin-mux configuration: %d\n", lRet);
+        printf("Error in pin-mux configuration: %" PRId32 "\n", lRet);
         return;
     }
 #endif
@@ -412,14 +416,14 @@ static void prvAdcExtTriggerDemo(void *pvParameters)
                                                /*bool enable   */ true,
                                                &ulServiceErrorCode);
     if (ulErrorCode) {
-        printf("SE Error: 160 MHz clk enable = %d\n", ulErrorCode);
+        printf("SE Error: 160 MHz clk enable = %" PRId32 "\n", ulErrorCode);
         return;
     }
 
     printf("\r\n >>> ADC demo starting up!!! <<< \r\n");
 
     xVersion = pxADCDrv->GetVersion();
-    printf("\r\n ADC version api:%X driver:%X...\r\n", xVersion.api, xVersion.drv);
+    printf("\r\n ADC version api:%" PRIx16 " driver:%" PRIx16 "\r\n", xVersion.api, xVersion.drv);
 
     /* Initialize ADC driver */
     lRet = pxADCDrv->Initialize(prvAdcConversionCallBack);
@@ -442,7 +446,7 @@ static void prvAdcExtTriggerDemo(void *pvParameters)
         goto error_poweroff;
     }
 
-    printf(">>> Allocated memory buffer Address is 0x%X <<<\n", (uint32_t) ulAdcSample);
+    printf(">>> Allocated memory buffer Address is 0x%" PRIx32 " <<<\n", (uint32_t) ulAdcSample);
 
     /* Start ADC from External trigger pulse */
     lRet = pxADCDrv->Control(ARM_ADC_EXTERNAL_TRIGGER_ENABLE, ARM_ADC_EXTERNAL_TRIGGER_SRC_0);
@@ -466,9 +470,9 @@ static void prvAdcExtTriggerDemo(void *pvParameters)
         printf("Error in invoking Utimer Task \r\n");
     }
 
-    xReturned = xTaskNotifyWait(NULL, ADC_INT_AVG_SAMPLE_RDY, NULL, portMAX_DELAY);
+    xReturned = xTaskNotifyWait(0, ADC_INT_AVG_SAMPLE_RDY, 0, portMAX_DELAY);
     if (xReturned != pdTRUE) {
-        printf("\n\r Task Wait Time out expired \n\r");
+        printf("\n\r Task Wait Time out expired\n\r");
         WAIT_FOREVER_LOOP
     }
 
@@ -486,9 +490,9 @@ static void prvAdcExtTriggerDemo(void *pvParameters)
         goto error_poweroff;
     }
 
-    printf("\n >>> ADC conversion completed \n");
+    printf("\n >>> ADC conversion completed\n");
     printf(" Converted value are stored in user allocated memory address.\n");
-    printf("\n ---END--- \r\n wait forever >>> \n");
+    printf("\n ---END--- \r\n wait forever >>>\n");
     WAIT_FOREVER_LOOP
 
 error_poweroff:
@@ -510,7 +514,7 @@ error_uninitialize:
                                                /*bool enable   */ false,
                                                &ulServiceErrorCode);
     if (ulErrorCode) {
-        printf("SE Error: 160 MHz clk disable = %d\n", ulErrorCode);
+        printf("SE Error: 160 MHz clk disable = %" PRId32 "\n", ulErrorCode);
         return;
     }
 
@@ -543,7 +547,7 @@ int main(void)
     xReturned = xTaskCreate(prvAdcExtTriggerDemo,
                             "adc_ext_trigger_demo",
                             256,
-                            NULL,
+                            0,
                             configMAX_PRIORITIES - 2,
                             &adc_xHandle);
     if (xReturned != pdPASS) {
@@ -555,7 +559,7 @@ int main(void)
     xReturned = xTaskCreate(prvUtimerCompareModeDemo,
                             "utimer_compare_mode_demo",
                             256,
-                            NULL,
+                            0,
                             configMAX_PRIORITIES - 1,
                             &utimer_xHandle);
     if (xReturned != pdPASS) {

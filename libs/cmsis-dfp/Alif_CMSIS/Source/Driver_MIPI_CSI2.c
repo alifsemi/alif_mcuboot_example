@@ -331,12 +331,6 @@ static int32_t CSI2_Initialize(ARM_MIPI_CSI2_SignalEvent_t cb_event, CSI_RESOURC
 
     CSI2->cb_event           = cb_event;
 
-    /*DPHY initialization*/
-    ret                      = CSI2_DPHY_Initialize(csi_info->frequency, csi_info->n_lanes);
-    if (ret != ARM_DRIVER_OK) {
-        return ret;
-    }
-
     CSI2->status.initialized = 1;
 
     return ret;
@@ -364,12 +358,6 @@ static int32_t CSI2_Uninitialize(CSI_RESOURCES *CSI2)
         return ARM_DRIVER_ERROR;
     }
 
-    /*DPHY Uninitialization*/
-    ret = CSI2_DPHY_Uninitialize();
-    if (ret != ARM_DRIVER_OK) {
-        return ret;
-    }
-
     /* Reset driver flags. */
     CSI2->status.initialized = 0;
 
@@ -386,6 +374,11 @@ static int32_t CSI2_Uninitialize(CSI_RESOURCES *CSI2)
 */
 static int32_t CSI2_PowerControl(ARM_POWER_STATE state, CSI_RESOURCES *CSI2)
 {
+    int32_t ret;
+    CAMERA_SENSOR_DEVICE *camera_sensor;
+
+    camera_sensor = Get_Camera_Sensor();
+
     if (CSI2->status.initialized == 0) {
         /* Driver is not initialized */
         return ARM_DRIVER_ERROR;
@@ -397,6 +390,12 @@ static int32_t CSI2_PowerControl(ARM_POWER_STATE state, CSI_RESOURCES *CSI2)
             if (CSI2->status.powered == 0) {
                 /* Driver is already powered off */
                 return ARM_DRIVER_OK;
+            }
+
+            /*DPHY Uninitialization*/
+            ret = CSI2_DPHY_Uninitialize();
+            if (ret != ARM_DRIVER_OK) {
+                return ret;
             }
 
             /*Disabling the IRQs*/
@@ -424,6 +423,8 @@ static int32_t CSI2_PowerControl(ARM_POWER_STATE state, CSI_RESOURCES *CSI2)
 
     case ARM_POWER_FULL:
         {
+            CSI_INFO *csi_info;
+
             if (CSI2->status.powered == 1) {
                 /* Driver is already powered ON */
                 return ARM_DRIVER_OK;
@@ -435,12 +436,30 @@ static int32_t CSI2_PowerControl(ARM_POWER_STATE state, CSI_RESOURCES *CSI2)
 
             set_csi_pixel_clk(RTE_CSI2_PIX_CLK_SEL, CSI2->csi_pixclk_div);
 
+            if (!(camera_sensor && camera_sensor->csi_info)) {
+                return ARM_DRIVER_ERROR_PARAMETER;
+            }
+
+            csi_info = camera_sensor->csi_info;
+
+            /*DPHY initialization*/
+            ret = CSI2_DPHY_Initialize(csi_info->frequency, csi_info->n_lanes);
+            if (ret != ARM_DRIVER_OK) {
+                return ret;
+            }
+
             CSI2->status.powered = 1;
 
             break;
         }
 
     case ARM_POWER_LOW:
+        {
+            /* Do nothing right now, just put CSI driver state to low power. */
+            CSI2->status.powered = 0;
+
+            break;
+        }
 
     default:
         {

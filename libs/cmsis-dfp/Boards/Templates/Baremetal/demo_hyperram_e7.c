@@ -30,7 +30,7 @@
  * writing with the memory mapped as Device Mode for either Cortex-M55.
  */
 
-#include "ospi_hyperram_xip.h"
+#include "ospi_psram_xip.h"
 #include "Driver_IO.h"
 #include "RTE_Components.h"
 #include CMSIS_device_header
@@ -56,27 +56,15 @@ ARM_DRIVER_GPIO       *GPIODrv = &ARM_Driver_GPIO_(BOARD_IS66_HYPERRAM_RESET_GPI
 /* OSPI0 region index is 5 in mpu table defined in the same testapp */
 #define MPU_OSPI0_REGION_INDEX 5U
 
-#define DDR_DRIVE_EDGE         0
-#define RXDS_DELAY             11
-#define OSPI_BUS_SPEED         100000000 /* 100MHz */
-#define ISSI_WAIT_CYCLES       6
-#define OSPI_DFS               16
-
 #define HRAM_SIZE_BYTES        (32 * 1024 * 1024) /* 32MB */
 
 #define BUFFER_SIZE            (16 * 1024)
 static uint16_t buff[BUFFER_SIZE / sizeof(uint16_t)]; /* Buffer size of 16KB */
 
-static const ospi_hyperram_xip_config issi_config = {
-    .instance       = BOARD_ISSI_RAM_OSPI_INSTANCE,
-    .bus_speed      = OSPI_BUS_SPEED,
-    .hyperram_init  = NULL, /* No special initialization needed by the hyperram device */
-    .ddr_drive_edge = DDR_DRIVE_EDGE,
-    .rxds_delay     = RXDS_DELAY,
-    .wait_cycles    = ISSI_WAIT_CYCLES,
-    .slave_select   = 0,
-    .dfs            = OSPI_DFS,
-    .spi_mode       = OSPI_SPI_MODE_OCTAL};
+static ospi_psram_xip_config issi_config = {
+    .instance       = BOARD_PSRAM_OSPI_INSTANCE,
+    .ram_init       = NULL, /* No special initialization needed by the hyperram device */
+    .ram_type       = RAM_TYPE_HYPERRAM};
 
 void MPU_Load_Regions(void)
 {
@@ -398,7 +386,7 @@ int main(void)
         goto error_exit;
     }
 
-    if (ospi_hyperram_xip_init(&issi_config) < 0) {
+    if (ospi_psram_xip_init(&issi_config) < 0) {
         printf("Hyperram XIP init failed\n");
         goto error_exit;
     }

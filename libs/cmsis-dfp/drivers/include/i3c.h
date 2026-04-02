@@ -259,7 +259,7 @@ extern "C" {
 #define I3C_SLAVE_DFLT_INTR_EN_MASK                                                                \
     (I3C_INTR_STATUS_EN_TRANSFER_ERR_STS_EN | I3C_INTR_STATUS_EN_DYN_ADDR_ASSGN_STS_EN |           \
      I3C_INTR_STATUS_EN_CCC_UPDATED_STS_EN | I3C_INTR_STATUS_EN_RESP_READY_STS_EN |                \
-     I3C_INTR_STATUS_EN_DEFSLV_STS_EN)
+     I3C_INTR_STATUS_EN_DEFSLV_STS_EN | I3C_INTR_STATUS_EN_READ_REQ_RECV_STS_EN)
 
 #define I3C_QUEUE_STATUS_LEVEL_IBI_BUF_BLR(x)       (((x) & GENMASK(23, 16)) >> 16)
 #define I3C_QUEUE_STATUS_LEVEL_RESP_BUF_BLR(x)      (((x) & GENMASK(15, 8)) >> 8)
@@ -438,7 +438,8 @@ typedef enum _I3C_XFER_STATUS {
     I3C_XFER_STATUS_IBI_SLV_INTR_REQ =
         (1UL << 18), /**< Transfer status IBI Slave Intr request received*/
     I3C_XFER_STATUS_DEFSLV_LIST    = (1UL << 19), /**< Transfer status Defslvs received */
-    I3C_XFER_STATUS_BUS_RESET_DONE = (1UL << 20)  /**< Transfer status Bus reset done  */
+    I3C_XFER_STATUS_BUS_RESET_DONE = (1UL << 20), /**< Transfer status Bus reset done  */
+    I3C_XFER_STATUS_SLV_RD_RQ_RCVD = (1UL << 21)  /**< Transfer status Read request rcvd from master */
 } I3C_XFER_STATUS;
 
 /* brief I3C Transfer types */
@@ -1476,10 +1477,11 @@ void i3c_master_setup_cmd(I3C_Type *i3c, const i3c_xfer_t xfer);
   \                               const uint16_t len)
   \brief        Setup Data Tx
   \param[in]    i3c    : Pointer to i3c register set structure
+  \param[in]    xfer   : transfer info
   \param[in]    len    : Data length
   \return       none
 */
-void i3c_setup_tx(I3C_Type *i3c, const uint16_t len);
+void i3c_setup_tx(I3C_Type *i3c, i3c_xfer_t *xfer, const uint16_t len);
 
 /**
   \fn           void i3c_setup_rx(I3C_Type *i3c,

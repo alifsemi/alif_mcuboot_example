@@ -81,7 +81,8 @@ void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer,
 
 void vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName)
 {
-    (void) pxTask;
+    ARG_UNUSED(pxTask);
+    ARG_UNUSED(pcTaskName);
 
     ASSERT_HANG_LOOP
 }
@@ -121,6 +122,7 @@ void touchscreen_demo_thread_entry(void *pvParameters)
     int8_t             count = 0;
     ARM_DRIVER_VERSION version;
     ARM_TOUCH_STATE    state;
+    ARG_UNUSED(pvParameters);
 
     printf("\r\n \t\t >>> GT911 Touchscreen demo with FREERTOS is starting up!!! <<< \r\n");
 
@@ -220,7 +222,7 @@ int main(void)
     BaseType_t xReturned = xTaskCreate(touchscreen_demo_thread_entry,
                                        "touchscreen_demo_thread_entry",
                                        216,
-                                       NULL,
+                                       0,
                                        configMAX_PRIORITIES - 1,
                                        &touch_xHandle);
     if (xReturned != pdPASS) {

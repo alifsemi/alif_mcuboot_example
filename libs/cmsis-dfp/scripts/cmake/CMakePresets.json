@@ -29,6 +29,19 @@
             }
         },
         {
+            "name": "clang",
+            "displayName": "Clang Build Config",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "inherits": "default",
+            "cacheVariables": {
+                "COMPILER": "CLANG"
+            },
+            "environment": {
+                "COMPILER_BIN_PATH": "$env{CLANG_PATH}/bin",
+                "PATH": "$env{COMPILER_BIN_PATH}${pathListSep}$penv{PATH}"
+            }
+        },
+        {
             "name": "default",
             "description": "Default Setting",
             "hidden": true,
@@ -42,7 +55,17 @@
                 "BOARD_NAME": "DevKit-e7",
                 "COMPILER": "ARMCLANG",
                 "OS": "NONE",
-                "TEST_APP": "ALL"
+                "TEST_APP": "ALL",
+                "CFG_DMA_ENABLE": "OFF",
+                "CFG_BLOCKING_MODE_ENABLE": "OFF",
+                "COMPILER_USER_ARGS":"",
+                "COMPILER_USER_ARGS_APPEND": "OFF",
+                "ASM_USER_ARGS":"",
+                "ASM_USER_ARGS_APPEND":"OFF",
+                "ENABLE_INSTALLATION": "OFF",
+                "PACK_EXEC_NAME": "ALL",
+                "PACK_EXEC_VERSION": "0.0.0",
+                "ENABLE_BUILD_ERROR_WHEN_INVALID_APP": "ON"
             }
         },
         {
@@ -53,10 +76,11 @@
                 "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
             },
             "environment": {
-                "COMPILER_BIN_PATH": "$env{ARMCLANG_PATH}/bin",
-                "CMSIS_PACK_PATH": "$env{CMSIS_CORE_PACK_PATH}",
+                "COMPILER_BIN_PATH"  : "$env{ARMCLANG_PATH}/bin",
+                "CMSIS_PACK_PATH"    : "$env{CMSIS_CORE_PACK_PATH}",
                 "CMSIS_COMPILER_PATH": "$env{CMSIS_COMPILER_PACK_PATH}",
-                "SE_TOOLS_IMAGE_DIR":"$env{SE_TOOLS}/build/images"
+                "CMSIS_FREERTOS_PATH": "$env{CMSIS_FREE_RTOS_PACK_PATH}",
+                "SE_TOOLS_IMAGE_DIR" : "$env{SE_TOOLS}/build/images"
             }
         }
     ],
@@ -72,9 +96,13 @@
             "inherits": "default"
         },
         {
+            "name": "clang_build",
+            "configurePreset": "clang",
+            "inherits": "default"
+        },
+        {
             "name": "default",
             "description": "Default Setting",
-            //"cleanFirst": true,
             "jobs": 16,
             "hidden": true,
             "nativeToolOptions": [
@@ -95,6 +123,11 @@
         {
             "name": "gcc_build_test",
             "configurePreset": "gcc",
+            "inherits": "default"
+        },
+        {
+            "name": "clang_build_test",
+            "configurePreset": "clang",
             "inherits": "default"
         },
         {
@@ -158,6 +191,23 @@
                 {
                     "type": "test",
                     "name": "gcc_build_test"
+                }
+            ]
+        },
+        {
+            "name": "clang_mram",
+            "steps": [
+                {
+                    "type": "configure",
+                    "name": "clang"
+                },
+                {
+                    "type": "build",
+                    "name": "clang_build"
+                },
+                {
+                    "type": "test",
+                    "name": "clang_build_test"
                 }
             ]
         }

@@ -29,6 +29,7 @@
 /* System Includes */
 #include <stdio.h>
 #include "app_utils.h"
+#include <inttypes.h>
 
 /* include for ADC Driver */
 #include "Driver_ADC.h"
@@ -83,7 +84,8 @@ void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer,
 
 void vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName)
 {
-    (void) pxTask;
+    ARG_UNUSED(pxTask);
+    ARG_UNUSED(pcTaskName);
 
     ASSERT_HANG_LOOP
 }
@@ -151,6 +153,7 @@ static void prvTsensDemoThreadEntry(void *pvParameters)
     uint32_t           ulErrorCode = SERVICES_REQ_SUCCESS;
     uint32_t           ulServiceErrorCode;
     ARM_DRIVER_VERSION xVersion;
+    ARG_UNUSED(pvParameters);
 
     /* Initialize the SE services */
     se_services_port_init();
@@ -161,7 +164,7 @@ static void prvTsensDemoThreadEntry(void *pvParameters)
                                                /*bool enable   */ true,
                                                &ulServiceErrorCode);
     if (ulErrorCode) {
-        printf("SE Error: 160 MHz clk enable = %d\n", ulErrorCode);
+        printf("SE Error: 160 MHz clk enable = %" PRIu32 "\n", ulErrorCode);
         return;
     }
 
@@ -198,7 +201,7 @@ static void prvTsensDemoThreadEntry(void *pvParameters)
         goto error_poweroff;
     }
 
-    printf(">>> Allocated memory buffer Address is 0x%X <<<\n",
+    printf(">>> Allocated memory buffer Address is 0x%" PRIX32 " <<<\n",
            (uint32_t) (ulAdcSample + TEMPERATURE_SENSOR));
     /* Start ADC */
     lRet = pxADCDrv->Start();
@@ -212,7 +215,7 @@ static void prvTsensDemoThreadEntry(void *pvParameters)
     }
 
     /* wait till conversion comes ( isr callback ) */
-    if (xTaskNotifyWait(NULL, ADC_INT_AVG_SAMPLE_RDY, NULL, portMAX_DELAY) != pdFALSE) {
+    if (xTaskNotifyWait(0, ADC_INT_AVG_SAMPLE_RDY, 0, portMAX_DELAY) != pdFALSE) {
         fTemp = (float) get_temperature(ulAdcSample[TEMPERATURE_SENSOR]);
         if (fTemp == ARM_DRIVER_ERROR) {
             printf("\r\n Error: Temperature is outside range\n");
@@ -227,13 +230,13 @@ static void prvTsensDemoThreadEntry(void *pvParameters)
             printf("\r\n Error: ADC stop failed\n");
             goto error_poweroff;
         }
-        printf("\n >>> ADC conversion completed \n");
+        printf("\n >>> ADC conversion completed\n");
         printf(" Converted value are stored in user allocated memory address.\n");
     } else {
-        printf("\n Error: ADC conversion Failed \n");
+        printf("\n Error: ADC conversion Failed\n");
     }
 
-    printf("\n ---END--- \r\n wait forever >>> \n");
+    printf("\n ---END--- \r\n wait forever >>>\n");
     WAIT_FOREVER_LOOP
 
 error_poweroff:
@@ -257,14 +260,14 @@ error_uninitialize:
                                                /*bool enable   */ false,
                                                &ulServiceErrorCode);
     if (ulErrorCode) {
-        printf("SE Error: 160 MHz clk disable = %d\n", ulErrorCode);
+        printf("SE Error: 160 MHz clk disable = %" PRIu32 "\n", ulErrorCode);
         return;
     }
 
     printf("\r\n ADC demo exiting...\r\n");
 
     /* thread delete */
-    vTaskDelete(NULL);
+    vTaskDelete(0);
 }
 
 /*----------------------------------------------------------------------------
@@ -287,7 +290,7 @@ int main(void)
     BaseType_t xReturned = xTaskCreate(prvTsensDemoThreadEntry,
                                        "prvTsensDemoThreadEntry",
                                        256,
-                                       NULL,
+                                       0,
                                        configMAX_PRIORITIES - 1,
                                        &adc_xHandle);
     if (xReturned != pdPASS) {

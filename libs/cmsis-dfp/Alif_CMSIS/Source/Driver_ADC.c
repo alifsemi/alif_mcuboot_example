@@ -250,6 +250,10 @@ static int32_t ADC_PowerControl(ADC_RESOURCES *ADC, ARM_POWER_STATE state)
             set_adc24_output_rate(ADC->drv_instance, 0U);
         }
 
+        disable_analog_peripherals();
+
+        disable_adc_ref_voltage();
+
         /* Disabling CMP clock */
         disable_analog_periph_clk();
 

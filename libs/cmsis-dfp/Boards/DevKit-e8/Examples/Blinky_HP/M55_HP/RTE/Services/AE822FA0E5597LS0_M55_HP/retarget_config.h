@@ -77,7 +77,7 @@ extern "C" {
 
 #error                                                                                             \
     " ***** [RETARGET-FAILED] POLLING MODE IS NOT ENABLED (Enable Polling mode in RTE_Device.h)"   \
-    " !!! ******\n"
+    " !!! ****** \n"
 #endif
 
 #if (PRINTF_UART_CONSOLE == LP) /* Instance B */

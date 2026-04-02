@@ -120,6 +120,7 @@ extern "C" {
 #define BL_TOC_IMAGE_DEVICE_MISMATCH                 0x20
 #define BL_ERROR_UPD_SIGNATURE_INCORRECT             0x21
 #define BL_ERROR_UPD_IMG_IN_MRAM_NOT_SUPPORTED       0x22
+#define BL_ERROR_HAVE_FAILED_ATOC_IMAGES             0x23
 
 /**
  * OTP Offsets
@@ -343,6 +344,11 @@ typedef enum {
 #define ES0_CLOCK_24MHZ 4
 #define ES0_CLOCK_48MHZ 0xC
 
+// ES0 configuration bit field
+#define ES0_CONFIG_NONE 0x0
+#define ES0_CONFIG_HPA  0x1
+#define ES0_CONFIG_CSP  0x2
+
 /**
  * @struct net_proc_boot_args_t
  * @brief ExtSys0 Boot arguments
@@ -354,6 +360,7 @@ typedef struct {
     uint32_t trng_dst_addr;
     uint32_t trng_len;
     uint32_t es0_clock_select;
+    uint32_t configuration;
 } net_proc_boot_args_t;
 
 /**
@@ -456,6 +463,8 @@ typedef enum {
     CLOCK_SETTING_AHB_FREQ,     /**< CLOCK_SETTING_AHB_FREQ */
     CLOCK_SETTING_APB_FREQ,     /**< CLOCK_SETTING_APB_FREQ */
     CLOCK_SETTING_SYSREF_FREQ,  /**< CLOCK_SETTING_SYSREF_FREQ */
+    CLOCK_SETTING_ACLK_FORCE_EN,    /**< CLOCK_SETTING_ACLK_FORCE_EN */
+    CLOCK_SETTING_ACLK_ENTRY_DELAY, /**< CLOCK_SETTING_ACLK_ENTRY_DELAY */
 } clock_setting_t;
 
 /*******************************************************************************
@@ -482,11 +491,16 @@ uint32_t SERVICES_padcontrol(uint32_t services_handle, uint8_t port_number, uint
                              uint8_t configuration_value, uint32_t *error_code);
 uint32_t SERVICES_application_ospi_write_key(uint32_t services_handle, uint32_t command,
                                              uint8_t *key, uint32_t *error_code);
+uint32_t SERVICES_application_verify_image(uint32_t services_handle,
+               uint32_t image_address,
+               uint32_t cert_chain_address,
+               uint32_t *error_code);
 uint32_t SERVICES_cryptocell_get_rnd(uint32_t services_handle, uint16_t rnd_len, void *rnd_value,
                                      int32_t *error_code);
 
-uint32_t SERVICES_cryptocell_get_lcs(uint32_t services_handle, uint32_t *lcs_state,
-                                     int32_t *error_code);
+uint32_t SERVICES_cryptocell_get_lcs(uint32_t services_handle,
+					uint32_t *lcs_state,
+					int32_t *error_code);
 // MbedTLS macros and APIs
 uint32_t SERVICES_cryptocell_mbedtls_hardware_poll(uint32_t services_handle, uint32_t *error_code,
                                                    uint32_t data, uint32_t output, uint32_t len,
@@ -591,14 +605,31 @@ uint32_t SERVICES_system_get_eui_extension(uint32_t services_handle, bool is_eui
 uint32_t SERVICES_system_get_device_id64(uint32_t services_handle, uint8_t *device_id,
                                          uint32_t *error_code);
 
-uint32_t SERVICES_boot_process_toc_entry(uint32_t services_handle, const uint8_t *image_id,
-                                         uint32_t *error_code);
-uint32_t SERVICES_boot_cpu(uint32_t services_handle, uint32_t cpu_id, uint32_t address,
-                           uint32_t *error_code);
-uint32_t SERVICES_boot_set_vtor(uint32_t services_handle, uint32_t cpu_id, uint32_t address,
-                                uint32_t *error_code);
-uint32_t SERVICES_boot_reset_cpu(uint32_t services_handle, uint32_t cpu_id, uint32_t *error_code);
-uint32_t SERVICES_boot_release_cpu(uint32_t services_handle, uint32_t cpu_id, uint32_t *error_code);
+uint32_t SERVICES_system_get_eui_extension(uint32_t services_handle,
+					bool is_eui48,
+					uint8_t *eui_extension,
+					uint32_t *error_code);
+uint32_t SERVICES_system_get_device_id64(uint32_t services_handle,
+                    uint8_t *device_id,
+                    uint32_t *error_code);
+
+uint32_t SERVICES_boot_process_toc_entry(uint32_t services_handle,
+					 const uint8_t *image_id,
+					 uint32_t *error_code);
+uint32_t SERVICES_boot_cpu(uint32_t services_handle,
+			   uint32_t cpu_id,
+			   uint32_t address,
+			   uint32_t *error_code);
+uint32_t SERVICES_boot_set_vtor(uint32_t services_handle,
+				uint32_t cpu_id,
+				uint32_t address,
+				uint32_t *error_code);
+uint32_t SERVICES_boot_reset_cpu(uint32_t services_handle,
+				 uint32_t cpu_id,
+				 uint32_t *error_code);
+uint32_t SERVICES_boot_release_cpu(uint32_t services_handle,
+				   uint32_t cpu_id,
+				   uint32_t *error_code);
 uint32_t SERVICES_boot_reset_soc(uint32_t services_handle);
 
 uint32_t SERVICES_power_stop_mode_req(uint32_t                 services_handle,
@@ -663,6 +694,8 @@ uint32_t SERVICES_clocks_set_divider(uint32_t services_handle, clock_divider_t d
                                      uint32_t value, uint32_t *error_code);
 uint32_t SERVICES_clocks_setting_get(uint32_t services_handle, clock_setting_t setting_type,
                                      uint32_t *value, uint32_t *error_code);
+uint32_t SERVICES_clocks_set_aclk(uint32_t services_handle, uint32_t *aclk_entry_delay,
+                                  uint32_t *aclk_force_en, uint32_t *error_code);
 
 // PLL services
 uint32_t SERVICES_pll_initialize(uint32_t services_handle, uint32_t *error_code);

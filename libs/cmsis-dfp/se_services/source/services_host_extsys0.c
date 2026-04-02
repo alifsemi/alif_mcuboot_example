@@ -71,6 +71,7 @@ uint32_t SERVICES_Boot_Net_Proc(uint32_t services_handle, net_proc_boot_args_t *
     p_svc->send_trng_dst_addr         = boot_args->trng_dst_addr;
     p_svc->send_trng_len              = boot_args->trng_len;
     p_svc->send_internal_clock_select = boot_args->es0_clock_select;
+    p_svc->send_configuration         = boot_args->configuration;
 
     uint32_t ret =
         SERVICES_send_request(services_handle, SERVICE_EXTSYS0_BOOT_SET_ARGS, DEFAULT_TIMEOUT);
