@@ -39,6 +39,7 @@
 
 #include "soc.h"
 #include "core_config.h"
+#include "app_mem_regions.h"
 
 #if defined(__ARM_FEATURE_CMSE) && (__ARM_FEATURE_CMSE == 3U)
 #include "app_tz.h"
@@ -189,7 +190,7 @@ void SystemInit(void)
  * disables the MPU which causes the default Device/XN attributes to take effect for the
  * OSPI XIP regions.
  */
-#if !BOOT_FROM_OSPI_FLASH
+#if !APP_BOOT_OSPI_FLASH
     MPU_Setup();
 #endif
 #endif

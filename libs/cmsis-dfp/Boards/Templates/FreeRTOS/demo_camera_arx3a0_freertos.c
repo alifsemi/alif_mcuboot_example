@@ -22,6 +22,7 @@
 
 //* System Includes */
 #include <stdio.h>
+#include <inttypes.h>
 
 /* Cpi Driver */
 #include "Driver_CPI.h"
@@ -44,6 +45,12 @@
 #include "task.h"
 #include "app_utils.h"
 
+#include "Driver_IO.h"
+
+// set to 0: enable selfie camera (cam1)
+// set to 1: enable standard camera (cam2)
+#define STANDARD_CAM_EN                0
+
 // Set to 0: Use application-defined arx3A0 pin configuration.
 // Set to 1: Use Conductor-generated pin configuration (from pins.h).
 #define USE_CONDUCTOR_TOOL_PINS_CONFIG 0
@@ -51,6 +58,13 @@
 /* Camera  Driver instance 0 */
 extern ARM_DRIVER_CPI  Driver_CPI;
 static ARM_DRIVER_CPI *CAMERAdrv = &Driver_CPI;
+
+#if STANDARD_CAM_EN
+/* Switch Camera target. */
+extern ARM_DRIVER_GPIO ARM_Driver_GPIO_(BOARD_CAMERA_I2C_C1_C2_GPIO_PORT);
+static ARM_DRIVER_GPIO *GPIO_Driver_SWITCH_CAM =
+        &ARM_Driver_GPIO_(BOARD_CAMERA_I2C_C1_C2_GPIO_PORT);
+#endif
 
 /*Define for FreeRTOS*/
 #define STACK_SIZE                    1024
@@ -78,7 +92,8 @@ void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer,
 
 void vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName)
 {
-    (void) pxTask;
+    ARG_UNUSED(pxTask);
+    ARG_UNUSED(pcTaskName);
 
     ASSERT_HANG_LOOP
 }
@@ -267,9 +282,9 @@ int32_t i2c_pinmux(void)
      * Pad function: PADCTRL_READ_ENABLE |
      *               PADCTRL_DRIVER_DISABLED_PULL_UP
      */
-    ret = pinconf_set(PORT_(BOARD_I2C1_SDA_C_GPIO_PORT),
-                      BOARD_I2C1_SDA_C_GPIO_PIN,
-                      PINMUX_ALTERNATE_FUNCTION_5,
+    ret = pinconf_set(PORT_(BOARD_CAMERA_I2C_SDA_GPIO_PORT),
+                      BOARD_CAMERA_I2C_SDA_GPIO_PIN,
+                      BOARD_CAMERA_I2C_SDA_ALTERNATE_FUNCTION,
                       PADCTRL_READ_ENABLE | PADCTRL_DRIVER_DISABLED_PULL_UP);
     if (ret != ARM_DRIVER_OK) {
         printf("\r\n Error: i3c PINMUX and PINPAD failed.\r\n");
@@ -280,9 +295,9 @@ int32_t i2c_pinmux(void)
      * Pad function: PADCTRL_READ_ENABLE
      *               PADCTRL_DRIVER_DISABLED_PULL_UP
      */
-    ret = pinconf_set(PORT_(BOARD_I2C1_SCL_C_GPIO_PORT),
-                      BOARD_I2C1_SCL_C_GPIO_PIN,
-                      PINMUX_ALTERNATE_FUNCTION_5,
+    ret = pinconf_set(PORT_(BOARD_CAMERA_I2C_SCL_GPIO_PORT),
+                      BOARD_CAMERA_I2C_SCL_GPIO_PIN,
+                      BOARD_CAMERA_I2C_SCL_ALTERNATE_FUNCTION,
                       PADCTRL_READ_ENABLE | PADCTRL_DRIVER_DISABLED_PULL_UP);
     if (ret != ARM_DRIVER_OK) {
         printf("\r\n Error: i3c PINMUX and PINPAD failed.\r\n");
@@ -395,7 +410,7 @@ int32_t camera_image_conversion(IMAGE_CONVERSION image_conversion, uint8_t *src,
     case BAYER_TO_RGB_CONVERSION:
         {
             printf("\r\n Start Bayer to RGB Conversion: \r\n");
-            printf("\t Frame Buffer Addr: 0x%X \r\n \t Bayer_to_RGB Addr: 0x%X\n",
+            printf("\t Frame Buffer Addr: 0x%" PRIx32 " \r\n \t Bayer_to_RGB Addr: 0x%" PRIx32 "\n",
                    (uint32_t) src,
                    (uint32_t) dest);
             ret = bayer_to_RGB(src, dest, frame_width, frame_height);
@@ -453,6 +468,7 @@ void camera_demo_thread_entry(void *pvParameters)
     uint32_t           error_code;
     run_profile_t      runp = {0};
     ARM_DRIVER_VERSION version;
+    ARG_UNUSED(pvParameters);
 
     printf("\r\n \t\t >>> ARX3A0 Camera Sensor demo with FreeRTOS is starting up!!! <<< \r\n");
 
@@ -460,12 +476,12 @@ void camera_demo_thread_entry(void *pvParameters)
      *   - Camera frame buffer and
      *   - (Optional) Camera frame buffer for Bayer to RGB Conversion
      */
-    printf("\n \t frame buffer        pool size: 0x%0X  pool addr: 0x%0X \r\n ",
+    printf("\n \t frame buffer        pool size: 0x%0X  pool addr: 0x%08" PRIx32 " \r\n ",
            FRAMEBUFFER_POOL_SIZE,
            (uint32_t) framebuffer_pool);
 
 #if IMAGE_CONVERSION_BAYER_TO_RGB_EN
-    printf("\n \t bayer_to_rgb buffer pool size: 0x%0X  pool addr: 0x%0X \r\n ",
+    printf("\n \t bayer_to_rgb buffer pool size: 0x%0X  pool addr: 0x%08" PRIX32 " \r\n ",
            BAYER_TO_RGB_BUFFER_POOL_SIZE,
            (uint32_t) bayer_to_rgb_buffer_pool);
 #endif
@@ -474,7 +490,7 @@ void camera_demo_thread_entry(void *pvParameters)
     /* pin mux and configuration for all device IOs requested from pins.h */
     ret = board_pins_config();
     if (ret != 0) {
-        printf("Error in pin-mux configuration: %d\n", ret);
+        printf("Error in pin-mux configuration: %" PRId32 "\n", ret);
         return;
     }
 #else
@@ -484,7 +500,7 @@ void camera_demo_thread_entry(void *pvParameters)
      */
     ret = hardware_init();
     if (ret != 0) {
-        printf("Error: CAMERA Hardware Initialize failed: %d\n", ret);
+        printf("Error: CAMERA Hardware Initialize failed: %" PRId32 "\n", ret);
         return;
     }
 #endif
@@ -498,21 +514,21 @@ void camera_demo_thread_entry(void *pvParameters)
                                               true,
                                               &service_error_code);
     if (error_code != SERVICES_REQ_SUCCESS) {
-        printf("SE: MIPI 100MHz clock enable = %d\n", error_code);
+        printf("SE: MIPI 100MHz clock enable = %" PRId32 "\n", error_code);
         return;
     }
 
     error_code =
         SERVICES_clocks_enable_clock(se_services_s_handle, CLKEN_HFOSC, true, &service_error_code);
     if (error_code != SERVICES_REQ_SUCCESS) {
-        printf("SE: MIPI 38.4Mhz(HFOSC) clock enable = %d\n", error_code);
+        printf("SE: MIPI 38.4Mhz(HFOSC) clock enable = %" PRId32 "\n", error_code);
         goto error_disable_100mhz_clk;
     }
 
     /* Get the current run configuration from SE */
     error_code = SERVICES_get_run_cfg(se_services_s_handle, &runp, &service_error_code);
     if (error_code) {
-        printf("\r\nSE: get_run_cfg error = %d\n", error_code);
+        printf("\r\nSE: get_run_cfg error = %" PRId32 "\n", error_code);
         goto error_disable_hfosc_clk;
     }
 
@@ -534,12 +550,45 @@ void camera_demo_thread_entry(void *pvParameters)
     /* Set the new run configuration */
     error_code          = SERVICES_set_run_cfg(se_services_s_handle, &runp, &service_error_code);
     if (error_code) {
-        printf("\r\nSE: set_run_cfg error = %d\n", error_code);
+        printf("\r\nSE: set_run_cfg error = %" PRId32 "\n", error_code);
         goto error_disable_hfosc_clk;
     }
 
+#if STANDARD_CAM_EN
+    ret = GPIO_Driver_SWITCH_CAM->Initialize(BOARD_CAMERA_I2C_C1_C2_GPIO_PIN, NULL);
+    if (ret != ARM_DRIVER_OK) {
+        printf("\r\n Error: GPIO Initialize failed (pin: %d, ret=%" PRId32 ")\r\n",
+               BOARD_CAMERA_I2C_C1_C2_GPIO_PIN, ret);
+        goto error_disable_hfosc_clk;
+    }
+
+    ret = GPIO_Driver_SWITCH_CAM->PowerControl(BOARD_CAMERA_I2C_C1_C2_GPIO_PIN, ARM_POWER_FULL);
+    if (ret != ARM_DRIVER_OK) {
+        printf("\r\n Error: GPIO PowerControl failed (pin: %d, ret=%" PRId32 ")\r\n",
+               BOARD_CAMERA_I2C_C1_C2_GPIO_PIN, ret);
+        goto error_uninitialize_gpio;
+    }
+
+    ret = GPIO_Driver_SWITCH_CAM->SetDirection(BOARD_CAMERA_I2C_C1_C2_GPIO_PIN,
+                                               GPIO_PIN_DIRECTION_OUTPUT);
+    if (ret != ARM_DRIVER_OK) {
+        printf("\r\n Error: GPIO SetDirection failed (pin: %d, ret=%" PRId32 ")\r\n",
+               BOARD_CAMERA_I2C_C1_C2_GPIO_PIN, ret);
+        goto error_poweroff_gpio;
+    }
+
+    ret = GPIO_Driver_SWITCH_CAM->SetValue(BOARD_CAMERA_I2C_C1_C2_GPIO_PIN,
+                                           GPIO_PIN_OUTPUT_STATE_HIGH);
+    if (ret != ARM_DRIVER_OK) {
+        printf("\r\n Error: GPIO SetValue failed (pin: %d, ret=%" PRId32 ")\r\n",
+               BOARD_CAMERA_I2C_C1_C2_GPIO_PIN, ret);
+        goto error_poweroff_gpio;
+    }
+#endif
+
     version = CAMERAdrv->GetVersion();
-    printf("\r\n Camera driver version api:0x%X driver:0x%X \r\n", version.api, version.drv);
+    printf("\r\n Camera driver version api:0x%" PRIx16 " driver:0x%" PRIx16 " \r\n", version.api,
+        version.drv);
 
     ret = CAMERAdrv->Initialize(camera_callback);
     if (ret != ARM_DRIVER_OK) {
@@ -587,7 +636,7 @@ void camera_demo_thread_entry(void *pvParameters)
     }
 
     /* wait till any event to comes in isr callback */
-    xTaskNotifyWait(NULL,
+    xTaskNotifyWait(0,
                     CAM_CB_EVENT_CAPTURE_STOPPED | CAM_CB_EVENT_ERROR,
                     &actual_events,
                     portMAX_DELAY);
@@ -673,11 +722,12 @@ void camera_demo_thread_entry(void *pvParameters)
            (uint32_t) (bayer_to_rgb_buffer_pool + BAYER_TO_RGB_BUFFER_POOL_SIZE - 1));
 
 #else
-    printf("Ulink:\n   dump binary memory /home/user/camera_dump/cam_image0_560p.bin 0x%X 0x%X "
-           "\r\n",
+    printf("Ulink:\n   dump binary memory /home/user/camera_dump/cam_image0_560p.bin 0x%" PRIX32
+           " 0x%" PRIX32 "\r\n",
            (uint32_t) framebuffer_pool,
            (uint32_t) (framebuffer_pool + FRAMEBUFFER_POOL_SIZE - 1));
-    printf("T32:\n   data.save.binary /home/user/camera_dump/cam_image0_560p.bin 0x%X--0x%X \r\n",
+    printf("T32:\n   data.save.binary /home/user/camera_dump/cam_image0_560p.bin 0x%" PRIx32
+            "--0x%" PRIX32 " \r\n",
            (uint32_t) framebuffer_pool,
            (uint32_t) (framebuffer_pool + FRAMEBUFFER_POOL_SIZE - 1));
 #endif
@@ -703,11 +753,27 @@ error_uninitialize_camera:
         printf("\r\n Error: CAMERA Uninitialize failed.\r\n");
     }
 
+#if STANDARD_CAM_EN
+error_poweroff_gpio:
+    /* Power off GPIO peripheral */
+    ret = GPIO_Driver_SWITCH_CAM->PowerControl(BOARD_CAMERA_I2C_C1_C2_GPIO_PIN, ARM_POWER_OFF);
+    if (ret != ARM_DRIVER_OK) {
+        printf("\r\n Error: GPIO Power OFF failed.\r\n");
+    }
+
+error_uninitialize_gpio:
+    /* Un-initialize GPIO driver */
+    ret = GPIO_Driver_SWITCH_CAM->Uninitialize(BOARD_CAMERA_I2C_C1_C2_GPIO_PIN);
+    if (ret != ARM_DRIVER_OK) {
+        printf("\r\n Error: GPIO Uninitialize failed.\r\n");
+    }
+#endif
+
 error_disable_hfosc_clk:
     error_code =
         SERVICES_clocks_enable_clock(se_services_s_handle, CLKEN_HFOSC, false, &service_error_code);
     if (error_code != SERVICES_REQ_SUCCESS) {
-        printf("SE: MIPI 38.4Mhz(HFOSC)  clock disable = %d\n", error_code);
+        printf("SE: MIPI 38.4Mhz(HFOSC)  clock disable = %" PRId32 "\n", error_code);
     }
 
 error_disable_100mhz_clk:
@@ -716,7 +782,7 @@ error_disable_100mhz_clk:
                                               false,
                                               &service_error_code);
     if (error_code != SERVICES_REQ_SUCCESS) {
-        printf("SE: MIPI 100MHz clock disable = %d\n", error_code);
+        printf("SE: MIPI 100MHz clock disable = %" PRId32 "\n", error_code);
     }
 
     printf("\r\n XXX Camera demo thread is exiting XXX...\r\n");
@@ -746,7 +812,7 @@ int main(void)
     BaseType_t xReturned = xTaskCreate(camera_demo_thread_entry,
                                        "camera_demo_thread_entry",
                                        216,
-                                       NULL,
+                                       0,
                                        configMAX_PRIORITIES - 1,
                                        &camera_xHandle);
     if (xReturned != pdPASS) {

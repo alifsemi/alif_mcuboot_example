@@ -26,6 +26,7 @@
 /* System Includes */
 #include <stdio.h>
 #include <stdlib.h>
+#include <inttypes.h>
 #include "string.h"
 
 /* include for Drivers */
@@ -44,6 +45,8 @@
 #include "retarget_stdout.h"
 #endif /* RTE_CMSIS_Compiler_STDOUT */
 
+#include "app_utils.h"
+
 // Set to 0: Use application-defined SPI pin configuration (via board_spi_pins_config()).
 // Set to 1: Use Conductor-generated pin configuration (from pins.h).
 #define USE_CONDUCTOR_TOOL_PINS_CONFIG 0
@@ -51,14 +54,11 @@
  *        0: To enable slave to master transfer */
 #define MASTER_TO_SLAVE_TRANSFER       1
 
-#define SPI2                           2 /* SPI instance 2 configured Master */
-#define SPI3                           3 /* SPI instance 3 configured Slave */
+extern ARM_DRIVER_SPI  ARM_Driver_SPI_(BOARD_MW_SPI_MASTER_INSTANCE);
+static ARM_DRIVER_SPI *masterDrv = &ARM_Driver_SPI_(BOARD_MW_SPI_MASTER_INSTANCE);
 
-extern ARM_DRIVER_SPI  ARM_Driver_SPI_(SPI2);
-static ARM_DRIVER_SPI *masterDrv = &ARM_Driver_SPI_(SPI2);
-
-extern ARM_DRIVER_SPI  ARM_Driver_SPI_(SPI3);
-static ARM_DRIVER_SPI *slaveDrv = &ARM_Driver_SPI_(SPI3);
+extern ARM_DRIVER_SPI  ARM_Driver_SPI_(BOARD_MW_SPI_SLAVE_INSTANCE);
+static ARM_DRIVER_SPI *slaveDrv = &ARM_Driver_SPI_(BOARD_MW_SPI_SLAVE_INSTANCE);
 
 /*Define for the FreeRTOS objects*/
 #define SPI2_CALLBACK_EVENT 0x01
@@ -208,6 +208,7 @@ static void MW_Demo_thread(void *pvParameters)
     int32_t        status;
     BaseType_t     xReturned;
     ARM_SPI_STATUS spi2_status, spi3_status;
+    ARG_UNUSED(pvParameters);
 
     /* Single buffer is used to store both control code and data.
      * Therefore, Buffer width size should be of 4 bytes irrespective of frame format size
@@ -217,13 +218,13 @@ static void MW_Demo_thread(void *pvParameters)
     uint32_t master_rx_buff[4] = {0}, slave_tx_buff[4];
 #endif
 
-    printf("Start of MicroWire demo application \n");
+    printf("Start of MicroWire demo application\n");
 
 #if USE_CONDUCTOR_TOOL_PINS_CONFIG
     /* pin mux and configuration for all device IOs requested from pins.h*/
     status = board_pins_config();
     if (status != 0) {
-        printf("Error in pin-mux configuration: %d\n", status);
+        printf("Error in pin-mux configuration: %" PRId32 "\n", status);
         return;
     }
 
@@ -234,7 +235,7 @@ static void MW_Demo_thread(void *pvParameters)
      */
     status = board_spi_pins_config();
     if (status != 0) {
-        printf("Error in pin-mux configuration: %d\n", status);
+        printf("Error in pin-mux configuration: %" PRId32 "\n", status);
         return;
     }
 #endif
@@ -242,13 +243,13 @@ static void MW_Demo_thread(void *pvParameters)
     /* SPI2 master instance initialization */
     status = masterDrv->Initialize(SPI2_Callback_func);
     if (status != ARM_DRIVER_OK) {
-        printf("ERROR: Failed to initialize SPI2 \n");
+        printf("ERROR: Failed to initialize SPI2\n");
         return;
     }
 
     status = masterDrv->PowerControl(ARM_POWER_FULL);
     if (status != ARM_DRIVER_OK) {
-        printf("ERROR: Failed to power SPI2 \n");
+        printf("ERROR: Failed to power SPI2\n");
         goto error_spi2_uninitialize;
     }
 
@@ -264,19 +265,19 @@ static void MW_Demo_thread(void *pvParameters)
     /* SPI3 slave instance initialization */
     status = slaveDrv->Initialize(SPI3_Callback_func);
     if (status != ARM_DRIVER_OK) {
-        printf("ERROR: Failed to initialize SPI3 \n");
+        printf("ERROR: Failed to initialize SPI3\n");
         return;
     }
 
     status = slaveDrv->PowerControl(ARM_POWER_FULL);
     if (status != ARM_DRIVER_OK) {
-        printf("ERROR: Failed to power SPI3 \n");
+        printf("ERROR: Failed to power SPI3\n");
         goto error_spi3_uninitialize;
     }
 
     slave_control = (ARM_SPI_MODE_SLAVE | ARM_SPI_MICROWIRE | ARM_SPI_DATA_BITS(32));
 
-    status        = slaveDrv->Control(slave_control, NULL);
+    status        = slaveDrv->Control(slave_control, 0);
     if (status != ARM_DRIVER_OK) {
         printf("ERROR: Failed to configure SPI3\n");
         goto error_spi3_power_off;
@@ -290,7 +291,7 @@ static void MW_Demo_thread(void *pvParameters)
 
 #if MASTER_TO_SLAVE_TRANSFER
 
-    printf("\nData transfer from master to slave \n");
+    printf("\nData transfer from master to slave\n");
 
     master_tx_buff[0] = 0x1111;     /* control word 1 */
     master_tx_buff[1] = 0x11111111; /* data 1 */
@@ -323,7 +324,7 @@ static void MW_Demo_thread(void *pvParameters)
     slave_tx_buff[0]  = 0x11111111; /* data 1 */
     slave_tx_buff[1]  = 0x22222222; /* data 2 */
 
-    printf("\nData transfer from slave to master \n");
+    printf("\nData transfer from slave to master\n");
 
     /* The third parameter should be the total number of data to be transferred,
      * excluding the control frame number. */
@@ -344,9 +345,9 @@ static void MW_Demo_thread(void *pvParameters)
 #endif
 
     xReturned =
-        xTaskNotifyWait(NULL, SPI2_CALLBACK_EVENT | SPI3_CALLBACK_EVENT, NULL, MW_THREAD_WAIT_TIME);
+        xTaskNotifyWait(0, SPI2_CALLBACK_EVENT | SPI3_CALLBACK_EVENT, 0, MW_THREAD_WAIT_TIME);
     if (xReturned != pdTRUE) {
-        printf("\n\r Task Wait Time out expired \n\r");
+        printf("\n\r Task Wait Time out expired\n\r");
         goto error_spi2_power_off;
     } else {
         printf("Data Transfer completed\n");
@@ -383,31 +384,31 @@ static void MW_Demo_thread(void *pvParameters)
 error_spi2_power_off:
     status = masterDrv->PowerControl(ARM_POWER_OFF);
     if (status != ARM_DRIVER_OK) {
-        printf("Error in SPI2 Power Off \n");
+        printf("Error in SPI2 Power Off\n");
     }
 
 error_spi2_uninitialize:
     status = masterDrv->Uninitialize();
     if (status != ARM_DRIVER_OK) {
-        printf("Error in SPI2 Uninitialize \n");
+        printf("Error in SPI2 Uninitialize\n");
     }
 
 error_spi3_power_off:
     status = slaveDrv->PowerControl(ARM_POWER_OFF);
     if (status != ARM_DRIVER_OK) {
-        printf("Error in SPI3 Power Off \n");
+        printf("Error in SPI3 Power Off\n");
     }
 
 error_spi3_uninitialize:
     status = slaveDrv->Uninitialize();
     if (status != ARM_DRIVER_OK) {
-        printf("Error in SPI3 Uninitialize \n");
+        printf("Error in SPI3 Uninitialize\n");
     }
 
-    printf("\nEnd of MicroWire demo application \n");
+    printf("\nEnd of MicroWire demo application\n");
 
     /* thread delete */
-    vTaskDelete(NULL);
+    vTaskDelete(0);
 }
 
 /*----------------------------------------------------------------------------
@@ -429,7 +430,7 @@ int main(void)
 
     /* Create application main thread */
     BaseType_t xReturned =
-        xTaskCreate(MW_Demo_thread, "MW_Thread", 216, NULL, configMAX_PRIORITIES - 1, &mw_xHandle);
+        xTaskCreate(MW_Demo_thread, "MW_Thread", 216, 0, configMAX_PRIORITIES - 1, &mw_xHandle);
     if (xReturned != pdPASS) {
         vTaskDelete(mw_xHandle);
         return -1;

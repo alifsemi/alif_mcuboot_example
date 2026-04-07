@@ -737,8 +737,8 @@ int32_t usbd_initialize(USB_DRIVER *drv)
     int32_t ret = USB_SUCCESS;
     /* Enable peripheral clk for USB  */
     enable_usb_periph_clk();
-    /* USB phy reset */
-    usb_ctrl2_phy_power_on_reset_clear();
+    /* USB phy power on reset clear */
+    usb_phy_por_clear();
 
     drv->regs = (USB_Type *) USB_BASE;
 

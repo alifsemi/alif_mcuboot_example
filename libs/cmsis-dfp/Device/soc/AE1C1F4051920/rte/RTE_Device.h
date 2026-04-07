@@ -1256,13 +1256,29 @@
 #define RTE_OSPI0_IRQ_PRIORITY                    0
 
 // <o> OSPI0 Frame format
-//    <0=> Standard
-//    <1=> Dual
-//    <2=> Quad
-//    <3=> Octal
+//    <0=> Standard SPI FRF
+//    <1=> Dual SPI FRF
+//    <2=> Quad SPI FRF
+//    <3=> Octal SPI FRF
+//    <3=> Dual Octal SPI FRF
 // <i> Defines OSPI0 Frame format
-// <i> Default: Octal
+// <i> Default: Octal SPI FRF
 #define RTE_OSPI0_SPI_FRAME_FORMAT                3
+
+// <o> OSPI0 Bus speed
+// <i> Defines the OSPI0 Bus speed
+// <i> Default: 100000000
+#define RTE_OSPI0_BUS_SPEED                       80000000
+
+// <o> OSPI0 Wait Cycles
+// <i> Defines the OSPI0 Wait Cycles for connected device
+// <i> Default: 6
+#define RTE_OSPI0_WAIT_CYCLES                     6
+
+// <o> OSPI0 DFS
+// <i> Defines OSPI0 Data Frame Size
+// <i> Default: 32
+#define RTE_OSPI0_DFS                             32
 
 // <o> OSPI0 TX FIFO Start level <0-255>
 // <i> Defines TX FIFO transfer start level for OSPI0
@@ -3127,7 +3143,7 @@
 // <o> Number of bits to shift <0-8>
 // <i> Defines How much bit to shift before storing in sample register.
 // <i> Default: 8
-#define RTE_ADC120_SHIFT_N_BIT         (0)
+#define RTE_ADC120_SHIFT_N_BIT         (8)
 
 // <o> Left or Right shift
 //     <0=> LEFT SHIFT

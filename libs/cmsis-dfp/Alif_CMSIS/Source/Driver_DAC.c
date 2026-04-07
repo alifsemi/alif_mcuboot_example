@@ -136,9 +136,13 @@ static int32_t DAC_PowerControl(ARM_POWER_STATE state, DAC_RESOURCES *DAC)
         /* Clear the DAC configuration */
         dac_clear_config(DAC->regs);
 
-        disable_dac_periph_clk(DAC->instance);
+        disable_analog_peripherals();
+
+        disable_dac12_ref_voltage();
 
         disable_analog_periph_clk();
+
+        disable_dac_periph_clk(DAC->instance);
 
         DAC->flags.powered = 0x0U;
         break;

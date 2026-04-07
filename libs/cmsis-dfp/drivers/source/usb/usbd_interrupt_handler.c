@@ -327,10 +327,10 @@ int32_t usbd_stop_transfer(USB_DRIVER *drv, uint8_t ep_num, uint8_t dir, uint32_
 
     phy_ep  = USB_GET_PHYSICAL_EP(ep_num, dir);
     ept     = &drv->eps[phy_ep];
-    trb_ptr = &ept->ep_trb[ept->trb_enqueue];
-    if (trb_ptr->ctrl) {
-        ept->trb_enqueue = 0;
-        trb_ptr->ctrl    = 0;
+    if (ept->trb_enqueue == 0U) {
+        ept->trb_enqueue = NO_OF_TRB_PER_EP - 1U;
+    } else {
+        ept->trb_enqueue--;
     }
     /* check the endpoint stall condition */
     if (ept->ep_status & USB_EP_STALL) {
@@ -365,6 +365,11 @@ int32_t usbd_stop_transfer(USB_DRIVER *drv, uint8_t ep_num, uint8_t dir, uint32_
 #endif
         return ret;
     }
+    trb_ptr = &ept->ep_trb[ept->trb_enqueue];
+    if (trb_ptr->ctrl) {
+        trb_ptr->ctrl    = 0;
+    }
+    ept->trb_enqueue = 0;
     if (force_rm == 1) {
         ept->ep_resource_index = 0U;
     }
@@ -628,7 +633,7 @@ void usbd_ep_xfercomplete(USB_DRIVER *drv, uint8_t endp_number)
 {
     USBD_TRB *trb_ptr;
     USBD_EP  *ept;
-    uint32_t  length;
+    uint32_t  remaining_len;
     uint8_t   dir;
     uint32_t  status;
 
@@ -649,22 +654,22 @@ void usbd_ep_xfercomplete(USB_DRIVER *drv, uint8_t endp_number)
     if (ept->trb_dequeue == NO_OF_TRB_PER_EP) {
         ept->trb_dequeue = 0U;
     }
-    length = trb_ptr->size & USB_TRB_SIZE_MASK;
-    if (length == 0U) {
-        ept->bytes_txed = ept->ep_requested_bytes;
+    /* remaining_len = remaining bytes not transferred */
+    remaining_len = trb_ptr->size & USB_TRB_SIZE_MASK;
+
+    if (dir == USB_DIR_IN) {
+        /* For IN: bytes_txed = requested - remaining */
+        ept->bytes_txed = ept->ep_requested_bytes - remaining_len;
     } else {
-        if (dir == USB_DIR_IN) {
-            ept->bytes_txed = ept->ep_requested_bytes - length;
+        uint32_t trb_size;
+        /* For OUT: Calculate based on actual TRB buffer size */
+        if (ept->unaligned_txed == 1U) {
+            trb_size            = ROUND_UP(ept->ep_requested_bytes, ept->ep_maxpacket);
+            ept->unaligned_txed = 0U;
         } else {
-            if (ept->unaligned_txed == 1U) {
-                ept->bytes_txed      = ROUND_UP(ept->ep_requested_bytes, ept->ep_maxpacket);
-                ept->bytes_txed     -= length;
-                ept->unaligned_txed  = 0U;
-            } else {
-                /* Get the actual number of bytes transmitted by host */
-                ept->bytes_txed = ept->ep_requested_bytes - length;
-            }
+            trb_size = ept->ep_requested_bytes;
         }
+        ept->bytes_txed = trb_size - remaining_len;
     }
     RTSS_InvalidateDCache_by_Addr((void *) trb_ptr->buf_ptr_low, ept->bytes_txed);
     drv->num_bytes = ept->bytes_txed;

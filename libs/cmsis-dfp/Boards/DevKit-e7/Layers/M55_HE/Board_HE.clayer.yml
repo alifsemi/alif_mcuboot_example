@@ -1,7 +1,7 @@
 layer:
   type: Board
   description: DevKit-E7 board setup using M55_HE
-  for-board: Alif Semiconductor::DevKit-E7:Gen 2
+  for-board: Alif Semiconductor::DevKit-E7
   for-device: Alif Semiconductor::AE722F80F55D5LS:M55_HE
   device: :M55_HE
 
@@ -15,6 +15,7 @@ layer:
       provides:
         - CMSIS_ETH
         - CMSIS_USART
+        - CMSIS_USB_Device
         - CMSIS_VIO
         - CMSIS_VSTREAM_AUDIO_IN
         - MIKROBUS_AN
@@ -45,8 +46,8 @@ layer:
 
   # List the packs used in the layer.
   packs:
-    - pack: AlifSemiconductor::Ensemble@^2.0.0-0
-    - pack: ARM::CMSIS@^6.2.0-0
+    - pack: AlifSemiconductor::Ensemble@^2.0.4-0
+    - pack: ARM::CMSIS@^6.2.0
     - pack: ARM::CMSIS-Compiler@^2.1.0
     - pack: ARM::CMSIS-Driver@^2.8.0
     - pack: ARM::ethos-u-core-driver@^1.24.8
@@ -55,7 +56,7 @@ layer:
   add-path:
     - ./ConductorTool
 
-  # List miscelaneous options passed via the command line to the build tool.
+  # List miscellaneous options passed via the command line to the build tool.
   misc:
     - for-compiler: AC6
       Link:
@@ -75,6 +76,7 @@ layer:
     - component: CMSIS Driver:SAI
     - component: CMSIS Driver:SPI
     - component: CMSIS Driver:USART
+    - component: CMSIS Driver:USB Device
     - component: CMSIS Driver:VIO:Board&DevKit-E7
     - component: CMSIS Driver:vStream:AudioIn&DevKit-E7
 

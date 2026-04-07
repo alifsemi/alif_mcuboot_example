@@ -23,13 +23,14 @@
 
 /* IMU Driver */
 #include "Driver_IMU.h"
+#include "sensor_utils.h"
 
 /* I3C Driver */
 #include "Driver_I3C.h"
 
 #if defined(RTE_Drivers_ICM42670P)
 
-#define ARM_IMU_DRV_VERSION ARM_DRIVER_VERSION_MAJOR_MINOR(1, 5)
+#define ARM_IMU_DRV_VERSION ARM_DRIVER_VERSION_MAJOR_MINOR(1, 6)
 
 #if !RTE_ICM42670_IBI_ENABLE
 /* IO Driver */
@@ -44,7 +45,7 @@ static ARM_DRIVER_GPIO *IO_Driver_INT = &ARM_Driver_GPIO_(RTE_ICM42670_INT_IO_PO
 #define IMU_I3C_TIMEOUT_US             (100000)
 #define ICM42670P_CFG_DELAY_US         (10)
 
-#define ICM42670P_UPPER_DATA_BYTE_Pos  (8)
+#define ICM42670P_DATA_HIGHER_BYTE_Pos (8)
 
 /* Register offest */
 #define ICM42670P_REG_IDX_SIZE         (1)
@@ -123,15 +124,21 @@ static ARM_DRIVER_GPIO *IO_Driver_INT = &ARM_Driver_GPIO_(RTE_ICM42670_INT_IO_PO
 #define ICM42670P_INT_SOURCE0_VAL (0x8)  /* Interrupt for data availability */
 #endif
 
-#define ICM42670P_ACCEL_CALIB_VAL                                                                  \
-    (2048U) /*Calibration for full scale output selection of +-16g  */
-#define ICM42670P_GYRO_CALIB_VAL                                                                   \
-    (16.4) /*Calibration for full scale output selection of +-2kdps */
+/*Calibration for full scale output selection of +-16g  */
+#define ICM42670P_ACCEL_CALIB_VAL  (2048)
+/*Calibration for full scale output selection of +-2kdps */
+#define ICM42670P_GYRO_CALIB_VAL   (16.4)
 
-#define ICM42670P_ACCEL_VAL(x)                                                                     \
-    ((x * 1000) / (ICM42670P_ACCEL_CALIB_VAL)) /* Acceleration value in mg*/
-#define ICM42670P_GYRO_VAL(x)    ((x * 1000) / (ICM42670P_GYRO_CALIB_VAL)) /* Gyro value in mdps */
-#define ICM42670P_TEMPERATURE(x) ((x / 128.0) + 25)                        /* Temp value in C */
+/* Temperature sensitivity */
+#define ICM42670P_TEMP_SENSITIVITY (128)
+
+/* Acceleration value in ug*/
+#define ICM42670P_ACCEL_VAL(x)   (((x) * MICROS_PER_UNIT) / (ICM42670P_ACCEL_CALIB_VAL))
+/* Gyro value in udps */
+#define ICM42670P_GYRO_VAL(x)    (((x) * MICROS_PER_UNIT) / (ICM42670P_GYRO_CALIB_VAL))
+/* Temp value in uC */
+#define ICM42670P_TEMPERATURE(x) ((((x) * MICROS_PER_UNIT) / ICM42670P_TEMP_SENSITIVITY) + \
+                                    (25 * MICROS_PER_UNIT))
 
 /* ICM42670P driver Info variable */
 static struct ICM42670P_DRV_INFO {
@@ -872,8 +879,8 @@ static int32_t IMU_Setup(void)
 */
 static int32_t IMU_GetAccelData(ARM_IMU_COORDINATES *accel_data)
 {
-    ARM_IMU_COORDINATES data;
     __ALIGNED(4) uint8_t buf[6];
+    int64_t      conv_val;
 
     /* Reads Acceleromter data */
     IMU_Read(icm42670p_drv_info.target_addr,
@@ -882,16 +889,20 @@ static int32_t IMU_GetAccelData(ARM_IMU_COORDINATES *accel_data)
              ICM42670P_ACCEL_DATA_SIZE);
 
     /* Processes Accelerometer data */
-    data.x         = (buf[ICM42670P_ACCEL_DATA_X1_OFFSET] << ICM42670P_UPPER_DATA_BYTE_Pos);
-    data.x        |= buf[ICM42670P_ACCEL_DATA_X0_OFFSET];
-    data.y         = (buf[ICM42670P_ACCEL_DATA_Y1_OFFSET] << ICM42670P_UPPER_DATA_BYTE_Pos);
-    data.y        |= buf[ICM42670P_ACCEL_DATA_Y0_OFFSET];
-    data.z         = (buf[ICM42670P_ACCEL_DATA_Z1_OFFSET] << ICM42670P_UPPER_DATA_BYTE_Pos);
-    data.z        |= buf[ICM42670P_ACCEL_DATA_Z0_OFFSET];
+    conv_val = ICM42670P_ACCEL_VAL((int16_t)((buf[ICM42670P_ACCEL_DATA_X1_OFFSET] <<
+                                   ICM42670P_DATA_HIGHER_BYTE_Pos) |
+                                   buf[ICM42670P_ACCEL_DATA_X0_OFFSET]));
+    SENSOR_EXTRACT_INT_FRACT_PART(accel_data->x, conv_val);
 
-    accel_data->x  = ICM42670P_ACCEL_VAL(data.x);
-    accel_data->y  = ICM42670P_ACCEL_VAL(data.y);
-    accel_data->z  = ICM42670P_ACCEL_VAL(data.z);
+    conv_val = ICM42670P_ACCEL_VAL((int16_t)((buf[ICM42670P_ACCEL_DATA_Y1_OFFSET] <<
+                                   ICM42670P_DATA_HIGHER_BYTE_Pos) |
+                                   buf[ICM42670P_ACCEL_DATA_Y0_OFFSET]));
+    SENSOR_EXTRACT_INT_FRACT_PART(accel_data->y, conv_val);
+
+    conv_val = ICM42670P_ACCEL_VAL((int16_t)((buf[ICM42670P_ACCEL_DATA_Z1_OFFSET] <<
+                                   ICM42670P_DATA_HIGHER_BYTE_Pos) |
+                                   buf[ICM42670P_ACCEL_DATA_Z0_OFFSET]));
+    SENSOR_EXTRACT_INT_FRACT_PART(accel_data->z, conv_val);
 
     /* Resets data received status */
     icm42670p_drv_info.status.data_rcvd = 0U;
@@ -907,8 +918,8 @@ static int32_t IMU_GetAccelData(ARM_IMU_COORDINATES *accel_data)
 */
 static int32_t IMU_GetGyroData(ARM_IMU_COORDINATES *gyro_data)
 {
-    ARM_IMU_COORDINATES data;
     __ALIGNED(4) uint8_t buf[6];
+    int64_t      conv_val;
 
     /* Reads Gyroscope data */
     IMU_Read(icm42670p_drv_info.target_addr,
@@ -917,16 +928,20 @@ static int32_t IMU_GetGyroData(ARM_IMU_COORDINATES *gyro_data)
              ICM42670P_GYRO_DATA_SIZE);
 
     /* Processes Gyroscope data */
-    data.x        = (buf[ICM42670P_GYRO_DATA_X1_OFFSET] << ICM42670P_UPPER_DATA_BYTE_Pos);
-    data.x       |= buf[ICM42670P_GYRO_DATA_X0_OFFSET];
-    data.y        = (buf[ICM42670P_GYRO_DATA_Y1_OFFSET] << ICM42670P_UPPER_DATA_BYTE_Pos);
-    data.y       |= buf[ICM42670P_GYRO_DATA_Y0_OFFSET];
-    data.z        = (buf[ICM42670P_GYRO_DATA_Z1_OFFSET] << ICM42670P_UPPER_DATA_BYTE_Pos);
-    data.z       |= buf[ICM42670P_GYRO_DATA_Z0_OFFSET];
+    conv_val = ICM42670P_GYRO_VAL((int16_t)((buf[ICM42670P_GYRO_DATA_X1_OFFSET] <<
+                                  ICM42670P_DATA_HIGHER_BYTE_Pos) |
+                                  buf[ICM42670P_GYRO_DATA_X0_OFFSET]));
+    SENSOR_EXTRACT_INT_FRACT_PART(gyro_data->x, conv_val);
 
-    gyro_data->x  = ICM42670P_GYRO_VAL(data.x);
-    gyro_data->y  = ICM42670P_GYRO_VAL(data.y);
-    gyro_data->z  = ICM42670P_GYRO_VAL(data.z);
+    conv_val = ICM42670P_GYRO_VAL((int16_t)((buf[ICM42670P_GYRO_DATA_Y1_OFFSET] <<
+                                  ICM42670P_DATA_HIGHER_BYTE_Pos) |
+                                  buf[ICM42670P_GYRO_DATA_Y0_OFFSET]));
+    SENSOR_EXTRACT_INT_FRACT_PART(gyro_data->y, conv_val);
+
+    conv_val = ICM42670P_GYRO_VAL((int16_t)((buf[ICM42670P_GYRO_DATA_Z1_OFFSET] <<
+                                  ICM42670P_DATA_HIGHER_BYTE_Pos) |
+                                  buf[ICM42670P_GYRO_DATA_Z0_OFFSET]));
+    SENSOR_EXTRACT_INT_FRACT_PART(gyro_data->z, conv_val);
 
     /* Resets data received status */
     icm42670p_drv_info.status.data_rcvd = 0U;
@@ -935,15 +950,15 @@ static int32_t IMU_GetGyroData(ARM_IMU_COORDINATES *gyro_data)
 }
 
 /**
-  \fn          int32_t IMU_GetTempData(float *temp_data)
+  \fn          int32_t IMU_GetTempData(ARM_IMU_SENSOR_VALUE *temp_data)
   \brief       Gets Temperature sensor data from IMU driver.
   \param[in]   temp_data : Temperature sensor data
   \return      \ref Execution status.
 */
-static int32_t IMU_GetTempData(float *temp_data)
+static int32_t IMU_GetTempData(ARM_IMU_SENSOR_VALUE *temp_data)
 {
-    int16_t ltemp;
     __ALIGNED(4) uint8_t buf[2];
+    int64_t      conv_val;
 
     /* Reads Temperature Sensor data */
     IMU_Read(icm42670p_drv_info.target_addr,
@@ -952,9 +967,10 @@ static int32_t IMU_GetTempData(float *temp_data)
              ICM42670P_TEMP_DATA_SIZE);
 
     /* Processes Temp data */
-    ltemp       = (buf[ICM42670P_TEMP_DATA1_OFFSET] << ICM42670P_UPPER_DATA_BYTE_Pos);
-    ltemp      |= buf[ICM42670P_TEMP_DATA0_OFFSET];
-    *temp_data  = ICM42670P_TEMPERATURE(ltemp);
+    conv_val = ICM42670P_TEMPERATURE((int16_t)((buf[ICM42670P_TEMP_DATA1_OFFSET] <<
+                                     ICM42670P_DATA_HIGHER_BYTE_Pos) |
+                                     buf[ICM42670P_TEMP_DATA0_OFFSET]));
+    SENSOR_EXTRACT_INT_FRACT_PART(*temp_data, conv_val);
 
     /* Resets data received status */
     icm42670p_drv_info.status.data_rcvd = 0U;
@@ -1090,8 +1106,7 @@ static int32_t ARM_IMU_PowerControl(ARM_POWER_STATE state)
 */
 static int32_t ARM_IMU_Control(uint32_t control, uint32_t arg)
 {
-    ARM_IMU_COORDINATES *ptr;
-    float               *temp_data;
+    void *ptr;
 
     switch (control) {
     case IMU_GET_ACCELEROMETER_DATA:
@@ -1114,8 +1129,8 @@ static int32_t ARM_IMU_Control(uint32_t control, uint32_t arg)
         if (!arg) {
             return ARM_DRIVER_ERROR;
         }
-        temp_data = (float *) arg;
-        IMU_GetTempData(temp_data);
+        ptr = (ARM_IMU_SENSOR_VALUE *) arg;
+        IMU_GetTempData(ptr);
         break;
 
     case IMU_SET_INTERRUPT:

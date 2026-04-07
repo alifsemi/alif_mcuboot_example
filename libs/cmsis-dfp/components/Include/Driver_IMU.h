@@ -53,12 +53,32 @@ extern "C" {
 #define IMU_EVENT_NONE               (0UL << 0)  ///< Event none
 
 /**
+ * @brief Representation of a sensor readout value.
+ *
+ * The value is represented as having an integer and a fractional part,
+ * and can be obtained using the formula val1 + val2 * 10^(-6). Negative
+ * values also adhere to the above formula, but may need special attention.
+ * Here are some examples of the value representation:
+ *
+ *      0.5: val1 =  0, val2 =  500000
+ *     -0.5: val1 =  0, val2 = -500000
+ *     -1.0: val1 = -1, val2 =  0
+ *     -1.5: val1 = -1, val2 = -500000
+ */
+typedef struct _ARM_IMU_SENSOR_VALUE {
+    /* Integer part of the value. */
+    int32_t int_val;
+    /* Fractional part of the value (in one-millionth parts). */
+    int32_t fract_val;
+} ARM_IMU_SENSOR_VALUE;
+
+/**
 \brief IMU Coordinates
 */
 typedef struct _ARM_IMU_COORDINATES {
-    int16_t x;
-    int16_t y;
-    int16_t z;
+    ARM_IMU_SENSOR_VALUE x;
+    ARM_IMU_SENSOR_VALUE y;
+    ARM_IMU_SENSOR_VALUE z;
 } ARM_IMU_COORDINATES;
 
 /**

@@ -115,6 +115,8 @@ typedef struct _CAMERA_SENSOR_OPERATIONS {
     int32_t (*Snapshot)(uint8_t); /* Start Camera Sensor device in snapshot mode*/
     int32_t (*Stop)(void);        /* Stop Camera Sensor device */
     int32_t (*Control)(uint32_t control, uint32_t arg); /* Control Camera Sensor device */
+    int32_t (*Suspend)(void);     /* Suspend the camera sensor to sleep state */
+    int32_t (*Resume)(void);      /* Resume the camera sensor from sleep state */
 } CAMERA_SENSOR_OPERATIONS;
 
 /**

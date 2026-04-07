@@ -26,6 +26,7 @@
 
 /* System Includes */
 #include <stdio.h>
+#include <inttypes.h>
 #include "app_utils.h"
 
 /* include Driver */
@@ -81,7 +82,8 @@ void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer,
 
 void vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName)
 {
-    (void) pxTask;
+    ARG_UNUSED(pxTask);
+    ARG_UNUSED(pcTaskName);
 
     ASSERT_HANG_LOOP
 }
@@ -148,8 +150,8 @@ static void prvAdcPotentiometerDemo(void *pvParameters)
     int32_t            lRet        = 0;
     uint32_t           ulErrorCode = SERVICES_REQ_SUCCESS;
     uint32_t           ulServiceErrorCode;
-    float              fTemp;
     ARM_DRIVER_VERSION xVersion;
+    ARG_UNUSED(pvParameters);
 
     /* Initialize the SE services */
     se_services_port_init();
@@ -160,19 +162,19 @@ static void prvAdcPotentiometerDemo(void *pvParameters)
                                                /*bool enable   */ true,
                                                &ulServiceErrorCode);
     if (ulErrorCode) {
-        printf("SE Error: 160 MHz clk enable = %d\n", ulErrorCode);
+        printf("SE Error: 160 MHz clk enable = %" PRId32 "\n", ulErrorCode);
         return;
     }
 
     printf("\t\t\n >>> ADC demo starting up!!! <<< \r\n");
 
     xVersion = pxADCDrv->GetVersion();
-    printf("\r\n ADC version api:%X driver:%X...\r\n", xVersion.api, xVersion.drv);
+    printf("\r\n ADC version api:%" PRIx16 " driver:%" PRIx16 "\r\n", xVersion.api, xVersion.drv);
 
     /* pin mux and configuration for all device IOs requested from pins.h*/
     lRet = board_pins_config();
     if (lRet != 0) {
-        printf("ERROR: Board pin configuration failed: %d\n", lRet);
+        printf("ERROR: Board pin configuration failed: %" PRId32 "\n", lRet);
         return;
     }
 
@@ -204,7 +206,7 @@ static void prvAdcPotentiometerDemo(void *pvParameters)
         goto error_poweroff;
     }
 
-    printf(">>> Allocated memory buffer Address is 0x%X <<<\n",
+    printf(">>> Allocated memory buffer Address is 0x%" PRIx32 " <<<\n",
            (uint32_t) (ulAdcSample + CLICK_BOARD_INPUT));
     /* Start ADC */
     lRet = pxADCDrv->Start();
@@ -218,20 +220,20 @@ static void prvAdcPotentiometerDemo(void *pvParameters)
     }
 
     /* wait till conversion comes ( isr callback ) */
-    if (xTaskNotifyWait(NULL, ADC_INT_AVG_SAMPLE_RDY, NULL, portMAX_DELAY) != pdFALSE) {
+    if (xTaskNotifyWait(0, ADC_INT_AVG_SAMPLE_RDY, 0, portMAX_DELAY) != pdFALSE) {
         /* Stop ADC */
         lRet = pxADCDrv->Stop();
         if (lRet != ARM_DRIVER_OK) {
             printf("\r\n Error: ADC stop failed\n");
             goto error_poweroff;
         }
-        printf("\n >>> ADC conversion completed \n");
+        printf("\n >>> ADC conversion completed\n");
         printf(" Converted value are stored in user allocated memory address.\n");
     } else {
-        printf("\n Error: ADC conversion Failed \n");
+        printf("\n Error: ADC conversion Failed\n");
     }
 
-    printf("\n ---END--- \r\n wait forever >>> \n");
+    printf("\n ---END--- \r\n wait forever >>>\n");
     WAIT_FOREVER_LOOP
 
 error_poweroff:
@@ -255,14 +257,14 @@ error_uninitialize:
                                                /*bool enable   */ false,
                                                &ulServiceErrorCode);
     if (ulErrorCode) {
-        printf("SE Error: 160 MHz clk disable = %d\n", ulErrorCode);
+        printf("SE Error: 160 MHz clk disable = %" PRId32 "\n", ulErrorCode);
         return;
     }
 
     printf("\r\n ADC demo exiting...\r\n");
 
     /* thread delete */
-    vTaskDelete(NULL);
+    vTaskDelete(0);
 }
 
 /*----------------------------------------------------------------------------
@@ -285,7 +287,7 @@ int main(void)
     BaseType_t xReturned = xTaskCreate(prvAdcPotentiometerDemo,
                                        "prvAdcPotentiometerDemo",
                                        256,
-                                       NULL,
+                                       0,
                                        configMAX_PRIORITIES - 1,
                                        &adc_xHandle);
     if (xReturned != pdPASS) {

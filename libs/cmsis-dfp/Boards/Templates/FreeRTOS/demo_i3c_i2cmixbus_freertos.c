@@ -34,6 +34,7 @@
 /* System Includes */
 #include <stdio.h>
 #include <string.h>
+#include <inttypes.h>
 
 /* Project Includes */
 #include "Driver_I3C.h"
@@ -82,7 +83,8 @@ void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer,
 
 void vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName)
 {
-    (void) pxTask;
+    ARG_UNUSED(pxTask);
+    ARG_UNUSED(pcTaskName);
 
     ASSERT_HANG_LOOP
 }
@@ -160,7 +162,7 @@ int32_t hardware_init(void)
     /* pin mux and configuration for all device IOs requested from pins.h*/
     ret = board_pins_config();
     if (ret != 0) {
-        printf("Error in pin-mux configuration: %d\n", ret);
+        printf("Error in pin-mux configuration: %" PRId32 "\n", ret);
         return ret;
     }
     return ARM_DRIVER_OK;
@@ -220,6 +222,7 @@ void I3C_callback(uint32_t event)
 */
 void mix_bus_i2c_i3c_Thread(void *pvParameters)
 {
+    ARG_UNUSED(pvParameters);
 
 /* Maximum 8 Slave Devices are supported */
 #define MAX_SLAVE_SUPPORTED          8
@@ -302,7 +305,7 @@ void mix_bus_i2c_i3c_Thread(void *pvParameters)
     /* Initialize i3c hardware pins using PinMux Driver. */
     ret = hardware_init();
     if (ret != 0) {
-        printf("Error: i3c hardware_init failed: %d\n", ret);
+        printf("Error: i3c hardware_init failed: %" PRId32 "\n", ret);
         return;
     }
 
@@ -376,7 +379,7 @@ void mix_bus_i2c_i3c_Thread(void *pvParameters)
     }
 
     /* Waiting for the callback */
-    xTaskNotifyWait(NULL, I3C_CB_EVENT_SUCCESS | I3C_CB_EVENT_ERROR, &actual_events, portMAX_DELAY);
+    xTaskNotifyWait(0, I3C_CB_EVENT_SUCCESS | I3C_CB_EVENT_ERROR, &actual_events, portMAX_DELAY);
 
     if (actual_events == I3C_CB_EVENT_ERROR) {
         printf("\r\nError: I3C Slaves' Address Reset failed.\r\n");
@@ -392,7 +395,7 @@ void mix_bus_i2c_i3c_Thread(void *pvParameters)
     i3c_cmd.len      = 1U;
     /* Assign Slave's Static address */
     i3c_cmd.addr     = I3C_ACCERO_ADDR;
-    i3c_cmd.data     = NULL;
+    i3c_cmd.data     = 0;
     i3c_cmd.def_byte = 0U;
 
     actual_events    = 0;
@@ -403,7 +406,7 @@ void mix_bus_i2c_i3c_Thread(void *pvParameters)
     }
 
     /* Waiting for the callback */
-    xTaskNotifyWait(NULL, I3C_CB_EVENT_SUCCESS | I3C_CB_EVENT_ERROR, &actual_events, portMAX_DELAY);
+    xTaskNotifyWait(0, I3C_CB_EVENT_SUCCESS | I3C_CB_EVENT_ERROR, &actual_events, portMAX_DELAY);
 
     if (actual_events == I3C_CB_EVENT_ERROR) {
         printf("\r\nError: I3C MasterAssignDA failed.\r\n");
@@ -449,7 +452,7 @@ void mix_bus_i2c_i3c_Thread(void *pvParameters)
     }
 
     /* Waiting for the callback */
-    xTaskNotifyWait(NULL, I3C_CB_EVENT_SUCCESS | I3C_CB_EVENT_ERROR, &actual_events, portMAX_DELAY);
+    xTaskNotifyWait(0, I3C_CB_EVENT_SUCCESS | I3C_CB_EVENT_ERROR, &actual_events, portMAX_DELAY);
 
     if (actual_events == I3C_CB_EVENT_ERROR) {
         printf("\r\nError: I3C MasterSendCommand failed.\r\n");
@@ -473,7 +476,7 @@ void mix_bus_i2c_i3c_Thread(void *pvParameters)
     }
 
     /* Waiting for the callback */
-    xTaskNotifyWait(NULL, I3C_CB_EVENT_SUCCESS | I3C_CB_EVENT_ERROR, &actual_events, portMAX_DELAY);
+    xTaskNotifyWait(0, I3C_CB_EVENT_SUCCESS | I3C_CB_EVENT_ERROR, &actual_events, portMAX_DELAY);
 
     if (actual_events == I3C_CB_EVENT_ERROR) {
         printf("\r\nError: I3C MasterSendCommand failed.\r\n");
@@ -490,7 +493,7 @@ void mix_bus_i2c_i3c_Thread(void *pvParameters)
     sys_busy_loop_us(1000);
 
     /* Attach i2c BMI slave using static address */
-    printf("\r\n >> i2c: Attaching i2c BMI slave addr:0x%X to i3c...\r\n", slave_addr[1]);
+    printf("\r\n >> i2c: Attaching i2c BMI slave addr:0x%" PRIx8 " to i3c...\r\n", slave_addr[1]);
 
     ret = I3CDrv->AttachSlvDev(ARM_I3C_DEVICE_TYPE_I2C, slave_addr[1]);
     if (ret != ARM_DRIVER_OK) {
@@ -547,7 +550,7 @@ void mix_bus_i2c_i3c_Thread(void *pvParameters)
             len = 1;
 
             printf("\r\n ------------------------------------------------------------ \r\n");
-            printf("\r\n >> i=%d TX slave addr:0x%X reg_addr:[0]0x%X \r\n",
+            printf("\r\n >> i=%" PRId32 " TX slave addr:0x%" PRIx8 " reg_addr:[0]0x%" PRIx8 " \r\n",
                    i,
                    slave_addr[i],
                    slave_reg_addr[i]);
@@ -573,27 +576,29 @@ void mix_bus_i2c_i3c_Thread(void *pvParameters)
              *   if the event flags are not set,
              *    this service suspends for a portMAX_DELAY time.
              */
-            xTaskNotifyWait(NULL,
+            xTaskNotifyWait(0,
                             I3C_CB_EVENT_SUCCESS | I3C_CB_EVENT_ERROR,
                             &actual_events,
                             portMAX_DELAY);
 
             if (actual_events & I3C_CB_EVENT_SUCCESS) {
                 /* TX Success: Got ACK from slave */
-                printf("\r\n \t\t >> i=%d TX Success: Got ACK from slave addr:0x%X.\r\n",
+                printf("\r\n \t\t >> i=%" PRId32 " TX Success: Got ACK from slave addr:0x%" PRIx8
+                       ".\r\n",
                        i,
                        slave_addr[i]);
             }
 
             if (actual_events & I3C_CB_EVENT_ERROR) {
                 /* TX Error: Got NACK from slave */
-                printf("\r\n \t\t >> i=%d TX Error: Got NACK from slave addr:0x%X \r\n",
+                printf("\r\n \t\t >> i=%" PRId32 " TX Error: Got NACK from slave addr:0x%" PRIx8
+                       " \r\n",
                        i,
                        slave_addr[i]);
             }
 
             /* RX */
-            printf("\r\n\r\n >> i=%d RX slave addr:0x%X \r\n", i, slave_addr[i]);
+            printf("\r\n\r\n >> i=%" PRId32 " RX slave addr:0x%" PRIx8 " \r\n", i, slave_addr[i]);
 
             /* clear rx data buffer. */
             rx_data[0] = 0;
@@ -638,7 +643,7 @@ void mix_bus_i2c_i3c_Thread(void *pvParameters)
              *   if the event flags are not set,
              *    this service suspends for a portMAX_DELAY time.
              */
-            xTaskNotifyWait(NULL,
+            xTaskNotifyWait(0,
                             I3C_CB_EVENT_SUCCESS | I3C_CB_EVENT_ERROR,
                             &actual_events,
                             portMAX_DELAY);
@@ -653,26 +658,30 @@ void mix_bus_i2c_i3c_Thread(void *pvParameters)
                 }
 
                 /* RX Success: Got ACK from slave */
-                printf("\r\n \t\t >> i=%d RX Success: Got ACK from slave addr:0x%X.\r\n",
+                printf("\r\n \t\t >> i=%" PRId32 " RX Success: Got ACK from slave addr:0x%" PRIx8
+                       ".\r\n",
                        i,
                        slave_addr[i]);
 
-                printf("\r\n \t\t >> i=%d RX Received Data from slave:[0]0x%X. actual "
-                       "data:0x%X\r\n",
+                printf("\r\n \t\t >> i=%" PRId32 " RX Received Data from slave:[0]0x%" PRIx8
+                        ". actual data:0x%" PRIx8 "\r\n",
                        i,
                        cmp_rx_data,
                        actual_rx_data[i]);
 
                 if (cmp_rx_data == actual_rx_data[i]) {
-                    printf("\r\n \t\t >> i=%d RX Received Data from slave is VALID.\r\n", i);
+                    printf("\r\n \t\t >> i=%" PRId32 " RX Received Data from slave is VALID.\r\n",
+                            i);
                 } else {
-                    printf("\r\n \t\t >> i=%d RX Received Data from slave is INVALID.\r\n", i);
+                    printf("\r\n \t\t >> i=%" PRId32 " RX Received Data from slave is INVALID.\r\n",
+                            i);
                 }
             }
 
             if (actual_events & I3C_CB_EVENT_ERROR) {
                 /* RX Error: Got NACK from slave */
-                printf("\r\n \t\t >> i=%d RX Error: Got NACK from slave addr:0x%X \r\n",
+                printf("\r\n \t\t >> i=%" PRId32 " RX Error: Got NACK from slave addr:0x%" PRIx8
+                       "\r\n",
                        i,
                        slave_addr[i]);
             }
@@ -685,7 +694,8 @@ error_detach:
 
     /* Detach all attached i2c/i3c slave device. */
     for (i = 0; i < TOTAL_SLAVE; i++) {
-        printf("\r\n i=%d detaching i2c or i3c slave addr:0x%X from i3c.\r\n", i, slave_addr[i]);
+        printf("\r\n i=%" PRId32 " detaching i2c or i3c slave addr:0x%" PRIx8 " from i3c.\r\n", i,
+                slave_addr[i]);
         ret = I3CDrv->Detachdev(slave_addr[i]);
         if (ret != ARM_DRIVER_OK) {
             printf("\r\n Error: I3C Detach device failed.\r\n");
@@ -732,7 +742,7 @@ int main(void)
     BaseType_t xReturned = xTaskCreate(mix_bus_i2c_i3c_Thread,
                                        "mix_bus_i2c_i3c_Thread",
                                        STACK_SIZE,
-                                       NULL,
+                                       0,
                                        configMAX_PRIORITIES - 1,
                                        &i3c_xHandle);
     if (xReturned != pdPASS) {

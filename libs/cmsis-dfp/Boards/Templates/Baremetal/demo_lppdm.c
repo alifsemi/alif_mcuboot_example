@@ -487,9 +487,9 @@ void pdm_demo()
 
     printf("\n------> Stop recording ------> \n");
     printf("\n--> PCM samples will be stored in 0x%" PRIxPTR ""
-           "address and size of buffer is %" PRIu16 "\n",
+           " address and size of buffer is %" PRIu32 "\n",
            (uintptr_t) sample_buf,
-           sizeof(sample_buf));
+           (uint32_t) sizeof(sample_buf));
     printf("\n ---END--- \r\n <<< wait forever >>> \n");
     WAIT_FOREVER_LOOP
 

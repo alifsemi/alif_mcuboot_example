@@ -21,6 +21,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <inttypes.h>
 
 #include <Driver_DMA.h>
 
@@ -182,9 +183,16 @@ static void prvDmaMemcpyTask(void *pvParameters)
     uint32_t           ulLength      = DMA_XFER_LEN;
     uint32_t           ulNotificationValue;
 
-    extern ARM_DRIVER_DMA ARM_Driver_DMA_(DMA1);
-    extern ARM_DRIVER_DMA ARM_Driver_DMA_(DMA2);
+#if defined(TEST_DMA0)
     extern ARM_DRIVER_DMA ARM_Driver_DMA_(DMA0);
+#elif defined(TEST_DMA1)
+    extern ARM_DRIVER_DMA ARM_Driver_DMA_(DMA1);
+#elif defined(TEST_DMA2)
+    extern ARM_DRIVER_DMA ARM_Driver_DMA_(DMA2);
+#else
+#error Select the DMA
+#endif
+
 
     (void) pvParameters;
 
@@ -194,32 +202,30 @@ static void prvDmaMemcpyTask(void *pvParameters)
     pxDMADrv = &ARM_Driver_DMA_(DMA1);
 #elif defined(TEST_DMA2)
     pxDMADrv = &ARM_Driver_DMA_(DMA2);
-#else
-#error Select the DMA
 #endif
 
     /* Verify the DMA API Version for compatibility*/
     xVersion = pxDMADrv->GetVersion();
-    printf("DMA API version = %d\n", xVersion.api);
+    printf("DMA API version = %" PRIu16 "\n", xVersion.api);
 
     /* Initializes DMA interface */
     lStatus = pxDMADrv->Initialize();
     if (lStatus) {
-        printf("DMA Init FAILED = %d\n", lStatus);
+        printf("DMA Init FAILED = %" PRId32 "\n", lStatus);
         WAIT_FOREVER_LOOP
     }
 
     /* Power control for DMA */
     lStatus = pxDMADrv->PowerControl(ARM_POWER_FULL);
     if (lStatus) {
-        printf("DMA Power FAILED = %d\n", lStatus);
+        printf("DMA Power FAILED = %" PRId32 "\n", lStatus);
         WAIT_FOREVER_LOOP
     }
 
     /* Allocate handle for DMA */
     lStatus = pxDMADrv->Allocate(&xDMAHandle);
     if (lStatus) {
-        printf("DMA Channel Allocation FAILED = %d\n", lStatus);
+        printf("DMA Channel Allocation FAILED = %" PRId32 "\n", lStatus);
         WAIT_FOREVER_LOOP
     }
 
@@ -233,7 +239,8 @@ static void prvDmaMemcpyTask(void *pvParameters)
     xDMAParams.burst_len  = ucDMABurstLen;
     xDMAParams.num_bytes  = ulLength;
 
-    printf("DMA MEMCPY STARTED : Burst Size = %d, Burst len = %d, Transfer Len = %d\n",
+    printf("DMA MEMCPY STARTED : Burst Size = %d, Burst len = %" PRIu8 ","
+           " Transfer Len = %" PRIu32 "\n",
            xDMABurstSize,
            ucDMABurstLen,
            ulLength);
@@ -241,7 +248,7 @@ static void prvDmaMemcpyTask(void *pvParameters)
     /* Start transfer */
     lStatus = pxDMADrv->Start(&xDMAHandle, &xDMAParams);
     if (lStatus || (xDMAHandle < 0)) {
-        printf("DMA Start FAILED = %d\n", lStatus);
+        printf("DMA Start FAILED = %" PRId32 "\n", lStatus);
         WAIT_FOREVER_LOOP
     }
 
@@ -251,7 +258,7 @@ static void prvDmaMemcpyTask(void *pvParameters)
                         &ulNotificationValue,
                         portMAX_DELAY) == pdPASS) {
         if (ulNotificationValue & DMA_ABORT_EVENT) {
-            printf("DMA ABORT OCCURRED \n");
+            printf("DMA ABORT OCCURRED\n");
             WAIT_FOREVER_LOOP
         }
     }
@@ -259,25 +266,25 @@ static void prvDmaMemcpyTask(void *pvParameters)
     /* Now the buffer is ready, compare it */
     lStatus = prvCompareBuffers(ucSrcBuff, ucDstBuff, ulLength, ACTUAL_BUFF_SIZE);
     if (lStatus) {
-        printf("DMA MEMCPY *FAILED* \n");
+        printf("DMA MEMCPY *FAILED*\n");
     } else {
         printf("DMA MEMCPY SUCCESS\n");
     }
 
     lStatus = pxDMADrv->DeAllocate(&xDMAHandle);
     if (lStatus) {
-        printf("DMA DeAllocate Failed = %d\n", lStatus);
+        printf("DMA DeAllocate Failed = %" PRId32 "\n", lStatus);
         WAIT_FOREVER_LOOP
     }
 
     /* Power control for DMA */
     lStatus = pxDMADrv->PowerControl(ARM_POWER_OFF);
     if (lStatus) {
-        printf("DMA PowerOff failed = %d\n", lStatus);
+        printf("DMA PowerOff failed = %" PRId32 "\n", lStatus);
         WAIT_FOREVER_LOOP
     }
 
-    printf("DMA TEST COMPLETED \n");
+    printf("DMA TEST COMPLETED\n");
 }
 
 /**
@@ -312,12 +319,12 @@ int main(void)
     xStatus = xTaskCreate(prvDmaMemcpyTask,
                           "DMA Memcpy Task",
                           DMA_MEMCPY_TASK_STACK_SIZE / sizeof(size_t),
-                          NULL,
+                          0,
                           DMA_MEMCPY_TASK_PRIORITY,
                           &xTaskDMAMemcpy);
     if (xStatus != pdPASS) {
         vTaskDelete(xTaskDMAMemcpy);
-        printf("Could not create DMA Task \n");
+        printf("Could not create DMA Task\n");
 
         return -1;
     }

@@ -65,7 +65,7 @@
 unsigned char filebuffer[(SD_BLK_SIZE * NUM_BLK_TEST) + 1] __attribute__((section("sd_dma_buf")))
 __attribute__((aligned(512)));
 FATFS sd_card __attribute__((section("sd_dma_buf"))) __attribute__((aligned(512)));
-FIL test_file;
+FIL test_file __attribute__((section("sd_dma_buf"))) __attribute__((aligned(512)));
 
 /**
   \fn           mySD_Thread_entry(unsigned long int args)

@@ -130,22 +130,20 @@ int32_t usbd_bulk_recv(USB_DRIVER *drv, uint8_t ep_num, uint8_t dir, uint8_t *bu
 #endif
         return USB_EP_DIRECTION_WRONG;
     }
-    if (buf_len < ept->ep_maxpacket) {
-        size                    = ept->ep_maxpacket;
-        ept->ep_requested_bytes = ept->ep_maxpacket;
-    } else {
-        size                    = buf_len;
-        ept->ep_requested_bytes = buf_len;
-    }
-    ept->bytes_txed = 0U;
+    ept->ep_requested_bytes = buf_len;
+    ept->bytes_txed         = 0U;
+
     /*
      * An OUT transfer size (Total TRB buffer allocation)
      * must be a multiple of MaxPacketSize even if software is expecting a
      * fixed non-multiple of MaxPacketSize transfer from the Host.
      */
-    if (IS_ALIGNED(buf_len, ept->ep_maxpacket)) {
+    if (!IS_ALIGNED(buf_len, ept->ep_maxpacket)) {
         size                = ROUND_UP(buf_len, ept->ep_maxpacket);
         ept->unaligned_txed = 1U;
+    } else {
+        size                = buf_len;
+        ept->unaligned_txed = 0U;
     }
     trb_ptr = &ept->ep_trb[ept->trb_enqueue];
 
@@ -156,7 +154,6 @@ int32_t usbd_bulk_recv(USB_DRIVER *drv, uint8_t ep_num, uint8_t dir, uint8_t *bu
 
     trb_ptr->buf_ptr_low  = LOWER_32_BITS(LocalToGlobal((uint32_t *) bufferptr));
     trb_ptr->buf_ptr_high = 0;
-
     trb_ptr->size         = USB_TRB_SIZE_LENGTH(size);
     trb_ptr->ctrl         = USB_TRBCTL_NORMAL;
     SET_BIT(trb_ptr->ctrl,

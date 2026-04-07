@@ -44,14 +44,16 @@
 #define RTE_Drivers_SD                      1 /* Driver SD                                */
 /* AlifSemiconductor::Device.SOC Peripherals.OSPI Controller */
 #define RTE_Drivers_OSPI                    1 /* Driver OSPI                              */
-/* AlifSemiconductor::BSP.OSPI Hyper RAM XIP     */
-#define RTE_Drivers_XIP_HYPERRAM            1 /* Driver Hyper RAM XIP                     */
+/* AlifSemiconductor::BSP.OSPI PSRAM XIP     */
+#define RTE_Drivers_XIP_PSRAM               1 /* Driver PSRAM XIP                         */
 /* AlifSemiconductor::BSP.OSPI FLASH XIP Core   */
 #define RTE_Drivers_ISSI_FLASH_XIP_CORE     1 /* Driver OSPI XIP CORE                     */
 /* AlifSemiconductor::BSP.OSPI FLASH XIP Utility  */
 #define RTE_Drivers_ISSI_FLASH_XIP_UTILITY  1 /* Driver OSPI XIP UTILITY                  */
 /* AlifSemiconductor::BSP.External peripherals.OSPI Flash ISSI     */
 #define RTE_Drivers_ISSI_FLASH              1 /* Driver Flash ISSI                        */
+/* AlifSemiconductor::BSP.External peripherals.OSPI Flash MX66UW1G     */
+#define RTE_Drivers_MX66UW1G_FLASH          1 /* Driver Flash MX66UW1G                    */
 /* AlifSemiconductor::CMSIS Driver.Touchscreen.GT911 */
 #define RTE_Drivers_GT911                   1 /* Driver GT911                             */
 /* AlifSemiconductor::Device.SOC Peripherals.HWSEM */

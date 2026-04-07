@@ -2,9 +2,10 @@
 
 The `Alif Semiconductor Ensemble Device Family Pack` contains Device and Board support for:
 
-- [Alif Semiconductor Ensemble E1C/E1/E3/E5/E7/E8](https://alifsemi.com/products/ensemble/) AI/ML microcontroller series with up two Arm Cortex-M55 and two Arm Ethos-U55 microNPUs.
-- [Alif Semiconductor Ensemble E7 DevKit - Gen 2](https://alifsemi.com/support/kits/ensemble-devkit/) single board computer with access to all signals and pins for power/performance profiling.
-- [Alif Semiconductor Ensemble E7 AI/ML AppKit - Gen 2](https://alifsemi.com/support/kits/ai-ml-appkit/) single board computer with camera/image, motion, sound sensors and display.
+- [Alif Semiconductor Ensemble E1C/E1/E3/E5/E7/E8](https://alifsemi.com/products/ensemble/) AI/ML microcontroller series with up two Arm Cortex-M55 and two Arm Ethos-U55/U85 microNPUs.
+- [Alif Semiconductor Ensemble E8 DevKit](https://alifsemi.com/support/kits/) single board computer with access to all signals and pins for power/performance profiling.
+- [Alif Semiconductor Ensemble E7 DevKit - Gen 2](https://alifsemi.com/support/kits/) single board computer with access to all signals and pins for power/performance profiling.
+- [Alif Semiconductor Ensemble E7 AI/ML AppKit - Gen 2](https://alifsemi.com/support/kits/) single board computer with camera/image, motion, sound sensors and display.
 
 This Pack contains:
 
@@ -30,20 +31,14 @@ The following packs are required for this DFP:
     - pack: ARM::CMSIS-Compiler@2.1.0       # Arm Compiler pack 2.1.0 or higher (for STDIN/OUT)
 ```
 
-## E7 DevKit (BSP)
+## E8 DevKit (BSP)
 
-The E7 DevKit Board Support (BSP) part provides the following examples and layers:
+The E8 DevKit Board Support (BSP) part provides the following examples and layers:
 
-Example                  | Tool           | Description
-:------------------------|:---------------|:--------------------------
-Blinky_M55_HE            | uVision IDE    | Blinky example running on M55 High Efficiency core
-Blinky_M55_HE_TCM        | uVision IDE    | Blinky example running on M55 High Efficiency core from TCM
-Csolution Project        | CMSIS-Toolbox  | Blinky examples configured for M55 High Performance or High Efficiency code
-DualCore_HE_HP           | CMSIS-Toolbox  | Dual Core example running on M55 High Efficiency and High Performance core
-HelloWorld_M55_HP        | uVision IDE    | Hello World example running on M55 High Performance core
-Zephyr_HP                | CMSIS-Toolbox  | Zephyr setup for CMSIS-Debugger on M55 High Performance core
-Zephyr_HE                | CMSIS-Toolbox  | Zephyr setup for CMSIS-Debugger on M55 High Efficiency core
-Zephyr_HE_HP             | CMSIS-Toolbox  | Zephyr setup for CMSIS-Debugger on M55 High Efficiency and High Performance core
+Example                 | Tool           | Description
+:-----------------------|:---------------|:--------------------------
+Blinky_HP               | CMSIS-Toolbox  | Blinky example configured for M55 High Performance code
+Blinky_HE               | CMSIS-Toolbox  | Blinky example configured for M55 High Efficiency code
 
 Layer Type: Board       | Tool           | Description
 :-----------------------|:---------------|:--------------------------
@@ -55,6 +50,37 @@ The Board Layers enable device-agnostic [Reference Applications](https://www.kei
 Provided API Interface    | Description
 :-------------------------|:------------------------------------------------------------------------------
  CMSIS_ETH                | CMSIS-Driver Ethernet connected to RJ45 connector
+ CMSIS_USB_Device         | CMSIS-Driver USB connected to MCU USB connector
+ CMSIS_VIO                | CMSIS-Driver VIO connected to RGB LED and Joystick
+ CMSIS_VSTREAM_AUDIO_IN   | CMSIS-Driver for Audio input stream via I2S Microphones
+ CMSIS_VSTREAM_VIDEO_IN   | CMSIS-Driver for Video input stream via MIPI Camera
+ CMSIS_VSTREAM_VIDEO_OUT  | CMSIS-Driver for Video output stream via GLCD Display
+ STDIN, STDOUT, STDERR    | Standard I/O connected to USART COM port
+
+## E7 DevKit (BSP)
+
+The E7 DevKit Board Support (BSP) part provides the following examples and layers:
+
+Example                  | Tool           | Description
+:------------------------|:---------------|:--------------------------
+Blinky_M55_HE            | uVision IDE    | Blinky example running on M55 High Efficiency core
+Blinky_M55_HE_TCM        | uVision IDE    | Blinky example running on M55 High Efficiency core from TCM
+Blinky_HP                | CMSIS-Toolbox  | Blinky example configured for M55 High Performance code
+Blinky_HE                | CMSIS-Toolbox  | Blinky example configured for M55 High Efficiency code
+DualCore_HE_HP           | CMSIS-Toolbox  | Dual Core example running on M55 High Efficiency and High Performance core
+HelloWorld_M55_HP        | uVision IDE    | Hello World example running on M55 High Performance core
+
+Layer Type: Board       | Tool           | Description
+:-----------------------|:---------------|:--------------------------
+`Board_HP.clayer.yml`   | CMSIS-Toolbox  | Board layer for M55 High Performance core
+`Board_HE.clayer.yml`   | CMSIS-Toolbox  | Board layer for M55 High Efficient core
+
+The Board Layers enable device-agnostic [Reference Applications](https://www.keil.arm.com/refapps/) and implement these API interfaces:
+
+Provided API Interface    | Description
+:-------------------------|:------------------------------------------------------------------------------
+ CMSIS_ETH                | CMSIS-Driver Ethernet connected to RJ45 connector
+ CMSIS_USB_Device         | CMSIS-Driver USB connected to SoC USB connector
  CMSIS_VIO                | CMSIS-Driver VIO connected to RGB LED and Joystick
  CMSIS_VSTREAM_AUDIO_IN   | CMSIS-Driver for Audio input stream via I2S Microphones
  STDIN, STDOUT, STDERR    | Standard I/O connected to USART COM port
@@ -68,9 +94,6 @@ Example                 | Tool           | Description
 Blinky_HP               | CMSIS-Toolbox  | Blinky example running on M55 High Performance core
 Blinky_HE               | CMSIS-Toolbox  | Blinky example running on M55 High Efficiency core
 DualCore_HE_HP          | CMSIS-Toolbox  | Dual Core example running on M55 High Efficiency and High Performance core
-Zephyr_HP               | CMSIS-Toolbox  | Zephyr setup for CMSIS-Debugger on M55 High Performance core
-Zephyr_HE               | CMSIS-Toolbox  | Zephyr setup for CMSIS-Debugger on M55 High Efficiency core
-Zephyr_HE_HP            | CMSIS-Toolbox  | Zephyr setup for CMSIS-Debugger on M55 High Efficiency and High Performance core
 
 Layer Type: Board       | Tool           | Description
 :-----------------------|:---------------|:--------------------------
@@ -82,20 +105,47 @@ The Board Layers enable device-agnostic [Reference Applications](https://open-cm
 Provided API Interface    | Description
 :-------------------------|:------------------------------------------------------------------------------
  CMSIS_VIO                | CMSIS-Driver VIO connected to RGB LED and Joystick
+ CMSIS_USB_Device         | CMSIS-Driver USB connected to SOC USB connector
  CMSIS_VSTREAM_AUDIO_IN   | CMSIS-Driver for Audio input stream via I2S Microphones
  CMSIS_VSTREAM_VIDEO_IN   | CMSIS-Driver for Video input stream via MIPI Camera
  CMSIS_VSTREAM_VIDEO_OUT  | CMSIS-Driver for Video output stream via GLCD Display
  STDIN, STDOUT, STDERR    | Standard I/O connected to USART COM port
 
+## CMSIS Solution Templates
+
+For starting new applications in VS Code, select these templates when using the CMSIS View menu command *Create a Solution*:
+
+- Alif CMSIS: A bare-metal application for an Alif Ensemble device.
+- Alif Zephyr: A Zephyr application (using West) for an Alif Ensemble device.
+
 ## Usage
 
-The host PC runs the [SETOOLS](https://swrm.alifsemi.com/Content/3.4%20SETOOLS.htm?TocPath=Secure%20Enclave%20Subsystem%7C_____4), IDE and debugger connects to Alif Semiconductor development boards via debug probes (J-Link, CMSIS DAP, ULINKpro). Optional, for the SETOOLS  an onboard UART-to-USB
-interface adapter (PRG_USB) is available.
+The host PC runs the [SETOOLS](https://swrm.alifsemi.com/Content/3.4%20SETOOLS.htm?TocPath=Secure%20Enclave%20Subsystem%7C_____4),
+IDE and debugger connects to Alif Semiconductor development boards via debug probes (J-Link, CMSIS DAP, ULINKpro).
+Optional, for the SETOOLS  an onboard UART-to-USB interface adapter (PRG_USB) is available.
 
 > _**NOTE**_<br>
-> SETOOLS are mandatory for generating and flashing processor the Application Table of Content (ATOC). The first time you load an image or change the processor setup, a ATOC image containing debug stubs must be generated and flashed onto the device prior to starting a debug session (otherwise, the debug connection will fail). After this is done once, the application can be built, flashed, and debugged without reprogramming the ATOC.
+> SETOOLS are mandatory for generating and flashing processor the Application Table of Content (ATOC). The first time you load
+> an image or change the processor setup, a ATOC image containing debug stubs must be generated and flashed onto the device prior
+> to starting a debug session (otherwise, the debug connection will fail). After this is done once, the application can be built,
+> flashed, and debugged without reprogramming the ATOC.
 >
 > Download SETOOLS from Alif Semiconductor [Software & Tools](https://alifsemi.com/support/software-tools/ensemble/) page (requires registration).
+
+> _**NOTE**_<br>
+> Beginning with the V1.107.00 release and onwards, the default tools configuration for the target device is the
+> Ensemble E8 device used on the Ensemble E8 DevKit. If you are using any other kit or your own board, you will need to select
+> the correct target device. See Section 4 of the latest Alif Security Toolkit Quick Start Guide for details on different ways
+> to do this.
+>
+> When using command line version of `tools-config` see the below examples to switch target device:
+> Kit        | Description
+> :----------|:-------------------------
+> E7 AppKit  | `tools-config -p "E7 (AE722F80F55D5LS) - 5.5 MRAM / 13.5 SRAM"`
+> E7 DevKit  | `tools-config -p "E7 (AE722F80F55D5LS) - 5.5 MRAM / 13.5 SRAM"`
+> E1C DevKit | `tools-config -p “E1C (AE1C1F4051920PH) - 1.86 MRAM / 2.0 SRAM”`
+> B1 DevKit  | `tools-config -p “B1 (AB1C1F4M51820PH) - 1.8 MRAM / 2.0 SRAM”`
+> E8 DevKit  | `tools-config -p "E8 (AE822FA0E5597LS0) - 5.5 MRAM / 9.75 SRAM"`
 
 The CMSIS-Toolbox examples include for VS Code a `tasks.json` file that generates and programs the ATOC using the SETOOLS using the following _tasks_:
 
@@ -179,6 +229,4 @@ Done
 - [Product page](https://alifsemi.com/products/ensemble/)
 - [Alif GitHub Repos](https://github.com/alifsemi)
 - [Support](https://alifsemi.com/support/)
-<!--
-- [User forum]()
- -->
+- [User forum](https://community.arm.com/support-forums/f/keil-forum)

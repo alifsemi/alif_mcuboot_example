@@ -12,23 +12,27 @@
  * @file     driver_mac.c
  * @author   Silesh C V
  * @email    silesh@alifsemi.com
- * @version  V1.0.0
- * @date     22-Mar-2022
+ * @version  V1.1.0
+ * @date     04-Feb-2026
  * @brief    CMSIS driver for ETH MAC.
  * @bug      None.
  * @Note     None
  ******************************************************************************/
 
+#include <string.h>
 #include "driver_mac.h"
 #include "sys_ctrl_eth.h"
 
+/* Receive/transmit checksum offload enabled by default */
+#ifndef EMAC_CHECKSUM_OFFLOAD
+  #define EMAC_CHECKSUM_OFFLOAD 1
+#endif
+
 static MAC_DEV MAC0 = {
     .regs         = (volatile MAC_REGS *) ETH_BASE,
-    .flags        = 0,
-    .cb_event     = NULL,
-    .frame_end    = NULL,
-    .irq          = (IRQn_Type) ETH_SBD_IRQ_IRQn,
+    .irq          = ETH_SBD_IRQ_IRQn,
     .irq_priority = RTE_ETH_MAC_IRQ_PRIORITY,
+    .flags        = 0,
 };
 
 /* area for descriptors */
@@ -37,30 +41,30 @@ __attribute__((aligned(16)));
 static uint32_t rx_buffers[RX_DESC_COUNT][ETH_BUF_SIZE >> 2] __attribute__((section("eth_buf")));
 static uint32_t tx_buffers[TX_DESC_COUNT][ETH_BUF_SIZE >> 2] __attribute__((section("eth_buf")));
 
-#define ARM_ETH_MAC_DRV_VERSION ARM_DRIVER_VERSION_MAJOR_MINOR(1, 0) /* driver version */
+#define ARM_ETH_MAC_DRV_VERSION ARM_DRIVER_VERSION_MAJOR_MINOR(1, 1) /* driver version */
 
 /* Driver Version */
 static const ARM_DRIVER_VERSION DriverVersion = {ARM_ETH_MAC_API_VERSION, ARM_ETH_MAC_DRV_VERSION};
 
 /* Driver Capabilities */
 static const ARM_ETH_MAC_CAPABILITIES DriverCapabilities = {
-    0,                      /* IPv4 header checksum verified on receive */
-    0,                      /* IPv6 checksum verification supported on receive */
-    0,                      /* UDP payload checksum verified on receive */
-    0,                      /* TCP payload checksum verified on receive */
-    0,                      /* ICMP payload checksum verified on receive */
-    0,                      /* IPv4 header checksum generated on transmit */
-    0,                      /* IPv6 checksum generation supported on transmit */
-    0,                      /* UDP payload checksum generated on transmit */
-    0,                      /* TCP payload checksum generated on transmit */
-    0,                      /* ICMP payload checksum generated on transmit */
-    ARM_ETH_INTERFACE_RMII, /* Ethernet Media Interface type */
-    0,                      /* driver provides initial valid MAC address */
-    1,                      /* callback event \ref ARM_ETH_MAC_EVENT_RX_FRAME generated */
-    1,                      /* callback event \ref ARM_ETH_MAC_EVENT_TX_FRAME generated */
-    0,                      /* wakeup event \ref ARM_ETH_MAC_EVENT_WAKEUP generated */
-    0,                      /* Precision Timer supported */
-    0                       /* Reserved (must be zero) */
+    (EMAC_CHECKSUM_OFFLOAD) ? 1U : 0U,  /* IPv4 header checksum verified on receive */
+    (EMAC_CHECKSUM_OFFLOAD) ? 1U : 0U,  /* IPv6 checksum verification supported on receive */
+    (EMAC_CHECKSUM_OFFLOAD) ? 1U : 0U,  /* UDP payload checksum verified on receive */
+    (EMAC_CHECKSUM_OFFLOAD) ? 1U : 0U,  /* TCP payload checksum verified on receive */
+    (EMAC_CHECKSUM_OFFLOAD) ? 1U : 0U,  /* ICMP payload checksum verified on receive */
+    (EMAC_CHECKSUM_OFFLOAD) ? 1U : 0U,  /* IPv4 header checksum generated on transmit */
+    (EMAC_CHECKSUM_OFFLOAD) ? 1U : 0U,  /* IPv6 checksum generation supported on transmit */
+    (EMAC_CHECKSUM_OFFLOAD) ? 1U : 0U,  /* UDP payload checksum generated on transmit */
+    (EMAC_CHECKSUM_OFFLOAD) ? 1U : 0U,  /* TCP payload checksum generated on transmit */
+    (EMAC_CHECKSUM_OFFLOAD) ? 1U : 0U,  /* ICMP payload checksum generated on transmit */
+    ARM_ETH_INTERFACE_RMII,             /* Ethernet Media Interface type */
+    0,                                  /* driver provides initial valid MAC address */
+    1,                                  /* callback event \ref ARM_ETH_MAC_EVENT_RX_FRAME generated */
+    1,                                  /* callback event \ref ARM_ETH_MAC_EVENT_TX_FRAME generated */
+    0,                                  /* wakeup event \ref ARM_ETH_MAC_EVENT_WAKEUP generated */
+    0,                                  /* Precision Timer supported */
+    0                                   /* Reserved (must be zero) */
 };
 
 /**
@@ -74,12 +78,12 @@ static void setup_rxdesc(MAC_DEV *dev, uint32_t desc_id)
 {
     DMA_DESC *desc = &dev->rx_descs[desc_id];
 
-    SCB_InvalidateDCache_by_Addr((uint32_t *) desc, sizeof(DMA_DESC));
+    SCB_InvalidateDCache_by_Addr(desc, sizeof(DMA_DESC));
 
-    desc->des0 = (uint32_t) LocalToGlobal(&rx_buffers[desc_id][0]);
+    desc->des0 = LocalToGlobal(&rx_buffers[desc_id]);
     desc->des3 = RDES3_OWN | RDES3_INT_ON_COMPLETION_EN | RDES3_BUFFER1_VALID_ADDR;
 
-    SCB_CleanDCache_by_Addr((uint32_t *) desc, sizeof(DMA_DESC));
+    SCB_CleanDCache_by_Addr(desc, sizeof(DMA_DESC));
 }
 
 /**
@@ -90,18 +94,15 @@ static void setup_rxdesc(MAC_DEV *dev, uint32_t desc_id)
 */
 static void init_rx_descs(MAC_DEV *dev)
 {
-    uint32_t i, last_rx_desc;
+    uint32_t i;
 
     for (i = 0; i < RX_DESC_COUNT; i++) {
         setup_rxdesc(dev, i);
     }
 
-    dev->regs->DMA_CH0_RX_BASE_ADDR = (uint32_t) LocalToGlobal(dev->rx_descs);
+    dev->regs->DMA_CH0_RX_BASE_ADDR = LocalToGlobal(dev->rx_descs);
     dev->regs->DMA_CH0_RX_RING_LEN  = RX_DESC_COUNT - 1;
-
-    last_rx_desc                    = (uint32_t) LocalToGlobal(&(dev->rx_descs[RX_DESC_COUNT - 1]));
-
-    dev->regs->DMA_CH0_RX_END_ADDR  = last_rx_desc;
+    dev->regs->DMA_CH0_RX_END_ADDR  = LocalToGlobal(&dev->rx_descs[RX_DESC_COUNT - 1]);
 }
 
 /**
@@ -118,10 +119,10 @@ static void init_tx_descs(MAC_DEV *dev)
         dev->tx_descs[i] = (DMA_DESC){0, 0, 0, 0};
     }
 
-    dev->regs->DMA_CH0_TX_BASE_ADDR = (uint32_t) LocalToGlobal(dev->tx_descs);
+    dev->regs->DMA_CH0_TX_BASE_ADDR = LocalToGlobal(dev->tx_descs);
     dev->regs->DMA_CHO_TX_RING_LEN  = TX_DESC_COUNT - 1;
 
-    SCB_CleanDCache_by_Addr((uint32_t *) dev->tx_descs, TX_DESC_COUNT * sizeof(DMA_DESC));
+    SCB_CleanDCache_by_Addr(dev->tx_descs, TX_DESC_COUNT * sizeof(DMA_DESC));
 }
 
 /**
@@ -133,8 +134,8 @@ static void init_tx_descs(MAC_DEV *dev)
 static void init_descriptors(MAC_DEV *dev)
 {
     dev->descs    = dma_descs;
-    dev->tx_descs = (DMA_DESC *) dev->descs;
-    dev->rx_descs = (dev->tx_descs + TX_DESC_COUNT);
+    dev->tx_descs = dev->descs;
+    dev->rx_descs = dev->tx_descs + TX_DESC_COUNT;
 
     init_rx_descs(dev);
     init_tx_descs(dev);
@@ -149,16 +150,13 @@ static void init_descriptors(MAC_DEV *dev)
 static int32_t mac_hw_init(MAC_DEV *dev)
 {
     uint32_t val;
-    uint32_t timeout = 100;
-#ifdef MTL_HAS_MULTIPLE_QUEUES
-    uint32_t tx_fifo_sz, rx_fifo_sz, tqs, rqs;
-#endif
+    uint32_t timeout = 1000;
 
     /* Soft reset the logic */
     dev->regs->DMA_BUS_MODE |= DMA_BUS_MODE_SFT_RESET;
 
     do {
-        osDelay(1);
+        sys_busy_loop_us(100);
         timeout--;
     } while ((dev->regs->DMA_BUS_MODE & DMA_BUS_MODE_SFT_RESET) && timeout);
 
@@ -167,63 +165,27 @@ static int32_t mac_hw_init(MAC_DEV *dev)
     }
 
     /* Configure MTL Tx Q0 Operating mode */
-    dev->regs->MTL_TXQ0_OP_MODE &= ~MTL_OP_MODE_TXQEN_MASK;
-    dev->regs->MTL_TXQ0_OP_MODE |= MTL_OP_MODE_TXQEN | MTL_OP_MODE_TSF;
-
-    /* Configure MTL RX Q0 operating mode */
-    dev->regs->MTL_RXQ0_OP_MODE |= (MTL_OP_MODE_RSF | MTL_OP_MODE_FEP | MTL_OP_MODE_FUP);
-
-#ifdef MTL_HAS_MULTIPLE_QUEUES
-    /*
-     *  configure the MTL T/Rx Q0 sizes by finding out the configured
-     * Tx RX FIFO sizes. Note that this is not needed if the IP is
-     * configured to have only one queue (each for Tx and Rx).
-     */
-    val        = dev->regs->MAC_HW_FEATURE_1;
-
-    tx_fifo_sz = (val >> MAC_HW_FEATURE1_TXFIFOSIZE_SHIFT) & MAC_HW_FEATURE1_TXFIFOSIZE_MASK;
-
-    rx_fifo_sz = (val >> MAC_HW_FEATURE1_RXFIFOSIZE_SHIFT) & MAC_HW_FEATURE1_RXFIFOSIZE_MASK;
-
-    /*
-     * FIFO sizes are encoded as log2(fifo_size) - 7 in the above field
-     * and tqs and rqs needs to be programmed in blocks of 256 bytes.
-     */
-    tqs        = (128 << tx_fifo_sz) / 256 - 1;
-    rqs        = (128 << rx_fifo_sz) / 256 - 1;
-
-    dev->regs->MTL_TXQ0_OP_MODE &=
-        ~(MTL_TXQ0_OPERATION_MODE_TQS_MASK << MTL_TXQ0_OPERATION_MODE_TQS_SHIFT);
-    dev->regs->MTL_TXQ0_OP_MODE |= (tqs << MTL_TXQ0_OPERATION_MODE_TQS_SHIFT);
-
-    dev->regs->MTL_RXQ0_OP_MODE &=
-        ~(MTL_RXQ0_OPERATION_MODE_RQS_MASK << MTL_TXQ0_OPERATION_MODE_TQS_SHIFT);
-    dev->regs->MTL_RXQ0_OP_MODE |= (rqs << MTL_TXQ0_OPERATION_MODE_TQS_SHIFT);
+#if (EMAC_CHECKSUM_OFFLOAD)
+    dev->regs->MTL_TXQ0_OP_MODE |= MTL_OP_MODE_TSF;
 #endif
 
-    /* Enable MAC RXQ */
-    dev->regs->MAC_RXQ_CTRL_0 &= ~(MAC_RXQ_CTRL0_RXQ0EN_MASK << MAC_RXQ_CTRL0_RXQ0EN_SHIFT);
-    dev->regs->MAC_RXQ_CTRL_0 |= (MAC_RXQ_CTRL0_RXQ0EN_ENABLED_DCB << MAC_RXQ_CTRL0_RXQ0EN_SHIFT);
-
-    /* Configure RXQ control1 for routing multicast/broadcast queues
-     * Note that by default, Q0 will be used.
-     */
-    dev->regs->MAC_RXQ_CTRL_1 |= MAC_RXQCTRL_MCBCQEN;
+    /* Configure MTL RX Q0 operating mode */
+    dev->regs->MTL_RXQ0_OP_MODE = (MTL_OP_MODE_FEP | MTL_OP_MODE_FUP);
+#if (EMAC_CHECKSUM_OFFLOAD)
+    dev->regs->MTL_RXQ0_OP_MODE |= MTL_OP_MODE_RSF;
+#endif
 
     /* Configure tx and rx flow control */
     dev->regs->MAC_Q0_TX_FLOW_CTRL |=
         0xffff << MAC_Q0_TX_FLOW_CTRL_PT_SHIFT | MAC_Q0_TX_FLOW_CTRL_TFE;
     dev->regs->MAC_RX_FLOW_CTRL  |= MAC_RX_FLOW_CTRL_RFE;
 
-    dev->regs->MAC_CONFIG        &= ~MAC_CONFIG_JE;
-    dev->regs->MAC_CONFIG        |= (MAC_CONFIG_FES | MAC_CONFIG_DM);
-
-    dev->regs->MAC_PACKET_FILTER |= MAC_PACKET_FILTER_PM;
+    dev->regs->MAC_CONFIG         = (MAC_CONFIG_CST | MAC_CONFIG_ACS);
 
     /* Configure the DMA block */
     dev->regs->DMA_CH0_TX_CTRL   |= (16 << DMA_CH0_TX_CONTROL_TXPBL_SHIFT);
 
-    dev->regs->DMA_CH0_RX_CTRL |=
+    dev->regs->DMA_CH0_RX_CTRL   |=
         ((16 << DMA_CH0_RX_CONTROL_RXPBL_SHIFT) | (2048 << DMA_CH0_RX_CONTROL_RBSZ_SHIFT));
 
     val  = dev->regs->DMA_SYS_BUS_MODE;
@@ -244,47 +206,7 @@ static int32_t mac_hw_init(MAC_DEV *dev)
 
     dev->regs->MAC_CONFIG      |= (MAC_CONFIG_RE | MAC_CONFIG_TE);
 
-    return 0;
-}
-
-/**
-  \fn          uint32_t crc32_8bit_rev (uint32_t crc32, uint8_t val)
-  \brief       Calculate 32-bit CRC (Polynom: 0x04C11DB7, data bit-reversed).
-  \param[in]   crc32  CRC initial value
-  \param[in]   val    Input value
-  \return      Calculated CRC value
-*/
-static uint32_t crc32_8bit_rev(uint32_t crc32, uint8_t val)
-{
-    uint32_t n;
-
-    crc32 ^= __RBIT(val);
-    for (n = 8; n; n--) {
-        if (crc32 & 0x80000000) {
-            crc32 <<= 1;
-            crc32  ^= 0x04C11DB7;
-        } else {
-            crc32 <<= 1;
-        }
-    }
-    return crc32;
-}
-
-/**
-  \fn          uint32_t crc32_data (const uint8_t *data, uint32_t len)
-  \brief       Calculate standard 32-bit Ethernet CRC.
-  \param[in]   data  Pointer to buffer containing the data
-  \param[in]   len   Data length in bytes
-  \return      Calculated CRC value
-*/
-static uint32_t crc32_data(const uint8_t *data, uint32_t len)
-{
-    uint32_t crc;
-
-    for (crc = 0xFFFFFFFF; len; len--) {
-        crc = crc32_8bit_rev(crc, *data++);
-    }
-    return (crc ^ 0xFFFFFFFF);
+    return ARM_DRIVER_OK;
 }
 
 /* Ethernet Driver functions */
@@ -318,12 +240,12 @@ static ARM_ETH_MAC_CAPABILITIES ETH_MAC_GetCapabilities(void)
 */
 static int32_t Initialize(ARM_ETH_MAC_SignalEvent_t cb_event, MAC_DEV *dev)
 {
-    if (!cb_event) {
-        return ARM_DRIVER_ERROR_PARAMETER;
-    }
+    dev->cb_event   = cb_event;
+    dev->rx_desc_id = 0U;
+    dev->tx_desc_id = 0U;
+    dev->tx_len     = 0U;
 
-    dev->flags    |= ETH_INIT;
-    dev->cb_event  = cb_event;
+    dev->flags      = ETH_INIT;
 
     return ARM_DRIVER_OK;
 }
@@ -336,7 +258,8 @@ static int32_t Initialize(ARM_ETH_MAC_SignalEvent_t cb_event, MAC_DEV *dev)
 */
 static int32_t Uninitialize(MAC_DEV *dev)
 {
-    dev->flags &= ~ETH_INIT;
+    dev->flags = 0U;
+
     return ARM_DRIVER_OK;
 }
 
@@ -353,6 +276,10 @@ static int32_t PowerControl(ARM_POWER_STATE state, MAC_DEV *dev)
 
     switch (state) {
     case ARM_POWER_OFF:
+        if (!(dev->flags & ETH_POWER)) {
+            break;
+        }
+
         /* Disable Ethernet peripheral clock */
         disable_eth_periph_clk();
 
@@ -362,7 +289,7 @@ static int32_t PowerControl(ARM_POWER_STATE state, MAC_DEV *dev)
         break;
 
     case ARM_POWER_LOW:
-        break;
+        return ARM_DRIVER_ERROR_UNSUPPORTED;
 
     case ARM_POWER_FULL:
         if (!(dev->flags & ETH_INIT)) {
@@ -370,7 +297,7 @@ static int32_t PowerControl(ARM_POWER_STATE state, MAC_DEV *dev)
         }
 
         if (dev->flags & ETH_POWER) {
-            return ARM_DRIVER_OK;
+            break;
         }
 
         /* Enable Ethernet peripheral clock */
@@ -388,6 +315,7 @@ static int32_t PowerControl(ARM_POWER_STATE state, MAC_DEV *dev)
 
         dev->flags |= ETH_POWER;
         break;
+
     default:
         return ARM_DRIVER_ERROR_UNSUPPORTED;
     }
@@ -466,38 +394,11 @@ static int32_t SetMacAddress(const ARM_ETH_MAC_ADDR *ptr_addr, MAC_DEV *dev)
 */
 static int32_t SetAddressFilter(const ARM_ETH_MAC_ADDR *ptr_addr, uint32_t num_addr, MAC_DEV *dev)
 {
-    uint32_t crc;
+    (void)ptr_addr;
+    (void)num_addr;
 
-    if (!ptr_addr) {
-        return ARM_DRIVER_ERROR_PARAMETER;
-    }
-
-    if (!(dev->flags & ETH_POWER)) {
-        return ARM_DRIVER_ERROR;
-    }
-
-    dev->regs->MAC_PACKET_FILTER &= ~(MAC_PACKET_FILTER_HPF | MAC_PACKET_FILTER_HMC);
-
-    dev->regs->MAC_HASH_TAB_0     = 0x0;
-    dev->regs->MAC_HASH_TAB_1     = 0x0;
-
-    if (num_addr == 0) {
-        return ARM_DRIVER_OK;
-    }
-
-    /* Calculate 64-bit Hash table for MAC addresses */
-    for (; num_addr; ptr_addr++, num_addr--) {
-        crc = crc32_data(&ptr_addr->b[0], 6) >> 26;
-        if (crc & 0x20) {
-            dev->regs->MAC_HASH_TAB_1 |= (1 << (crc & 0x1F));
-        } else {
-            dev->regs->MAC_HASH_TAB_0 |= (1 << crc);
-        }
-    }
-    /* Enable perfect and hash address filtering */
-    dev->regs->MAC_PACKET_FILTER |= (MAC_PACKET_FILTER_HPF | MAC_PACKET_FILTER_HMC);
-
-    return ARM_DRIVER_OK;
+    /* Not supported by ETH module */
+    return ARM_DRIVER_ERROR_UNSUPPORTED;
 }
 
 /**
@@ -513,8 +414,6 @@ static int32_t SetAddressFilter(const ARM_ETH_MAC_ADDR *ptr_addr, uint32_t num_a
 static int32_t SendFrame(const uint8_t *frame, uint32_t len, uint32_t flags, MAC_DEV *dev)
 {
     uint32_t  cur_idx;
-    uint8_t  *dst;
-    uint32_t  buffer_len = len;
     DMA_DESC *desc;
 
     if (!frame || !len) {
@@ -530,53 +429,37 @@ static int32_t SendFrame(const uint8_t *frame, uint32_t len, uint32_t flags, MAC
 
     SCB_InvalidateDCache_by_Addr(desc, sizeof(DMA_DESC));
 
-    dst = dev->frame_end;
-
-    if (dst == NULL) {
+    if (dev->tx_len == 0U) {
         /* new frame */
         if (desc->des3 & TDES3_OWN) {
             return ARM_DRIVER_ERROR_BUSY;
         }
-        dst        = (uint8_t *) &tx_buffers[cur_idx][0];
-        desc->des2 = TDES2_INTERRUPT_ON_COMPLETION | buffer_len;
-    } else {
-        /* frame fragment */
-        desc->des2 += len;
     }
 
     /* Copy the frame to the buffer */
-    for (; len > 7; dst += 8, frame += 8, len -= 8) {
-        ((uint32_t *) dst)[0] = ((uint32_t *) frame)[0];
-        ((uint32_t *) dst)[1] = ((uint32_t *) frame)[1];
-    }
-    /* Copy remaining 7 bytes */
-    for (; len > 1; dst += 2, frame += 2, len -= 2) {
-        ((uint16_t *) dst)[0] = ((uint16_t *) frame)[0];
-    }
-
-    if (len > 0) {
-        dst++[0] = frame++[0];
-    }
-
-    SCB_CleanDCache_by_Addr((uint32_t *) &tx_buffers[cur_idx][0], ETH_BUF_SIZE);
+    memcpy ((void *)&tx_buffers[cur_idx] + dev->tx_len, frame, len);
+    dev->tx_len += len;
 
     if (flags & ARM_ETH_MAC_TX_FRAME_FRAGMENT) {
-        /* More data to come, remember current write position */
-        dev->frame_end = dst;
+        /* More data to come */
         return ARM_DRIVER_OK;
     }
 
+    SCB_CleanDCache_by_Addr(tx_buffers[cur_idx], dev->tx_len);
+
     dev->tx_desc_id++;
     dev->tx_desc_id %= TX_DESC_COUNT;
-    desc->des0       = (uint32_t) LocalToGlobal(&tx_buffers[cur_idx][0]);
+    desc->des0       = LocalToGlobal(tx_buffers[cur_idx]);
+    desc->des2       = TDES2_INTERRUPT_ON_COMPLETION | dev->tx_len;
+    desc->des3       = TDES3_OWN | TDES3_LAST_DESCRIPTOR | TDES3_FIRST_DESCRIPTOR | dev->tx_len;
+#if (EMAC_CHECKSUM_OFFLOAD)
+    desc->des3      |= 0x3 << TDES3_CHECKSUM_INSERTION_SHIFT;
+#endif
+    SCB_CleanDCache_by_Addr(desc, sizeof(DMA_DESC));
 
-    dev->frame_end   = NULL;
+    dev->regs->DMA_CH0_TX_END_ADDR = LocalToGlobal((void *)&dev->tx_descs[dev->tx_desc_id]);
 
-    desc->des3       = TDES3_OWN | TDES3_LAST_DESCRIPTOR | TDES3_FIRST_DESCRIPTOR | buffer_len;
-
-    SCB_CleanDCache_by_Addr((uint32_t *) desc, sizeof(DMA_DESC));
-
-    dev->regs->DMA_CH0_TX_END_ADDR = (uint32_t) LocalToGlobal(&(dev->tx_descs[dev->tx_desc_id]));
+    dev->tx_len      = 0U;
 
     return ARM_DRIVER_OK;
 }
@@ -595,10 +478,8 @@ static int32_t SendFrame(const uint8_t *frame, uint32_t len, uint32_t flags, MAC
 static int32_t ReadFrame(uint8_t *frame, uint32_t len, MAC_DEV *dev)
 {
     uint32_t cur_idx;
-    int32_t  buffer_len = (int32_t) len;
-    uint8_t *src;
 
-    if (!frame || !len) {
+    if (!frame && len) {
         return ARM_DRIVER_ERROR_PARAMETER;
     }
 
@@ -607,34 +488,21 @@ static int32_t ReadFrame(uint8_t *frame, uint32_t len, MAC_DEV *dev)
     }
 
     cur_idx = dev->rx_desc_id;
-    src     = (uint8_t *) &rx_buffers[cur_idx][0];
 
-    SCB_InvalidateDCache_by_Addr(src, ETH_BUF_SIZE);
+    SCB_InvalidateDCache_by_Addr(rx_buffers[cur_idx], len);
 
     /* copy data to the buffer */
-    for (; len > 7; frame += 8, src += 8, len -= 8) {
-        ((uint32_t *) frame)[0] = ((uint32_t *) src)[0];
-        ((uint32_t *) frame)[1] = ((uint32_t *) src)[1];
-    }
-
-    /* copy remaining 7 bytes */
-    for (; len > 1; frame += 2, src += 2, len -= 2) {
-        ((uint16_t *) frame)[0] = ((uint16_t *) src)[0];
-    }
-
-    if (len > 0) {
-        frame[0] = src[0];
-    }
+    memcpy (frame, rx_buffers[cur_idx], len);
 
     /* refresh the descriptor */
     setup_rxdesc(dev, cur_idx);
 
-    dev->regs->DMA_CH0_RX_END_ADDR = (uint32_t) LocalToGlobal(&(dev->rx_descs[cur_idx]));
+    dev->regs->DMA_CH0_RX_END_ADDR = LocalToGlobal(&dev->rx_descs[cur_idx]);
 
     dev->rx_desc_id++;
     dev->rx_desc_id %= RX_DESC_COUNT;
 
-    return buffer_len;
+    return (int32_t)len;
 }
 
 /**
@@ -648,7 +516,7 @@ static uint32_t GetRxFrameSize(MAC_DEV *dev)
     DMA_DESC *desc;
 
     if (!(dev->flags & ETH_POWER)) {
-        return 0;
+        return ARM_DRIVER_ERROR;
     }
 
     desc = &dev->rx_descs[dev->rx_desc_id];
@@ -659,7 +527,18 @@ static uint32_t GetRxFrameSize(MAC_DEV *dev)
         return 0;
     }
 
-    return (desc->des3 & 0x7fff) - 4;
+    if (desc->des3 & RDES3_ERROR_SUMMARY) {
+        return ARM_DRIVER_ERROR;
+    }
+    if (!(desc->des3 & RDES3_FIRST_DESCRIPTOR) || !(desc->des3 & RDES3_LAST_DESCRIPTOR)) {
+        return ARM_DRIVER_ERROR;
+    }
+
+    if ((dev->flags & ETH_VLAN) && (desc->des3 & RDES3_PACKET_LEN_TYPE_MASK) != RDES3_PACKET_LEN_TYPE_VLAN) {
+        /* type packet with no VLAN tag */
+        return ARM_DRIVER_ERROR;
+    }
+    return (desc->des3 & RDES3_PACKET_SIZE_MASK);
 }
 
 /**
@@ -801,9 +680,28 @@ static int32_t Control(uint32_t control, uint32_t arg, MAC_DEV *dev)
             val |= MAC_CONFIG_LM;
         }
 
-        if ((arg & ARM_ETH_MAC_CHECKSUM_OFFLOAD_RX) || (arg & ARM_ETH_MAC_CHECKSUM_OFFLOAD_TX)) {
-            return ARM_DRIVER_ERROR_UNSUPPORTED;
+#if (EMAC_CHECKSUM_OFFLOAD)
+        /* rx checksum verification */
+        if (arg & ARM_ETH_MAC_CHECKSUM_OFFLOAD_RX) {
+            dev->regs->MTL_RXQ0_OP_MODE |=  MTL_OP_MODE_RSF;
+            dev->regs->MAC_CONFIG       |=  MAC_CONFIG_IPC;
+        } else {
+            dev->regs->MTL_RXQ0_OP_MODE &= ~MTL_OP_MODE_RSF;
+            dev->regs->MAC_CONFIG       &= ~MAC_CONFIG_IPC;
         }
+
+        /* tx checksum generation */
+        if (arg & ARM_ETH_MAC_CHECKSUM_OFFLOAD_TX) {
+            dev->regs->MTL_TXQ0_OP_MODE |=  MTL_OP_MODE_TSF;
+        } else {
+            dev->regs->MTL_TXQ0_OP_MODE &= ~MTL_OP_MODE_TSF;
+        }
+#else
+        if ((arg & ARM_ETH_MAC_CHECKSUM_OFFLOAD_RX) || (arg & ARM_ETH_MAC_CHECKSUM_OFFLOAD_TX)) {
+            /* Checksum offload is disabled in the driver */
+            return ARM_DRIVER_ERROR;
+        }
+#endif
 
         dev->regs->MAC_CONFIG = val;
 
@@ -891,6 +789,23 @@ static int32_t Control(uint32_t control, uint32_t arg, MAC_DEV *dev)
             dev->regs->MAC_PMT_CTRL_STS  = 0x0;
         }
         break;
+
+    case ARM_ETH_MAC_VLAN_FILTER:
+        if (arg != 0U) {
+            val = MAC_VLAN_TAG_DOVLTC | MAC_VLAN_TAG_EVLRXS;
+            if (arg & ARM_ETH_MAC_VLAN_FILTER_ID_ONLY) {
+                val |= MAC_VLAN_TAG_ETV;
+            }
+            dev->regs->MAC_VLAN_TAG       = val | (arg & MAC_VLAN_TAG_VL);
+            dev->regs->MAC_PACKET_FILTER |= MAC_PACKET_FILTER_VTFE;
+            dev->flags                   |= ETH_VLAN;
+        } else {
+            dev->regs->MAC_VLAN_TAG       =  0U;
+            dev->regs->MAC_PACKET_FILTER &= ~MAC_PACKET_FILTER_VTFE;
+            dev->flags                   &= ~ETH_VLAN;
+        }
+        break;
+
     default:
         return ARM_DRIVER_ERROR_UNSUPPORTED;
     }
@@ -921,7 +836,7 @@ static int32_t ControlTimer(uint32_t control, ARM_ETH_MAC_TIME *time, MAC_DEV *d
 */
 static int32_t PHY_Read(uint8_t phy_addr, uint8_t reg_addr, uint16_t *data, MAC_DEV *dev)
 {
-    uint32_t val, timeout = 5;
+    uint32_t val, timeout = 100;
 
     if (!data) {
         return ARM_DRIVER_ERROR_PARAMETER;
@@ -942,7 +857,7 @@ static int32_t PHY_Read(uint8_t phy_addr, uint8_t reg_addr, uint16_t *data, MAC_
             *data = dev->regs->MAC_MDIO_DATA;
             break;
         }
-        osDelay(1);
+        sys_busy_loop_us(25);
         timeout--;
     } while (timeout);
 
@@ -965,7 +880,7 @@ static int32_t PHY_Read(uint8_t phy_addr, uint8_t reg_addr, uint16_t *data, MAC_
 */
 static int32_t PHY_Write(uint8_t phy_addr, uint8_t reg_addr, uint16_t data, MAC_DEV *dev)
 {
-    uint32_t val, timeout = 5;
+    uint32_t val, timeout = 100;
 
     if (!(dev->flags & ETH_POWER)) {
         return ARM_DRIVER_ERROR;
@@ -982,7 +897,7 @@ static int32_t PHY_Write(uint8_t phy_addr, uint8_t reg_addr, uint16_t data, MAC_
         if (!(dev->regs->MAC_MDIO_ADDR & MAC_MDIO_ADDR_GB)) {
             break;
         }
-        osDelay(1);
+        sys_busy_loop_us(25);
         timeout--;
     } while (timeout);
 

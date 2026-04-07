@@ -40,6 +40,7 @@
 /* System Includes */
 #include "Driver_IO.h"
 #include <stdio.h>
+#include <inttypes.h>
 #include "app_utils.h"
 #include "board_config.h"
 #include "pinconf.h"
@@ -142,7 +143,8 @@ void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer,
 
 void vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName)
 {
-    (void) pxTask;
+    ARG_UNUSED(pxTask);
+    ARG_UNUSED(pcTaskName);
 
     ASSERT_HANG_LOOP
 }
@@ -208,6 +210,7 @@ static void utimer_compare_mode_app(void *pvParameters)
     uint8_t    ucChannel = BOARD_CMP_EXT_TRIGGER_UTIMER_INSTANCE;
     uint32_t   ulCount_array[3];
     BaseType_t xReturned;
+    ARG_UNUSED(pvParameters);
 
     /*
      * utimer channel 0 is configured for utimer compare mode (driver A).
@@ -232,59 +235,59 @@ static void utimer_compare_mode_app(void *pvParameters)
     ulCount_array[1] = 0x17D78400;  /*< over flow count value > */
     ulCount_array[2] = 0xBEBC200;   /*< compare a/b value> */
 
-    xReturned        = xTaskNotifyWait(NULL, UTIMER_TASK_START, NULL, portMAX_DELAY);
+    xReturned        = xTaskNotifyWait(0, UTIMER_TASK_START, 0, portMAX_DELAY);
     if (xReturned != pdTRUE) {
-        printf("\n\r Task Wait Time out expired \n\r");
+        printf("\n\r Task Wait Time out expired\n\r");
         WAIT_FOREVER_LOOP
     }
 
     slRet = ptrUTIMER->Initialize(ucChannel, utimer_compare_mode_cb_func);
     if (slRet != ARM_DRIVER_OK) {
-        printf("utimer channel %d failed initialize \n", ucChannel);
+        printf("utimer channel %d failed initialize\n", ucChannel);
         return;
     }
 
     slRet = ptrUTIMER->PowerControl(ucChannel, ARM_POWER_FULL);
     if (slRet != ARM_DRIVER_OK) {
-        printf("utimer channel %d failed power up \n", ucChannel);
+        printf("utimer channel %d failed power up\n", ucChannel);
         goto error_compare_mode_uninstall;
     }
 
     slRet = ptrUTIMER->ConfigCounter(ucChannel, ARM_UTIMER_MODE_COMPARING, ARM_UTIMER_COUNTER_UP);
     if (slRet != ARM_DRIVER_OK) {
-        printf("utimer channel %d mode configuration failed \n", ucChannel);
+        printf("utimer channel %d mode configuration failed\n", ucChannel);
         goto error_compare_mode_poweroff;
     }
 
     slRet = ptrUTIMER->SetCount(ucChannel, ARM_UTIMER_CNTR, ulCount_array[0]);
     if (slRet != ARM_DRIVER_OK) {
-        printf("utimer channel %d set count failed \n", ucChannel);
+        printf("utimer channel %d set count failed\n", ucChannel);
         goto error_compare_mode_poweroff;
     }
 
     slRet = ptrUTIMER->SetCount(ucChannel, ARM_UTIMER_CNTR_PTR, ulCount_array[1]);
     if (slRet != ARM_DRIVER_OK) {
-        printf("utimer channel %d set count failed \n", ucChannel);
+        printf("utimer channel %d set count failed\n", ucChannel);
         goto error_compare_mode_poweroff;
     }
 
     slRet = ptrUTIMER->SetCount(ucChannel, ARM_UTIMER_COMPARE_A, ulCount_array[2]);
     if (slRet != ARM_DRIVER_OK) {
-        printf("utimer channel %d set count failed \n", ucChannel);
+        printf("utimer channel %d set count failed\n", ucChannel);
         goto error_compare_mode_poweroff;
     }
 
     slRet = ptrUTIMER->Start(ucChannel);
     if (slRet != ARM_DRIVER_OK) {
-        printf("utimer channel %d failed to start \n", ucChannel);
+        printf("utimer channel %d failed to start\n", ucChannel);
         goto error_compare_mode_poweroff;
     }
 
     while (1) {
         /* Waiting for the callback */
-        xReturned = xTaskNotifyWait(NULL, UTIMER_COMPARE_A_CB_EVENT, NULL, portMAX_DELAY);
+        xReturned = xTaskNotifyWait(0, UTIMER_COMPARE_A_CB_EVENT, 0, portMAX_DELAY);
         if (xReturned != pdTRUE) {
-            printf("\n\r Task Wait Time out expired \n\r");
+            printf("\n\r Task Wait Time out expired\n\r");
             goto error_compare_mode_poweroff;
         }
     }
@@ -292,21 +295,21 @@ static void utimer_compare_mode_app(void *pvParameters)
 
     slRet = ptrUTIMER->Stop(ucChannel, ARM_UTIMER_COUNTER_CLEAR);
     if (slRet != ARM_DRIVER_OK) {
-        printf("utimer channel %d failed to stop \n", ucChannel);
+        printf("utimer channel %d failed to stop\n", ucChannel);
     }
 
 error_compare_mode_poweroff:
 
     slRet = ptrUTIMER->PowerControl(ucChannel, ARM_POWER_OFF);
     if (slRet != ARM_DRIVER_OK) {
-        printf("utimer channel %d failed power off \n", ucChannel);
+        printf("utimer channel %d failed power off\n", ucChannel);
     }
 
 error_compare_mode_uninstall:
 
     slRet = ptrUTIMER->Uninitialize(ucChannel);
     if (slRet != ARM_DRIVER_OK) {
-        printf("utimer channel %d failed to un-initialize \n", ucChannel);
+        printf("utimer channel %d failed to un-initialize\n", ucChannel);
     }
 }
 
@@ -385,13 +388,13 @@ static int32_t led_init(void)
     int32_t slRet = 0;
 
     /* Initialize the LED0_R */
-    slRet         = ledDrv->Initialize(LED0_R, NULL);
+    slRet         = ledDrv->Initialize(LED0_R, 0);
     if (slRet != ARM_DRIVER_OK) {
         printf("ERROR: Failed to initialize\n");
         return slRet;
     }
 
-    slRet = CMPout->Initialize(CMP_OUTPIN, NULL);
+    slRet = CMPout->Initialize(CMP_OUTPIN, 0);
     if (slRet != ARM_DRIVER_OK) {
         printf("ERROR: Failed to initialize\n");
         return slRet;
@@ -435,14 +438,14 @@ error_power_off_LED:
     /* Power-off the LED0_R */
     slRet = ledDrv->PowerControl(LED0_R, ARM_POWER_OFF);
     if (slRet != ARM_DRIVER_OK) {
-        printf("ERROR: Failed to power off \n");
+        printf("ERROR: Failed to power off\n");
     }
 
 error_uninitialize_LED:
     /* Uninitialize the LED0_R */
     slRet = ledDrv->Uninitialize(LED0_R);
     if (slRet != ARM_DRIVER_OK) {
-        printf("Failed to Un-initialize \n");
+        printf("Failed to Un-initialize\n");
     }
     return APP_ERROR;
 }
@@ -468,13 +471,13 @@ error_power_off_LED:
     /* Power-off the CMP_OUTPIN */
     slRet = CMPout->PowerControl(CMP_OUTPIN, ARM_POWER_OFF);
     if (slRet != ARM_DRIVER_OK) {
-        printf("ERROR: Failed to power off \n");
+        printf("ERROR: Failed to power off\n");
     }
 
     /* Uninitialize the CMP_OUTPIN */
     slRet = CMPout->Uninitialize(CMP_OUTPIN);
     if (slRet != ARM_DRIVER_OK) {
-        printf("Failed to Un-initialize \n");
+        printf("Failed to Un-initialize\n");
     }
     return APP_ERROR;
 }
@@ -500,13 +503,13 @@ error_power_off_LED:
     /* Power-off the LED0_R */
     slRet = ledDrv->PowerControl(LED0_R, ARM_POWER_OFF);
     if (slRet != ARM_DRIVER_OK) {
-        printf("ERROR: Failed to power off \n");
+        printf("ERROR: Failed to power off\n");
     }
 
     /* Uninitialize the LED0_R */
     slRet = ledDrv->Uninitialize(LED0_R);
     if (slRet != ARM_DRIVER_OK) {
-        printf("Failed to Un-initialize \n");
+        printf("Failed to Un-initialize\n");
     }
     return APP_ERROR;
 }
@@ -549,6 +552,7 @@ static void CMP_demo_Thread_entry(void *pvParameters)
     uint8_t            ucStatus = 0;
     ARM_DRIVER_VERSION version;
     const TickType_t   xDelay = (1000 / portTICK_PERIOD_MS);
+    ARG_UNUSED(pvParameters);
 
     printf("\r\n >>> Comparator demo FreeRTOS starting up!!! <<< \r\n");
 
@@ -556,7 +560,7 @@ static void CMP_demo_Thread_entry(void *pvParameters)
     /* pin mux and configuration for all device IOs requested from pins.h*/
     slRet = board_pins_config();
     if (slRet != 0) {
-        printf("Error in pin-mux configuration: %d\n", slRet);
+        printf("Error in pin-mux configuration: %" PRId32 "\n", slRet);
         return;
     }
 #else
@@ -566,7 +570,7 @@ static void CMP_demo_Thread_entry(void *pvParameters)
      */
     slRet = board_cmp_pins_config();
     if (slRet != 0) {
-        printf("Error in pin-mux configuration: %d\n", slRet);
+        printf("Error in pin-mux configuration: %" PRId32 "\n", slRet);
         return;
     }
 #endif
@@ -651,7 +655,7 @@ static void CMP_demo_Thread_entry(void *pvParameters)
 #endif
 
         /* wait for CMP callback */
-        xReturned = xTaskNotifyWait(NULL, CMP_CALLBACK_EVENT_SUCCESS, NULL, portMAX_DELAY);
+        xReturned = xTaskNotifyWait(0, CMP_CALLBACK_EVENT_SUCCESS, 0, portMAX_DELAY);
         if (xReturned != pdTRUE) {
             printf("Error: CMP tx_event_flags_get\n");
             goto error_poweroff;
@@ -695,7 +699,7 @@ static void CMP_demo_Thread_entry(void *pvParameters)
         goto error_poweroff;
     }
 
-    printf("\n Comparator Filter event completed and the call_back_counter value is %d\n",
+    printf("\n Comparator Filter event completed and the call_back_counter value is %" PRIu32 "\n",
            call_back_counter);
 
 error_poweroff:
@@ -732,7 +736,7 @@ int main()
     BaseType_t xReturned = xTaskCreate(CMP_demo_Thread_entry,
                                        "CMPFreertos",
                                        256,
-                                       NULL,
+                                       0,
                                        configMAX_PRIORITIES - 1,
                                        &cmp_xHandle);
     if (xReturned != pdPASS) {
@@ -745,7 +749,7 @@ int main()
     xReturned = xTaskCreate(utimer_compare_mode_app,
                             "utimer_compare_mode_demo",
                             256,
-                            NULL,
+                            0,
                             configMAX_PRIORITIES - 2,
                             &utimer_compare_xHandle);
     if (xReturned != pdPASS) {

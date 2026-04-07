@@ -21,6 +21,7 @@
  ******************************************************************************/
 
 #include <stdio.h>
+#include <inttypes.h>
 #include <RTE_Components.h>
 #include CMSIS_device_header
 #include "pinconf.h"
@@ -137,7 +138,7 @@ static volatile bool    passive_mode;
 static uint8_t          rx_obj_id     = 255U;
 static ARM_CAN_MSG_INFO rx_msg_header;
 static volatile uint8_t rx_msg_size = 8U;
-static uint8_t          rx_data[CANFD_MAX_MSG_SIZE 1U];
+static uint8_t          rx_data[CANFD_MAX_MSG_SIZE + 1U];
 
 /* A map between Data length code to the payload size */
 static const uint8_t canfd_len_dlc_map[0x10U] = {
@@ -283,7 +284,7 @@ static void canfd_lom_demo_task(void *pvParameters)
     error_code =
         SERVICES_clocks_enable_clock(se_services_s_handle, CLKEN_HFOSC, true, &service_error_code);
     if (error_code) {
-        printf("SE Error: HFOSC clk enable = %d\n", (int) error_code);
+        printf("SE Error: HFOSC clk enable = %" PRId32 "\n", (int) error_code);
         return;
     }
 
@@ -293,7 +294,7 @@ static void canfd_lom_demo_task(void *pvParameters)
                                               true,
                                               &service_error_code);
     if (error_code) {
-        printf("SE Error: 160 MHz clk enable = %d\n", (int) error_code);
+        printf("SE Error: 160 MHz clk enable = %" PRId32 "\n", (int) error_code);
         return;
     }
 
@@ -303,7 +304,7 @@ static void canfd_lom_demo_task(void *pvParameters)
     /* pin mux and configuration for all device IOs requested from pins.h*/
     ret_val = board_pins_config();
     if (ret_val != 0) {
-        printf("Error in pin-mux configuration: %d\n", ret_val);
+        printf("Error in pin-mux configuration: %" PRId32 "\n", ret_val);
         return;
     }
 
@@ -314,26 +315,26 @@ static void canfd_lom_demo_task(void *pvParameters)
      */
     ret_val = board_canfd_pins_config();
     if (ret_val != 0) {
-        printf("Error in pin-mux configuration: %d\n", ret_val);
+        printf("Error in pin-mux configuration: %" PRId32 "\n", ret_val);
         return;
     }
 #endif
 
     /* Get CANFD capabilities */
     can_capabilities = CANFD_instance->GetCapabilities();
-    printf("Num of objects supported: %d\r\n", can_capabilities.num_objects);
+    printf("Num of objects supported: %" PRId32 "\r\n", can_capabilities.num_objects);
 
     /* Initializing CANFD Access struct */
     ret_val = CANFD_instance->Initialize(cb_unit_event, cb_object_event);
     if (ret_val != ARM_DRIVER_OK) {
-        printf("ERROR: Failed to initialize the CANFD \n");
+        printf("ERROR: Failed to initialize the CANFD\n");
         return;
     }
 
     /* Powering up CANFD */
     ret_val = CANFD_instance->PowerControl(ARM_POWER_FULL);
     if (ret_val != ARM_DRIVER_OK) {
-        printf("ERROR: Failed to Power up the CANFD \n");
+        printf("ERROR: Failed to Power up the CANFD\n");
         goto uninitialise_canfd;
     }
 
@@ -404,7 +405,7 @@ static void canfd_lom_demo_task(void *pvParameters)
     }
 
     /* wait for receive/error callback. */
-    if (xTaskNotifyWait(NULL, CANFD_ALL_NOTIFICATIONS, &task_notified_value, portMAX_DELAY) !=
+    if (xTaskNotifyWait(0, CANFD_ALL_NOTIFICATIONS, &task_notified_value, portMAX_DELAY) !=
         pdFALSE)
     {
         /* Checks if both callbacks are successful */
@@ -433,7 +434,7 @@ uninitialise_canfd:
     error_code =
         SERVICES_clocks_enable_clock(se_services_s_handle, CLKEN_HFOSC, false, &service_error_code);
     if (error_code) {
-        printf("SE Error: HFOSC clk disable = %d\n", (int) error_code);
+        printf("SE Error: HFOSC clk disable = %" PRId32 "\n", (int) error_code);
         return;
     }
 
@@ -443,14 +444,14 @@ uninitialise_canfd:
                                               false,
                                               &service_error_code);
     if (error_code) {
-        printf("SE Error: 160 MHz clk disable = %d\n", (int) error_code);
+        printf("SE Error: 160 MHz clk disable = %" PRId32 "\n", (int) error_code);
         return;
     }
 
     printf("*** CANFD Listen only Mode Demo is ended ***\r\n");
 
     /* Task delete */
-    vTaskDelete(NULL);
+    vTaskDelete(0);
 }
 
 /**
@@ -479,7 +480,7 @@ int main()
     BaseType_t xReturned = xTaskCreate(canfd_lom_demo_task,
                                        "CANFD_LOM_Task",
                                        CANFD_TASK_STACK_SIZE,
-                                       NULL,
+                                       0,
                                        (configMAX_PRIORITIES - 1U),
                                        &canfd_xHandle);
     if (xReturned != pdPASS) {
@@ -519,7 +520,7 @@ static void canfd_check_error(void)
                 canfd_process_rx_message();
             }
         } else {
-            printf("Error in CANFD-->Error code: %d\r\n", cur_sts.last_error_code);
+            printf("Error in CANFD-->Error code: %" PRId32 "\r\n", cur_sts.last_error_code);
         }
         bus_error = false;
     }
@@ -557,8 +558,8 @@ static void canfd_process_rx_message(void)
     /* Checking if a new message is received. If yes
      * performs the below operations */
     if (rx_msg_header.rtr == 1U) {
-        printf("Rx msg:\r\n    Type:Remote frame, Id:%lu",
-               (rx_msg_header.id & (~ARM_CAN_ID_IDE_Msk)));
+        printf("Rx msg:\r\n    Type:Remote frame, Id:%" PRIu32 "",
+               (uint32_t)(rx_msg_header.id & (~ARM_CAN_ID_IDE_Msk)));
     } else {
         printf("Rx msg:\r\n    Type:Data frame, ");
 
@@ -569,8 +570,8 @@ static void canfd_process_rx_message(void)
                 printf("\r\n    Error Occurred in Rx message \r\n");
                 return;
             }
-            printf("Id:%lu, Len:%d:\r\n    Data:",
-                   (rx_msg_header.id & (~ARM_CAN_ID_IDE_Msk)),
+            printf("Id:%" PRIu32 ", Len:%" PRId32 ":\r\n    Data:",
+                    (uint32_t)(rx_msg_header.id & (~ARM_CAN_ID_IDE_Msk)),
                    rx_msg_size);
             for (iter = 0; iter < rx_msg_size; iter++) {
                 printf("%c", rx_data[iter]);

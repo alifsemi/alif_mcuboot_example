@@ -50,7 +50,7 @@
 //     <1=> enable
 // <i> Defines CPI ISP port
 // <i> Default: ISP port disable
-#define RTE_CPI_ISP_PORT                                      0
+#define RTE_CPI_ISP_PORT                                      1
 
 // <o> CPI Row roundup
 //     <0=> disable
@@ -355,6 +355,139 @@
 
 #endif
 // </e> LPCPI (Camera) [Driver_LPCPI]
+
+// <e> ISP (ISP) [Driver_ISP]
+// <i> Configuration settings for Driver_ISP in component ::Drivers:ISP
+#define RTE_ISP 1
+#if RTE_ISP
+
+// <o> ISP IRQ priority <0-255>
+// <i> Defines Interrupt priority for ISP.
+// <i> Default: 0
+#define RTE_ISP_IRQ_PRIORITY                    0
+
+// <o> ISP Enable AE Module
+//     <0=> disable
+//     <1=> enable
+// <i> defines if AE Module is enabled or not
+// <i> default: false
+#define RTE_ISP_AE_MODULE 0
+
+// <o> ISP Enable BLS Module
+//     <0=> disable
+//     <1=> enable
+// <i> defines if Black Level Subtraction Module is enabled or not
+// <i> default: false
+#define RTE_ISP_BLS_MODULE 0
+
+// <o> ISP Enable DMSC Module
+//     <0=> disable
+//     <1=> enable
+// <i> defines if Demosaic Module is enabled or not
+// <i> default: false
+#define RTE_ISP_DMSC_MODULE 1
+
+// <o> ISP Enable FLT Module
+//     <0=> disable
+//     <1=> enable
+// <i> defines if Noise/Sharpening-Filter Module is enabled or not
+// <i> default: false
+#define RTE_ISP_FLT_MODULE 0
+
+// <o> ISP Enable CCM Module
+//     <0=> disable
+//     <1=> enable
+// <i> defines if Color Correction Matrix Module is enabled or not
+// <i> default: false
+#define RTE_ISP_CCM_MODULE 1
+
+// <o> ISP Enable CSM Module
+//     <0=> disable
+//     <1=> enable
+// <i> defines if Color Space Conversion Module is enabled or not
+// <i> default: false
+#define RTE_ISP_CSM_MODULE 0
+
+// <o> ISP Enable WB Module
+//     <0=> disable
+//     <1=> enable
+// <i> defines if White Balancing Module is enabled or not
+// <i> default: false
+#define RTE_ISP_WB_MODULE 1
+
+// <o> ISP Enable EXPM Module
+//     <0=> disable
+//     <1=> enable
+// <i> defines if Auto-Exposure Statistics Module is enabled or not
+// <i> default: false
+#define RTE_ISP_EXPM_MODULE 0
+
+// <o> ISP Enable Gamma-out Module
+//     <0=> disable
+//     <1=> enable
+// <i> defines if Gamma-out Module is enabled or not
+// <i> default: false
+#define RTE_ISP_GAMMAOUT_MODULE 0
+
+// <o> ISP Enable WBM Module
+//     <0=> disable
+//     <1=> enable
+// <i> defines if White-Balancing Statistics Module is enabled or not
+// <i> default: false
+#define RTE_ISP_WBM_MODULE 1
+
+// <o> ISP Enable Binning Module
+//     <0=> disable
+//     <1=> enable
+// <i> defines if Binning Module is enabled or not
+// <i> default: false
+#define RTE_ISP_BINNING_MODULE 0
+
+// <o> ISP Enable Scaling Module
+//     <0=> disable
+//     <1=> enable
+// <i> defines if scaling Module is enabled or not
+// <i> default: true
+#define RTE_ISP_SCALAR_MODULE 1
+
+// <o> ISP log level
+//    <0=> NONE
+//    <1 => Logs all fatal errors.
+//    <2=> Logs all warnings.
+//    <3=> Logs all informational messages.
+//    <4=> Logs all debug messages.
+//    <5=> Log level verbose
+// <i> Defines ISP logging level
+#define RTE_ISP_LOG_LEVEL 5
+
+// <o> ISP Buffer Count <2-8>
+// <i> Number of video buffers for ISP
+#define RTE_ISP_BUFFER_COUNT 1
+
+// <o> ISP Output Format
+//    <20=> RAW8 (8-bit raw)
+//    <21=> RAW10 (10-bit raw)
+//    <22=> RAW12 (12-bit raw)
+//    <23=> NV12 (YUV420 semi-planar)
+//    <25=> NV16 (YUV422 semi-planar)
+//    <30=> YUV422P (YUV422 planar)
+//    <31=> YUV420P (YUV420 planar)
+//    <32=> YUYV (YUV422 packed)
+//    <37=> YUV400 (Grayscale)
+//    <38=> RGB888 (RGB interleaved)
+//    <39=> RGB888P (RGB planar)
+//    <40=> RAW420SP (RAW420 semi-planar)
+//    <41=> RAW422SP (RAW422 semi-planar)
+// <i> Defines ISP output pixel format for memory dump
+// <i> Default: RGB888
+#define RTE_ISP_OUTPUT_FORMAT 32
+
+#define RTE_ISP_OUTPUT_WIDTH 480
+
+#define RTE_ISP_OUTPUT_HEIGHT 480
+
+#endif
+// </e> ISP (ISP) [Driver_ISP]
 
 // <e> MIPI_CSI2 (mipi csi2) [Driver_MIPI_CSI2]
 // <i> Configuration settings for Driver_MIPI_CSI2 in component ::Drivers:MIPI_CSI2
@@ -897,8 +1030,8 @@
 //     <3=>   640x480_RGB565
 //     <4=>   320x240_RGB565
 //     <5=>   320x320_RGB565
-// <i> Default: 0
-#define RTE_MT9M114_CAMERA_SENSOR_MIPI_IMAGE_CONFIG            2
+// <i> Default: 1
+#define RTE_MT9M114_CAMERA_SENSOR_MIPI_IMAGE_CONFIG            1
 
 // <o> select MT9M114 MIPI number of lanes in DPHY
 // <i> defines select MT9M114 MIPI number of lanes in DPHY.
@@ -1314,7 +1447,7 @@
 //     <5=> 24bit
 // <i> Defines Color mode for display panel
 // <i> Default: 24bit
-#define RTE_ILI9806E_PANEL_DSI_COLOR_MODE   1
+#define RTE_ILI9806E_PANEL_DSI_COLOR_MODE   5
 
 // <o> Number of data lanes
 //     <1=> ONE
@@ -1611,7 +1744,7 @@
 //      <7=> ARGB4444
 // <i> Defines CDC200 pixel format
 // <i> Default: RGB888
-#define RTE_CDC200_PIXEL_FORMAT   2
+#define RTE_CDC200_PIXEL_FORMAT   1
 
 // <o> CDC200 Constant alpha <0-255>
 // <i> Defines CDC200 constant alpha range from 0 (fully transparent) to 255 or 1.0 (fully opaque).
@@ -1787,12 +1920,6 @@
 #define RTE_LPI3C_DMA_ENABLE 0
 
 #if RTE_LPI3C_DMA_ENABLE
-// <o> LPI3C DMA Selection
-//    <0=> DMA2(M55-HE)
-//    <1=> DMA0
-// <i> Defines Select DMA0 for LPI3C. By default DMA0 will be considered
-// <i> Default: DMA0
-#define RTE_LPI3C_SELECT_DMA0 1
 
 // <o> LPI3C DMA IRQ priority <0-255>
 // <i> Defines LPI3C DMA Interrupt priority
@@ -1843,6 +1970,8 @@
 
 // <o> ICM42670 IMU INT pin GPIO port number range <0-15>
 // <i> Defines ICM42670 IMU INT pin GPIO port number.
+//    <1=> Port number for E8 Appkit
+//    <8=> Port number for E8 Devkit
 // <i> Default: 8
 #define RTE_ICM42670_INT_IO_PORT 8
 
@@ -1863,6 +1992,8 @@
 
 // <o> BMI323 IMU INT pin GPIO port number range <0-15>
 // <i> Defines BMI323 IMU INT pin GPIO port number.
+//    <1=> Port number for E8 Appkit
+//    <8=> Port number for E8 Devkit
 // <i> Default: 8
 #define RTE_BMI323_INT_IO_PORT 8
 
@@ -2566,13 +2697,29 @@
 #define RTE_OSPI0_IRQ_PRIORITY                    0
 
 // <o> OSPI0 Frame format
-//    <0=> Standard
-//    <1=> Dual
-//    <2=> Quad
-//    <3=> Octal
+//    <0=> Standard SPI FRF
+//    <1=> Dual SPI FRF
+//    <2=> Quad SPI FRF
+//    <3=> Octal SPI FRF
+//    <3=> Dual Octal SPI FRF
 // <i> Defines OSPI0 Frame format
-// <i> Default: Octal
+// <i> Default: Octal SPI FRF
 #define RTE_OSPI0_SPI_FRAME_FORMAT                3
+
+// <o> OSPI0 Bus speed
+// <i> Defines the OSPI0 Bus speed
+// <i> Default: 100000000
+#define RTE_OSPI0_BUS_SPEED                       100000000
+
+// <o> OSPI0 Wait Cycles
+// <i> Defines the OSPI0 Wait Cycles for connected device
+// <i> Default: 6
+#define RTE_OSPI0_WAIT_CYCLES                     6
+
+// <o> OSPI0 DFS
+// <i> Defines OSPI0 Data Frame Size
+// <i> Default: 32
+#define RTE_OSPI0_DFS                             32
 
 // <o> OSPI0 TX FIFO Start level <0-255>
 // <i> Defines TX FIFO transfer start level for OSPI0
@@ -2635,17 +2782,17 @@
 // <o> OSPI0 DDR DRIVE EDGE
 // <i> Defines DDR DRIVE EDGE for OSPI0
 // <i> Default: 0
-#define RTE_OSPI0_DDR_DRIVE_EDGE     0
+#define RTE_OSPI0_DDR_DRIVE_EDGE     1
 
 // <o> OSPI0 RXDS Delay <0-23>
 // <i> Defines the delay applied to the RXDS signal of OSPI0
 // <i> Default: 0
-#define RTE_OSPI0_RXDS_DELAY         0
+#define RTE_OSPI0_RXDS_DELAY         11
 
 // <o> OSPI0 Signal Delay <0-23>
 // <i> Defines the delay applied to signals of OSPI0
 // <i> Default: 0
-#define RTE_OSPI0_SIGNAL_DELAY       0
+#define RTE_OSPI0_SIGNAL_DELAY       22
 #endif
 // </e> OSPI0 (Octal Serial Peripheral Interface 0) [Driver_OSPI]
 
@@ -2659,13 +2806,29 @@
 #define RTE_OSPI1_IRQ_PRIORITY                    0
 
 // <o> OSPI1 Frame format
-//    <0=> Standard
-//    <1=> Dual
-//    <2=> Quad
-//    <3=> Octal
+//    <0=> Standard SPI FRF
+//    <1=> Dual SPI FRF
+//    <2=> Quad SPI FRF
+//    <3=> Octal SPI FRF
+//    <3=> Dual Octal SPI FRF
 // <i> Defines OSPI0 Frame format
-// <i> Default: Octal
+// <i> Default: Octal SPI FRF
 #define RTE_OSPI1_SPI_FRAME_FORMAT                3
+
+// <o> OSPI1 Bus speed
+// <i> Defines the OSPI1 Bus speed
+// <i> Default: 100000000
+#define RTE_OSPI1_BUS_SPEED                       100000000
+
+// <o> OSPI1 Wait Cycles
+// <i> Defines the OSPI1 Wait Cycles for connected device
+// <i> Default: 16
+#define RTE_OSPI1_WAIT_CYCLES                     3
+
+// <o> OSPI1 DFS
+// <i> Defines OSPI1 Data Frame Size
+// <i> Default: 32
+#define RTE_OSPI1_DFS                             32
 
 // <o> OSPI1 TX FIFO Start level <0-255>
 // <i> Defines TX FIFO transfer start level for OSPI1
@@ -2741,8 +2904,9 @@
 #define RTE_OSPI1_SIGNAL_DELAY       0
 #endif
 // </e> OSPI1 (Octal Serial Peripheral Interface 1) [Driver_OSPI]
+// </h> OSPI  (Octal Serial Peripheral Interface)
 
-//</h>
+// <h> FLASH
 // <e> FLASH (ISSI FLASH) [Driver_Flash]
 // <i> Configuration settings for Driver_Flash in component ::Drivers:Flash
 #define RTE_ISSI_FLASH 1
@@ -2767,9 +2931,85 @@
 // <i> Defines the number of wait (dummy) cycles needed for fast read operations
 // <i> Default: 16
 #define RTE_ISSI_FLASH_WAIT_CYCLES    16
-
 #endif
 // </e> FLASH (ISSI FLASH) [Driver_Flash]
+
+// <e> FLASH (MX66UW1G FLASH) [Driver_MX66UW1G_FLASH]
+// <i> Configuration settings for Driver_MX66UW1G_FLASH in component ::Drivers:Flash
+#define RTE_MX66UW1G_FLASH 1
+#if RTE_MX66UW1G_FLASH
+
+// <o> MX66UW1G FLASH SIZE
+// <i> MX66UW1G flash density in bytes
+// <i> Default: 0x4000000
+#define RTE_MX66UW1G_FLASH_SIZE           0x4000000
+
+// <o> MX66UW1G FLASH OSPI Instance
+// <i> Defines the OSPI controller instance the MX66UW1G flash is connected to
+// <i> Default: 1
+#define RTE_MX66UW1G_FLASH_OSPI_DRV_NUM   1
+
+// <o> MX66UW1G FLASH OSPI Bus speed
+// <i> Defines the OSPI Bus speed
+// <i> Default: 100000000
+#define RTE_MX66UW1G_FLASH_OSPI_BUS_SPEED 100000000
+
+// <o> MX66UW1G FLASH Wait cycles
+// <i> Defines the number of wait (dummy) cycles needed for fast read operations
+// <i> Default: 10
+#define RTE_MX66UW1G_FLASH_WAIT_CYCLES    10
+#endif
+// </e> FLASH (MX66UW1G FLASH) [Driver_MX66UW1G_FLASH]
+// </h> FLASH
+
+// <h> APS512XXN PSRAM
+// <e> APS512XXN PSRAM [Driver_APS512XXN_PSRAM]
+// <i> Configuration settings for Driver_APS512XXN_PSRAM in component ::Drivers:APS512XXN_PSRAM
+#define RTE_APS512XXN_PSRAM 1
+#if RTE_APS512XXN_PSRAM
+
+// <o> APS512XXN PSRAM Wait cycles
+// <i> Defines the number of wait cycles needed for fast read write operations.
+// <i> Default: 4
+#define RTE_APS512XXN_PSRAM_WAIT_CYCLES            4
+
+// <o> APS512XXN PSRAM Enable Dual Octal Mode
+//    <0=> Disable
+//    <1=> Enable
+// <i> Defines APS512XXN PSRAM SPI Mode.
+// <i> Default: 0
+#define RTE_APS512XXN_PSRAM_DUAL_OCTAL_MODE_ENABLE 1
+
+// <o> APS512XXN PSRAM OSPI slave selection
+//    <0=> SS_0
+//    <1=> SS_1
+// <i> Defines the slave select line for APS512XXN PSRAM.
+// <i> Default: 0
+#define RTE_APS512XXN_PSRAM_OSPI_SS_LINE           0
+#endif
+// </e> APS512XXN PSRAM [Driver_APS512XXN_PSRAM]
+// </h> APS512XXN PSRAM
+
+// <h> S80K HYPERRAM
+// <e> S80K HYPERRAM [Driver_S80K_HYPERRAM]
+// <i> Configuration settings for Driver_S80K_HYPERRAM in component ::Drivers:S80K_HYPERRAM
+#define RTE_S80K_HYPERRAM 1
+#if RTE_S80K_HYPERRAM
+
+// <o> S80K HYPERRAM Wait cycles
+// <i> Defines the number of wait cycles needed for fast read write operations.
+// <i> Default: 3
+#define RTE_S80K_HYPERRAM_WAIT_CYCLES             3
+
+// <o> S80K HYPERRAM SPI MODE
+//    <0=> Octal mode
+//    <1=> Dual Octal mode
+// <i> Defines S80K HYPERRAM SPI Mode.
+// <i> Default: 0
+#define RTE_S80K_HYPERRAM_SPI_MODE                1
+#endif
+// </e> S80K HYPERRAM [Driver_S80K_HYPERRAM]
+// </h> S80K HYPERRAM
 
 // <h> I2S  (Integrated Interchip Sound)
 // <e> I2S0 (Integrated Interchip Sound 0) [Driver_SAI0]
@@ -3264,8 +3504,8 @@
 //     <2=>   I2C2
 //     <3=>   I2C3
 //     <I3C=> I2C OVER I3C
-// <i> Default: 2
-#define RTE_WM8904_CODEC_I2C_INSTANCE 2
+// <i> Default: 1
+#define RTE_WM8904_CODEC_I2C_INSTANCE 1
 #endif
 
 // </h> WM8904 Codec [Driver_WM8904]
@@ -8059,7 +8299,7 @@
 // <o> Number of bits to shift <0-8>
 // <i> Defines How much bit to shift before storing in sample register.
 // <i> Default: 8
-#define RTE_ADC120_SHIFT_N_BIT         (0)
+#define RTE_ADC120_SHIFT_N_BIT         (8)
 
 // <o> Left or Right shift
 //     <0=> LEFT SHIFT
@@ -9125,13 +9365,6 @@
 #define RTE_LPI2C1_DMA_ENABLE        0
 #if RTE_LPI2C1_DMA_ENABLE
 
-// <o> LPI2C1 DMA Selection
-//    <0=> DMA2(M55-HE)
-//    <1=> DMA0
-// <i> Defines Select DMA0 for LPI2C1. By default DMA0 will be considered
-// <i> Default: DMA0
-#define RTE_LPI2C1_SELECT_DMA0 1
-
 // <o> LPI2C1 DMA IRQ priority <0-255>
 // <i> Defines LPI2C1 DMA Interrupt priority
 // <i> Default: 0
@@ -9142,6 +9375,36 @@
 // </e> LPI2C (Low Power Inter Integrated Circuit) [Driver_LPI2C1]
 #endif  // defined(RTSS_HE)
 // </h> I2C (Inter Integrated Circuit)
+
+// <h> RANGE_SENSOR (Range Sensor)
+// <e> RANGE_SENSOR (Object Range Measurement Unit) [Driver_RANGE_SENSOR]
+// <i> Configuration settings for Driver_RANGE_SENSOR in component::Drivers:RANGE_SENSOR
+#define RTE_RANGE_SENSOR 1
+
+#if RTE_RANGE_SENSOR
+
+// <e> CH201 (Time of Flight Sensor) [Driver_CH201]
+// <i> Configuration settings for Driver_CH201 in component::Drivers:CH201
+#define RTE_CH201 1
+
+#if RTE_CH201
+
+// <o> CH201 I2C Bus speed range <0-400000>
+// <i> Defines CH201 I2C speed in Hertz
+// <i> Default: 400000
+#define RTE_CH201_I2C_SPEED_HZ   400000
+
+// <o> CH201 RTC calibration pulse range <1-1000>
+// <i> Defines CH201 sensor's internal RTC calculation pulse in millisec
+// <i> Default: 100
+#define RTE_CH201_RTC_CAL_PULSE_MS 100
+
+#endif
+//</e> CH201 (Time of Flight Sensor) [Driver_CH201]
+
+#endif
+//</e> RANGE_SENSOR (Object Range Measurement Unit) [Driver_RANGE_SENSOR]
+//</h> RANGE_SENSOR (Range Sensor)
 
 // <e> DMA0 (Direct Memory Access Controller) [Driver_DMA0]
 // <i> Configuration settings for Driver_DMA0 in component ::Drivers:DMA

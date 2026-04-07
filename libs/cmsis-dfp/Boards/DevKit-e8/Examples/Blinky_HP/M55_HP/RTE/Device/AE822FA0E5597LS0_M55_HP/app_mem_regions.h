@@ -35,6 +35,23 @@
 
 // <h>RAM Configuration
 // =======================
+//   <q>Combine SRAM0 & SRAM1
+//   <i> Combines SRAM0 and SRAM1 into single memory region
+#define SRAM0_SRAM1_COMBINED        1
+// <h> SRAM
+//   <o> Base address <0x02000000-0x027FFFFF:8>
+//   <i> Defines base address of SRAM memory region.
+//   <i> Default: 0x02000000
+#define APP_SRAM_BASE          0x02000000
+//   <o> Region size [bytes] <0x0-0x00800000:8>
+//   <i> Defines size of SRAM0 memory region.
+//   <i> Default: 0x00800000
+#define APP_SRAM_SIZE          0x00800000
+//   <q>No zero initialize
+//   <i> Excludes SRAM0 region from zero initialization.
+#define APP_SRAM_NOINIT        1
+// </h>
+
 // <h> SRAM0
 //   <o> Base address <0x02000000-0x023FFFFF:8>
 //   <i> Defines base address of SRAM0 memory region.
@@ -50,14 +67,14 @@
 // </h>
 
 // <h> SRAM1
-//   <o> Base address <0x08000000-0x0827FFFF:8>
+//   <o> Base address <0x02400000-0x027FFFFF:8>
 //   <i> Defines base address of SRAM1 memory region.
-//   <i> Default: 0x08000000
-#define APP_SRAM1_BASE         0x08000000
-//   <o> Region size [bytes] <0x0-0x00280000:8>
+//   <i> Default: 0x02400000
+#define APP_SRAM1_BASE         0x02400000
+//   <o> Region size [bytes] <0x0-0x00400000:8>
 //   <i> Defines size of SRAM1 memory region.
-//   <i> Default: 0x00280000
-#define APP_SRAM1_SIZE         0x0040000
+//   <i> Default: 0x00400000
+#define APP_SRAM1_SIZE         0x00400000
 //   <q>No zero initialize
 //   <i> Excludes SRAM1 region from zero initialization.
 #define APP_SRAM1_NOINIT       1

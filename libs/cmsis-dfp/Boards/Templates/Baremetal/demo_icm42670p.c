@@ -23,6 +23,7 @@
 #include <inttypes.h>
 #include <string.h>
 #include "app_utils.h"
+#include "sensor_utils.h"
 
 /* Project Includes */
 /* PINMUX Driver */
@@ -110,7 +111,7 @@ static void imu_icm42670p_demo(void)
 {
     ARM_DRIVER_VERSION      version;
     ARM_IMU_COORDINATES     data[2];
-    float                   temperature;
+    ARM_IMU_SENSOR_VALUE    temperature;
     volatile ARM_IMU_STATUS status;
     int32_t                 ret;
     uint8_t                 iter;
@@ -182,16 +183,16 @@ static void imu_icm42670p_demo(void)
                 goto error_poweroff;
             }
 
-            printf("\tAccel Data--> x:%" PRId16 "mg, y:%" PRId16 "mg, z:%" PRId16 "mg"
-                   "\tGyro Data-->  x:%" PRId16 "mdps, y:%" PRId16 "mdps, z:%" PRId16 "mdps"
-                   "\tTemp Data-->  %fC\r\n",
-                   data[0].x,
-                   data[0].y,
-                   data[0].z,
-                   data[1].x,
-                   data[1].y,
-                   data[1].z,
-                   temperature);
+            printf("\tAccel Data--> x:%f g, y:%f g, z:%f g"
+                   "\tGyro Data-->  x:%f dps, y:%f dps, z:%f dps"
+                   "\tTemp Data-->  %f C\r\n",
+                   sensor_value_to_double((SENSOR_VALUE *) &data[0].x),
+                   sensor_value_to_double((SENSOR_VALUE *) &data[0].y),
+                   sensor_value_to_double((SENSOR_VALUE *) &data[0].z),
+                   sensor_value_to_double((SENSOR_VALUE *) &data[1].x),
+                   sensor_value_to_double((SENSOR_VALUE *) &data[1].y),
+                   sensor_value_to_double((SENSOR_VALUE *) &data[1].z),
+                   sensor_value_to_double((SENSOR_VALUE *) &temperature));
             /* wait for 1 sec */
             for (iter = 0; iter < 10; iter++) {
                 sys_busy_loop_us(100000);

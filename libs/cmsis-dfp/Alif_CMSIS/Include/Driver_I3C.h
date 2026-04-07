@@ -90,6 +90,8 @@ extern "C" {
     (1UL << 9)  ///< Targets info rcvd through DEFSLVS CCC. Applicable only for secondary masters
 #define ARM_I3C_EVENT_BUS_RESET_DONE                                                               \
     (1UL << 10)  ///< Bus reset is done(Available only for Master mode)
+#define ARM_I3C_EVENT_READ_REQUEST_RCVD                                                            \
+    (1UL << 11)  ///< Read request received from master when the slave is not in Tx mode
 
 /****** I3C Error Status codes *****/
 #define ARM_I3C_LEC_NO_ERROR        (0U)  ///< Last error code: No error

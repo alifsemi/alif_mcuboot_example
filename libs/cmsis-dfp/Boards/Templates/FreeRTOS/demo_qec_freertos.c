@@ -20,6 +20,7 @@
  ******************************************************************************/
 
 #include <stdio.h>
+#include <inttypes.h>
 #include "Driver_UTIMER.h"
 #include "pinconf.h"
 #include "Driver_IO.h"
@@ -147,7 +148,7 @@ static int32_t gpio_init(void)
 {
     int32_t ret = ARM_DRIVER_OK;
 
-    ret         = ptrQECxGPIO->Initialize(BOARD_QEC_X_GPO_GPIO_PIN, NULL);
+    ret         = ptrQECxGPIO->Initialize(BOARD_QEC_X_GPO_GPIO_PIN, 0);
     if (ret != ARM_DRIVER_OK) {
         printf("ERROR: Failed to initialize GPIO1_PIN0 as GPIO\n");
         return ret;
@@ -168,7 +169,7 @@ static int32_t gpio_init(void)
         return ret;
     }
 
-    ret = ptrQECyGPIO->Initialize(BOARD_QEC_Y_GPO_GPIO_PIN, NULL);
+    ret = ptrQECyGPIO->Initialize(BOARD_QEC_Y_GPO_GPIO_PIN, 0);
     if (ret != ARM_DRIVER_OK) {
         printf("ERROR: Failed to initialize GPIO1_PIN1 as GPIO\n");
         return ret;
@@ -189,7 +190,7 @@ static int32_t gpio_init(void)
         return ret;
     }
 
-    ret = ptrQECzGPIO->Initialize(BOARD_QEC_Z_GPO_GPIO_PIN, NULL);
+    ret = ptrQECzGPIO->Initialize(BOARD_QEC_Z_GPO_GPIO_PIN, 0);
     if (ret != ARM_DRIVER_OK) {
         printf("ERROR: Failed to initialize GPIO1_PIN2 as GPIO\n");
         return ret;
@@ -225,6 +226,7 @@ static void qec0_app(void *pvParameters)
     int32_t  ret;
     uint8_t  channel                         = BOARD_ENCODER_UTIMER_INSTANCE;
     uint32_t init_count                      = 0;
+    ARG_UNUSED(pvParameters);
 
     ARM_UTIMER_TRIGGER_CONFIG upcount_trig   = {.triggerTarget = ARM_UTIMER_TRIGGER_UPCOUNT,
                                                 .triggerSrc    = ARM_UTIMER_SRC_0,
@@ -255,7 +257,7 @@ static void qec0_app(void *pvParameters)
     ret = board_qec_pins_config();
 #endif
     if (ret != ARM_DRIVER_OK) {
-        printf("ERROR: Pin configuration failed: %d\n", ret);
+        printf("ERROR: Pin configuration failed: %" PRId32 "\n", ret);
         return;
     }
 
@@ -264,53 +266,53 @@ static void qec0_app(void *pvParameters)
         printf("gpio init failed\n");
     }
 
-    ret = ptrUTIMER->Initialize(channel, NULL);
+    ret = ptrUTIMER->Initialize(channel, 0);
     if (ret != ARM_DRIVER_OK) {
-        printf("utimer channel %d failed initialize \n", channel);
+        printf("utimer channel %" PRIu8 " failed initialize\n", channel);
         return;
     }
 
     ret = ptrUTIMER->PowerControl(channel, ARM_POWER_FULL);
     if (ret != ARM_DRIVER_OK) {
-        printf("utimer channel %d failed power up \n", channel);
+        printf("utimer channel %" PRIu8 " failed power up\n", channel);
         goto error_qec_uninstall;
     }
 
     ret =
         ptrUTIMER->ConfigCounter(channel, ARM_UTIMER_MODE_TRIGGERING, ARM_UTIMER_COUNTER_TRIANGLE);
     if (ret != ARM_DRIVER_OK) {
-        printf("utimer channel %d mode configuration failed \n", channel);
+        printf("utimer channel %" PRIu8 " mode configuration failed\n", channel);
         goto error_qec_poweroff;
     }
 
     ret = ptrUTIMER->SetCount(channel, ARM_UTIMER_CNTR, init_count);
     if (ret != ARM_DRIVER_OK) {
-        printf("utimer channel %d set count failed \n", channel);
+        printf("utimer channel %" PRIu8 " set count failed\n", channel);
         goto error_qec_poweroff;
     }
 
     ret = ptrUTIMER->ConfigTrigger(channel, &upcount_trig);
     if (ret != ARM_DRIVER_OK) {
-        printf("utimer channel %d trigger configuration failed \n", channel);
+        printf("utimer channel %" PRIu8 " trigger configuration failed\n", channel);
         goto error_qec_poweroff;
     } else {
-        printf("utimer channel %d triggered for up count using Trig0\n", channel);
+        printf("utimer channel %" PRIu8 " triggered for up count using Trig0\n", channel);
     }
 
     ret = ptrUTIMER->ConfigTrigger(channel, &downcount_trig);
     if (ret != ARM_DRIVER_OK) {
-        printf("utimer channel %d trigger configuration failed \n", channel);
+        printf("utimer channel %" PRIu8 " trigger configuration failed\n", channel);
         goto error_qec_poweroff;
     } else {
-        printf("utimer channel %d triggered for down count using Trig1\n", channel);
+        printf("utimer channel %" PRIu8 " triggered for down count using Trig1\n", channel);
     }
 
     ret = ptrUTIMER->ConfigTrigger(channel, &clear_trig);
     if (ret != ARM_DRIVER_OK) {
-        printf("utimer channel %d trigger configuration failed \n", channel);
+        printf("utimer channel %" PRIu8 " trigger configuration failed\n", channel);
         goto error_qec_poweroff;
     } else {
-        printf("utimer channel %d triggered for counter clear using Trig3\n", channel);
+        printf("utimer channel %" PRIu8 " triggered for counter clear using Trig3\n", channel);
     }
 
     /* Toggling gpio's connected to x for 20 times to increment cnt value for 10 times */
@@ -321,7 +323,7 @@ static void qec0_app(void *pvParameters)
         }
     }
 
-    printf("counter value after counter increment : %d\n",
+    printf("counter value after counter increment : %" PRIu32 "\n",
            ptrUTIMER->GetCount(channel, ARM_UTIMER_CNTR));
 
     /* Toggling gpio's connected to x for 10 times to increment cnt value for 5 times */
@@ -332,7 +334,7 @@ static void qec0_app(void *pvParameters)
         }
     }
 
-    printf("counter value after counter decrement: %d\n",
+    printf("counter value after counter decrement: %" PRIu32 "\n",
            ptrUTIMER->GetCount(channel, ARM_UTIMER_CNTR));
 
     /* Making z event as high to clear count value */
@@ -341,28 +343,28 @@ static void qec0_app(void *pvParameters)
         printf("ERROR: Failed to set value for GPIO1_PIN2\n");
     }
 
-    printf("counter value after counter clear: %d\n",
+    printf("counter value after counter clear: %" PRIu32 "\n",
            ptrUTIMER->GetCount(channel, ARM_UTIMER_CNTR));
 
     ret = ptrUTIMER->Stop(channel, ARM_UTIMER_COUNTER_CLEAR);
     if (ret != ARM_DRIVER_OK) {
-        printf("utimer channel %d failed to stop \n", channel);
+        printf("utimer channel %" PRIu8 " failed to stop\n", channel);
     } else {
-        printf("utimer channel %d :timer stopped\n", channel);
+        printf("utimer channel %" PRIu8 " :timer stopped\n", channel);
     }
 
 error_qec_poweroff:
 
     ret = ptrUTIMER->PowerControl(channel, ARM_POWER_OFF);
     if (ret != ARM_DRIVER_OK) {
-        printf("utimer channel %d failed power off \n", channel);
+        printf("utimer channel %" PRIu8 " failed power off\n", channel);
     }
 
 error_qec_uninstall:
 
     ret = ptrUTIMER->Uninitialize(channel);
     if (ret != ARM_DRIVER_OK) {
-        printf("utimer channel %d failed to un-initialize \n", channel);
+        printf("utimer channel %" PRIu8 " failed to un-initialize\n", channel);
     }
 
     printf("*** FreeRTOS demo application: QEC completed *** \r\n\n");
@@ -388,7 +390,7 @@ int main(void)
 
     /* Create application main thread */
     xReturned =
-        xTaskCreate(qec0_app, "qec_app", 256, NULL, configMAX_PRIORITIES - 1, &qec0_xHandle);
+        xTaskCreate(qec0_app, "qec_app", 256, 0, configMAX_PRIORITIES - 1, &qec0_xHandle);
     if (xReturned != pdPASS) {
         vTaskDelete(qec0_xHandle);
         return -1;

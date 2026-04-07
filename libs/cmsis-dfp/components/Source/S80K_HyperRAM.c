@@ -18,16 +18,19 @@
  ******************************************************************************/
 
 #include "S80K_HyperRAM.h"
+#include "RTE_Device.h"
+#include "sys_utils.h"
 
 /**
-  \fn          void s80k_hyperram_init(OSPI_Type *ospi, uint8_t wait_cycles)
+  \fn          int32_t s80k_hyperram_init(OSPI_Type *ospi, AES_Type *aes)
   \brief       S80K HyperRAM init function.
-  \param[in]   ospi : Pointer to the OSPI register map.
-  \param[in]   wait_cycles  : hyperram wait cycle value.
-  \return      none
+  \param[in]   ospi    : Pointer to the OSPI register map.
+  \param[in]   aes     : Pointer to the AES register map.
+  \return      status
  */
-void s80k_hyperram_init(OSPI_Type *ospi, uint8_t wait_cycles)
+int32_t s80k_hyperram_init(OSPI_Type *ospi, AES_Type *aes)
 {
+    ARG_UNUSED(aes);
     ospi_transfer_t ospi_config;
     uint32_t        buff[3];
 
@@ -47,15 +50,16 @@ void s80k_hyperram_init(OSPI_Type *ospi, uint8_t wait_cycles)
     buff[1]                    = 0x0;                                /* bit[0] - bit[7] */
     buff[2]                    = ((1 << S80K_RAM_OPERATION_MODE_POS) /* Normal operation */
                | (0 << S80K_RAM_DRIVE_STRENGTH_POS) /* 34 ohm output drive strength (default) */
-               | (((wait_cycles - 5) & 0xF) << S80K_RAM_INIT_LATENCY_POS) /* initial latency */
+               /* initial latency value */
+               | (((RTE_S80K_HYPERRAM_WAIT_CYCLES - 5) & 0xF) << S80K_RAM_INIT_LATENCY_POS)
                | (0 << S80K_RAM_FIXED_LATENCY_EN_POS) /* variable latency */
                | (1 << S80K_RAM_WRAPPED_BURST_SEQ_POS) /* standard wrapped burst sequence */
                | (2 << S80K_RAM_BURST_LEN_POS)); /* 16-word (32-byte) wrap */
 
     ospi_config.spi_frf        = SPI_FRF_OCTAL;
     ospi_config.ddr            = 1;
-    ospi_config.inst_len       = SPI_CTRLR0_INST_L_0bit;
-    ospi_config.addr_len       = 12;
+    ospi_config.inst_len       = SPI_INST_L_0_BIT;
+    ospi_config.addr_len       = SPI_ADDR_L_48_BIT;
     ospi_config.dummy_cycle    = 0;
     ospi_config.tx_total_cnt   = 3;
     ospi_config.tx_current_cnt = 0;
@@ -63,4 +67,6 @@ void s80k_hyperram_init(OSPI_Type *ospi, uint8_t wait_cycles)
 
     ospi_set_dfs(ospi, 16);
     ospi_hyperbus_send(ospi, &ospi_config);
+
+    return 0;
 }

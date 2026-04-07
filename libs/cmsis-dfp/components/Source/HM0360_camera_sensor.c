@@ -66,6 +66,8 @@
 
 #define HM0360_CHIP_ID_REGISTER_VALUE   0x360
 
+static uint32_t isAlreadyInit;
+
 /**
 \brief HM0360 Camera Sensor Register Array Structure
        used for Camera Configuration.
@@ -80,6 +82,10 @@ typedef struct _HM0360_REG {
  * Provide busy loop delay
  */
 #define HM0360_DELAY_uSEC(usec) sys_busy_loop_us(usec)
+
+/* Delay values for Power-up sequence. */
+#define XSHUTDOWN_TO_XSLEEP 400
+#define XSLEEP_TO_I2C_CMD   39
 
 /* HM0360 Camera reset GPIO port */
 extern ARM_DRIVER_GPIO  ARM_Driver_GPIO_(RTE_HM0360_CAMERA_SENSOR_RESET_GPIO_PORT);
@@ -229,8 +235,8 @@ static const HM0360_REG hm0360_regs[] = {
 static int32_t HM0360_Bulk_Write_Reg(const HM0360_REG HM0360_reg[], uint32_t total_num,
                                      uint32_t reg_size)
 {
-    uint32_t i   = 0;
-    int32_t  ret = 0;
+    uint32_t i;
+    int32_t  ret;
 
     for (i = 0; i < total_num; i++) {
         ret = HM0360_WRITE_REG(HM0360_reg[i].reg_addr, HM0360_reg[i].reg_value, reg_size);
@@ -243,30 +249,14 @@ static int32_t HM0360_Bulk_Write_Reg(const HM0360_REG HM0360_reg[], uint32_t tot
 }
 
 /**
-  \fn           int32_t HM0360_Camera_Hard_Reseten(void)
-  \brief        Hard Reset HM0360 Camera Sensor
-  \param[in]    none
-  \return       \ref execution_status
-  */
-static int32_t HM0360_Camera_Hard_Reseten(void)
+ * \fn           int32_t HM0360_Check_Power_State(void)
+ * \brief        Check current power state of HM0360 Camera Sensor
+ * \param[in]    none
+ * \return       \ref execution_status
+ */
+static int32_t HM0360_Check_Power_State(void)
 {
-    int32_t ret = 0;
-
-    ret         = GPIO_Driver_CAM_RST->Initialize(RTE_HM0360_CAMERA_SENSOR_RESET_PIN_NO, NULL);
-    if (ret != ARM_DRIVER_OK) {
-        return ret;
-    }
-
-    ret = GPIO_Driver_CAM_RST->PowerControl(RTE_HM0360_CAMERA_SENSOR_RESET_PIN_NO, ARM_POWER_FULL);
-    if (ret != ARM_DRIVER_OK) {
-        return ret;
-    }
-
-    ret = GPIO_Driver_CAM_RST->SetDirection(RTE_HM0360_CAMERA_SENSOR_RESET_PIN_NO,
-                                            GPIO_PIN_DIRECTION_OUTPUT);
-    if (ret != ARM_DRIVER_OK) {
-        return ret;
-    }
+    int32_t ret;
 
     ret = GPIO_Driver_CAM_PWR->Initialize(RTE_HM0360_CAMERA_SENSOR_POWER_PIN_NO, NULL);
     if (ret != ARM_DRIVER_OK) {
@@ -278,8 +268,98 @@ static int32_t HM0360_Camera_Hard_Reseten(void)
         return ret;
     }
 
-    ret = GPIO_Driver_CAM_PWR->SetDirection(RTE_HM0360_CAMERA_SENSOR_POWER_PIN_NO,
-                                            GPIO_PIN_DIRECTION_OUTPUT);
+    ret = GPIO_Driver_CAM_PWR->GetValue(RTE_HM0360_CAMERA_SENSOR_POWER_PIN_NO,
+                                        (uint32_t *)&isAlreadyInit);
+    if (ret) {
+        /* Can't parse Reset GPIO value. We should do complete re-init of Camera sensor. */
+        isAlreadyInit = 0;
+        return ret;
+    }
+
+    return ARM_DRIVER_OK;
+}
+
+/**
+ * \fn           int32_t HM0360_Suspend(void)
+ * \brief        Put HM0360 Camera Sensor to Sleep state.
+ * \param[in]    none
+ * \return       \ref execution_status
+ */
+static int32_t HM0360_Suspend(void)
+{
+    return GPIO_Driver_CAM_XSLP->SetValue(RTE_HM0360_CAMERA_SENSOR_XSLEEP_PIN_NO,
+            GPIO_PIN_OUTPUT_STATE_LOW);
+}
+
+/**
+ * \fn           int32_t HM0360_Resume(void)
+ * \brief        Resume HM0360 Camera Sensor from Sleep state.
+ * \param[in]    none
+ * \return       \ref execution_status
+ */
+static int32_t HM0360_Resume(void)
+{
+    int32_t ret;
+
+    ret         = GPIO_Driver_CAM_RST->Initialize(RTE_HM0360_CAMERA_SENSOR_RESET_PIN_NO, NULL);
+    if (ret != ARM_DRIVER_OK) {
+        return ret;
+    }
+
+    ret = GPIO_Driver_CAM_RST->PowerControl(RTE_HM0360_CAMERA_SENSOR_RESET_PIN_NO, ARM_POWER_FULL);
+    if (ret != ARM_DRIVER_OK) {
+        return ret;
+    }
+
+    if (!isAlreadyInit) {
+        ret = GPIO_Driver_CAM_PWR->Initialize(RTE_HM0360_CAMERA_SENSOR_POWER_PIN_NO, NULL);
+        if (ret != ARM_DRIVER_OK) {
+            return ret;
+        }
+
+        ret = GPIO_Driver_CAM_PWR->PowerControl(RTE_HM0360_CAMERA_SENSOR_POWER_PIN_NO,
+                                                ARM_POWER_FULL);
+        if (ret != ARM_DRIVER_OK) {
+            return ret;
+        }
+    }
+
+    ret = GPIO_Driver_CAM_XSLP->Initialize(RTE_HM0360_CAMERA_SENSOR_XSLEEP_PIN_NO, NULL);
+    if (ret != ARM_DRIVER_OK) {
+        return ret;
+    }
+
+    ret = GPIO_Driver_CAM_XSLP->PowerControl(RTE_HM0360_CAMERA_SENSOR_XSLEEP_PIN_NO,
+                                             ARM_POWER_FULL);
+    if (ret != ARM_DRIVER_OK) {
+        return ret;
+    }
+
+    ret = GPIO_Driver_CAM_XSLP->SetValue(RTE_HM0360_CAMERA_SENSOR_XSLEEP_PIN_NO,
+            GPIO_PIN_OUTPUT_STATE_HIGH);
+    if (ret != ARM_DRIVER_OK) {
+        return ret;
+    }
+
+    return camera_sensor_i2c_init(&hm0360_camera_sensor_i2c_cnfg);
+}
+
+/**
+ * \fn           int32_t HM0360_Camera_Hard_Reseten(void)
+ * \brief        Hard Reset HM0360 Camera Sensor
+ * \param[in]    none
+ * \return       \ref execution_status
+ */
+static int32_t HM0360_Camera_Hard_Reseten(void)
+{
+    int32_t ret;
+
+    ret         = GPIO_Driver_CAM_RST->Initialize(RTE_HM0360_CAMERA_SENSOR_RESET_PIN_NO, NULL);
+    if (ret != ARM_DRIVER_OK) {
+        return ret;
+    }
+
+    ret = GPIO_Driver_CAM_RST->PowerControl(RTE_HM0360_CAMERA_SENSOR_RESET_PIN_NO, ARM_POWER_FULL);
     if (ret != ARM_DRIVER_OK) {
         return ret;
     }
@@ -291,6 +371,18 @@ static int32_t HM0360_Camera_Hard_Reseten(void)
 
     ret =
         GPIO_Driver_CAM_XSLP->PowerControl(RTE_HM0360_CAMERA_SENSOR_XSLEEP_PIN_NO, ARM_POWER_FULL);
+    if (ret != ARM_DRIVER_OK) {
+        return ret;
+    }
+
+    ret = GPIO_Driver_CAM_RST->SetDirection(RTE_HM0360_CAMERA_SENSOR_RESET_PIN_NO,
+                                            GPIO_PIN_DIRECTION_OUTPUT);
+    if (ret != ARM_DRIVER_OK) {
+        return ret;
+    }
+
+    ret = GPIO_Driver_CAM_PWR->SetDirection(RTE_HM0360_CAMERA_SENSOR_POWER_PIN_NO,
+                                            GPIO_PIN_DIRECTION_OUTPUT);
     if (ret != ARM_DRIVER_OK) {
         return ret;
     }
@@ -313,7 +405,11 @@ static int32_t HM0360_Camera_Hard_Reseten(void)
         return ret;
     }
 
-    HM0360_DELAY_uSEC(2000);
+    ret = GPIO_Driver_CAM_PWR->SetValue(RTE_HM0360_CAMERA_SENSOR_POWER_PIN_NO,
+                                        GPIO_PIN_OUTPUT_STATE_LOW);
+    if (ret != ARM_DRIVER_OK) {
+        return ret;
+    }
 
     ret = GPIO_Driver_CAM_PWR->SetValue(RTE_HM0360_CAMERA_SENSOR_POWER_PIN_NO,
                                         GPIO_PIN_OUTPUT_STATE_HIGH);
@@ -321,15 +417,13 @@ static int32_t HM0360_Camera_Hard_Reseten(void)
         return ret;
     }
 
-    HM0360_DELAY_uSEC(1000);
-
     ret = GPIO_Driver_CAM_RST->SetValue(RTE_HM0360_CAMERA_SENSOR_RESET_PIN_NO,
                                         GPIO_PIN_OUTPUT_STATE_HIGH);
     if (ret != ARM_DRIVER_OK) {
         return ret;
     }
 
-    HM0360_DELAY_uSEC(400);
+    HM0360_DELAY_uSEC(XSHUTDOWN_TO_XSLEEP);
 
     ret = GPIO_Driver_CAM_XSLP->SetValue(RTE_HM0360_CAMERA_SENSOR_XSLEEP_PIN_NO,
                                          GPIO_PIN_OUTPUT_STATE_HIGH);
@@ -337,7 +431,7 @@ static int32_t HM0360_Camera_Hard_Reseten(void)
         return ret;
     }
 
-    HM0360_DELAY_uSEC(100000);
+    HM0360_DELAY_uSEC(XSLEEP_TO_I2C_CMD);
 
     return ARM_DRIVER_OK;
 }
@@ -370,8 +464,18 @@ static int32_t HM0360_Camera_Cfg(void)
   */
 static int32_t HM0360_Init(void)
 {
-    int32_t  ret      = 0;
+    int32_t  ret;
     uint32_t rcv_data = 0;
+
+    /* Check if sensor is already Powered on. */
+    ret = HM0360_Check_Power_State();
+    if (ret != ARM_DRIVER_OK) {
+        return ret;
+    }
+
+    if (isAlreadyInit) {
+        return HM0360_Resume();
+    }
 
     /*camera sensor resten*/
     ret               = HM0360_Camera_Hard_Reseten();
@@ -413,14 +517,10 @@ static int32_t HM0360_Init(void)
         return ret;
     }
 
-    HM0360_DELAY_uSEC(10000);
-
     ret = HM0360_Camera_Cfg();
     if (ret != ARM_DRIVER_OK) {
         return ret;
     }
-
-    HM0360_DELAY_uSEC(1000);
 
     return HM0360_WRITE_REG(0x0100, 0x00, 1);
 }
@@ -446,6 +546,7 @@ static int32_t HM0360_Start(void)
 static int32_t HM0360_Snapshot(uint8_t num_frames)
 {
     int ret;
+
     ret = HM0360_WRITE_REG(0x3028, num_frames, 1);
     if (ret != ARM_DRIVER_OK) {
         return ret;
@@ -564,6 +665,8 @@ static CAMERA_SENSOR_OPERATIONS HM0360_ops = {
     .Snapshot = HM0360_Snapshot,
     .Stop     = HM0360_Stop,
     .Control  = HM0360_Control,
+    .Suspend  = HM0360_Suspend,
+    .Resume   = HM0360_Resume,
 };
 
 /**

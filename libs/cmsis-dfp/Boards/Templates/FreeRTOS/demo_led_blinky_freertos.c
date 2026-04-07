@@ -67,7 +67,8 @@ void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer,
 
 void vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName)
 {
-    (void) pxTask;
+    ARG_UNUSED(pxTask);
+    ARG_UNUSED(pcTaskName);
 
     ASSERT_HANG_LOOP
 }
@@ -179,6 +180,7 @@ static int32_t board_led_pins_config(void)
 */
 void led_demo_Thread(void *pvParameters)
 {
+    ARG_UNUSED(pvParameters);
     /*
      * gpio12 pin3 can be used as Red LED of LED0.
      * gpio7 pin4 can be used as Green LED of LED0.
@@ -229,17 +231,17 @@ void led_demo_Thread(void *pvParameters)
     }
 #endif
 
-    ret1 = gpioDrvLed0R->Initialize(LED0_R, NULL);
+    ret1 = gpioDrvLed0R->Initialize(LED0_R, 0);
     if (ret1 != ARM_DRIVER_OK) {
         printf("ERROR: Failed to initialize\n");
         return;
     }
-    ret1 = gpioDrvLed0G->Initialize(LED0_G, NULL);
+    ret1 = gpioDrvLed0G->Initialize(LED0_G, 0);
     if (ret1 != ARM_DRIVER_OK) {
         printf("ERROR: Failed to initialize\n");
         return;
     }
-    ret1 = gpioDrvLed0B->Initialize(LED0_B, NULL);
+    ret1 = gpioDrvLed0B->Initialize(LED0_B, 0);
     if (ret1 != ARM_DRIVER_OK) {
         printf("ERROR: Failed to initialize\n");
         return;
@@ -278,17 +280,17 @@ void led_demo_Thread(void *pvParameters)
     }
 
 #if (BOARD_LEDRGB_COUNT > 1)
-    ret2 = gpioDrvLed1R->Initialize(LED1_R, NULL);
+    ret2 = gpioDrvLed1R->Initialize(LED1_R, 0);
     if (ret2 != ARM_DRIVER_OK) {
         printf("ERROR: Failed to initialize\n");
         return;
     }
-    ret2 = gpioDrvLed1G->Initialize(LED1_G, NULL);
+    ret2 = gpioDrvLed1G->Initialize(LED1_G, 0);
     if (ret2 != ARM_DRIVER_OK) {
         printf("ERROR: Failed to initialize\n");
         return;
     }
-    ret2 = gpioDrvLed1B->Initialize(LED1_B, NULL);
+    ret2 = gpioDrvLed1B->Initialize(LED1_B, 0);
     if (ret2 != ARM_DRIVER_OK) {
         printf("ERROR: Failed to initialize\n");
         return;
@@ -408,40 +410,40 @@ error_power_off:
 
     ret1 = gpioDrvLed0R->PowerControl(LED0_R, ARM_POWER_OFF);
     if (ret1 != ARM_DRIVER_OK) {
-        printf("ERROR: Failed to power off \n");
+        printf("ERROR: Failed to power off\n");
     } else {
-        printf("LEDs power off \n");
+        printf("LEDs power off\n");
     }
     ret1 = gpioDrvLed0G->PowerControl(LED0_G, ARM_POWER_OFF);
     if (ret1 != ARM_DRIVER_OK) {
-        printf("ERROR: Failed to power off \n");
+        printf("ERROR: Failed to power off\n");
     } else {
-        printf("LEDs power off \n");
+        printf("LEDs power off\n");
     }
     ret1 = gpioDrvLed0B->PowerControl(LED0_B, ARM_POWER_OFF);
     if (ret1 != ARM_DRIVER_OK) {
-        printf("ERROR: Failed to power off \n");
+        printf("ERROR: Failed to power off\n");
     } else {
-        printf("LEDs power off \n");
+        printf("LEDs power off\n");
     }
 #if (BOARD_LEDRGB_COUNT > 1)
     ret2 = gpioDrvLed1R->PowerControl(LED1_R, ARM_POWER_OFF);
     if (ret2 != ARM_DRIVER_OK) {
-        printf("ERROR: Failed to power off \n");
+        printf("ERROR: Failed to power off\n");
     } else {
-        printf("LEDs power off \n");
+        printf("LEDs power off\n");
     }
     ret2 = gpioDrvLed1G->PowerControl(LED1_G, ARM_POWER_OFF);
     if (ret2 != ARM_DRIVER_OK) {
-        printf("ERROR: Failed to power off \n");
+        printf("ERROR: Failed to power off\n");
     } else {
-        printf("LEDs power off \n");
+        printf("LEDs power off\n");
     }
     ret2 = gpioDrvLed1B->PowerControl(LED1_B, ARM_POWER_OFF);
     if (ret2 != ARM_DRIVER_OK) {
-        printf("ERROR: Failed to power off \n");
+        printf("ERROR: Failed to power off\n");
     } else {
-        printf("LEDs power off \n");
+        printf("LEDs power off\n");
     }
 #endif
 
@@ -449,40 +451,40 @@ error_uninitialize:
 
     ret1 = gpioDrvLed0R->Uninitialize(LED0_R);
     if (ret1 != ARM_DRIVER_OK) {
-        printf("Failed to Un-initialize \n");
+        printf("Failed to Un-initialize\n");
     } else {
-        printf("Un-initialized \n");
+        printf("Un-initialized\n");
     }
     ret1 = gpioDrvLed0G->Uninitialize(LED0_G);
     if (ret1 != ARM_DRIVER_OK) {
-        printf("Failed to Un-initialize \n");
+        printf("Failed to Un-initialize\n");
     } else {
-        printf("Un-initialized \n");
+        printf("Un-initialized\n");
     }
     ret1 = gpioDrvLed0B->Uninitialize(LED0_B);
     if (ret1 != ARM_DRIVER_OK) {
-        printf("Failed to Un-initialize \n");
+        printf("Failed to Un-initialize\n");
     } else {
-        printf("Un-initialized \n");
+        printf("Un-initialized\n");
     }
 #if (BOARD_LEDRGB_COUNT > 1)
     ret2 = gpioDrvLed1R->Uninitialize(LED1_R);
     if (ret2 != ARM_DRIVER_OK) {
-        printf("Failed to Un-initialize \n");
+        printf("Failed to Un-initialize\n");
     } else {
-        printf("Un-initialized \n");
+        printf("Un-initialized\n");
     }
     ret2 = gpioDrvLed1G->Uninitialize(LED1_G);
     if (ret2 != ARM_DRIVER_OK) {
-        printf("Failed to Un-initialize \n");
+        printf("Failed to Un-initialize\n");
     } else {
-        printf("Un-initialized \n");
+        printf("Un-initialized\n");
     }
     ret2 = gpioDrvLed1B->Uninitialize(LED1_B);
     if (ret2 != ARM_DRIVER_OK) {
-        printf("Failed to Un-initialize \n");
+        printf("Failed to Un-initialize\n");
     } else {
-        printf("Un-initialized \n");
+        printf("Un-initialized\n");
     }
 #endif
 }
@@ -506,7 +508,7 @@ int main(void)
     BaseType_t xReturned = xTaskCreate(led_demo_Thread,
                                        "led_demo_Thread",
                                        216,
-                                       NULL,
+                                       0,
                                        configMAX_PRIORITIES - 1,
                                        &led_xHandle);
     if (xReturned != pdPASS) {

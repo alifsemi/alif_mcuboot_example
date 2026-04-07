@@ -22,6 +22,7 @@
 #ifndef SYS_CTRL_AES_H
 #define SYS_CTRL_AES_H
 
+#include <stdbool.h>
 #include "soc.h"
 
 #ifdef __cplusplus
@@ -131,6 +132,36 @@ static inline void aes_set_signal_delay(AES_Type *aes, uint8_t delay)
 static inline void aes_set_rxds_delay(AES_Type *aes, uint8_t rxds_delay)
 {
     aes->AES_RXDS_DELAY = rxds_delay;
+}
+#endif
+
+#if SOC_FEAT_AES_HAS_ADDR_CTRL_SHIM
+typedef struct _aes_addr_ctrl {
+    /* Number of bits in the lower portion of the address */
+    uint8_t addr_lower_bits;
+    /* Bit position of the lowest bit in the upper portion of the address */
+    uint8_t addr_upper_shift;
+    /* Enable array mode for SS0 line (lower 256MB) */
+    bool ss0_array_mode_en;
+    /* Enable array mode for SS1 line (upper 256MB) */
+    bool ss1_array_mode_en;
+    /* Mask bits in the lower portion of the address to drive low */
+    uint16_t addr_mask;
+} aes_addr_ctrl;
+
+#define AES_ADDR_CTRL_ARRAY_MASK_POS        (0)
+#define AES_ADDR_CTRL_SS0_ARRAY_MODE_POS    (18)
+#define AES_ADDR_CTRL_SS1_ARRAY_MODE_POS    (19)
+#define AES_ADDR_CTRL_ARRAY_MODE_SHIFT_POS  (22)
+#define AES_ADDR_CTRL_ARRAY_MODE_SPLIT_POS  (28)
+
+static inline void aes_control_address(AES_Type *aes, aes_addr_ctrl *addr_cfg)
+{
+    aes->AES_ADDR_CONTROL = ((addr_cfg->addr_mask << AES_ADDR_CTRL_ARRAY_MASK_POS) |
+                             (addr_cfg->ss0_array_mode_en << AES_ADDR_CTRL_SS0_ARRAY_MODE_POS) |
+                             (addr_cfg->ss1_array_mode_en << AES_ADDR_CTRL_SS1_ARRAY_MODE_POS) |
+                             (addr_cfg->addr_upper_shift << AES_ADDR_CTRL_ARRAY_MODE_SHIFT_POS) |
+                             (addr_cfg->addr_lower_bits << AES_ADDR_CTRL_ARRAY_MODE_SPLIT_POS));
 }
 #endif
 

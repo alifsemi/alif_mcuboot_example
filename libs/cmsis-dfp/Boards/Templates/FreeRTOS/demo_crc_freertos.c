@@ -23,6 +23,7 @@
 
 /* System Includes */
 #include <stdio.h>
+#include <inttypes.h>
 
 /* Project Includes */
 /* include for CRC Driver */
@@ -67,7 +68,8 @@ void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer,
 
 void vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName)
 {
-    (void) pxTask;
+    ARG_UNUSED(pxTask);
+    ARG_UNUSED(pcTaskName);
 
     ASSERT_HANG_LOOP
 }
@@ -162,6 +164,7 @@ void crc_demo_Thread_entry(void *pvParameters)
     uint32_t           crc_output;
     ARM_DRIVER_VERSION version;
     BaseType_t         xReturned;
+    ARG_UNUSED(pvParameters);
 
     printf("\r\n >>> Demo FreeRTOS app using CRC is starting <<< \r\n");
 
@@ -216,7 +219,7 @@ void crc_demo_Thread_entry(void *pvParameters)
 
     /*sending User input */
     ret = CRCdrv->Compute(input_value, len, &crc_output);
-    printf("8 bit output : %x\n", crc_output);
+    printf("8 bit output : %" PRIx32 "\n", crc_output);
     if (ret != ARM_DRIVER_OK) {
         printf("\r\n Error: CRC 8 bit data sending failed\n");
         goto error_send;
@@ -338,13 +341,13 @@ void crc_demo_Thread_entry(void *pvParameters)
 #endif
 
     /* wait for CRC callback */
-    xReturned = xTaskNotifyWait(NULL, CRC_CALLBACK_EVENT_SUCCESS, NULL, portMAX_DELAY);
+    xReturned = xTaskNotifyWait(0, CRC_CALLBACK_EVENT_SUCCESS, 0, portMAX_DELAY);
     if (xReturned != pdTRUE) {
         printf("Error: RTC tx_event_flags_get\n");
         goto error_poweroff;
     }
 
-    printf("\n >>> CRC Compute done \n");
+    printf("\n >>> CRC Compute done\n");
 
 error_send:
 error_poweroff:
@@ -383,7 +386,7 @@ int main(void)
     BaseType_t xReturned = xTaskCreate(crc_demo_Thread_entry,
                                        "CRCFreertos",
                                        256,
-                                       NULL,
+                                       0,
                                        configMAX_PRIORITIES - 1,
                                        &crc_xHandle);
     if (xReturned != pdPASS) {

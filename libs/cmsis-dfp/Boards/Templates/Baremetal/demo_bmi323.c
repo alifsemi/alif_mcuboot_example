@@ -23,6 +23,7 @@
 #include <string.h>
 #include <inttypes.h>
 #include "app_utils.h"
+#include "sensor_utils.h"
 
 /* Project Includes */
 #include "board_config.h"
@@ -105,12 +106,12 @@ static int32_t hardware_init(void)
 */
 static void imu_bmi323_demo(void)
 {
-    ARM_DRIVER_VERSION  version;
-    ARM_IMU_COORDINATES data;
-    float               temperature;
-    ARM_IMU_STATUS      status;
-    int32_t             ret;
-    uint8_t             iter;
+    ARM_DRIVER_VERSION   version;
+    ARM_IMU_COORDINATES  data;
+    ARM_IMU_SENSOR_VALUE temperature;
+    ARM_IMU_STATUS       status;
+    int32_t              ret;
+    uint8_t              iter;
 
     printf("\r\n BMI323 IMU demo Starting...\r\n");
 
@@ -168,10 +169,10 @@ static void imu_bmi323_demo(void)
                     goto error_poweroff;
                 }
 
-                printf("\t\tAccel Data--> x:%" PRId16 "mg, y:%" PRId16 "mg, z:%" PRId16 "mg\r\n",
-                       data.x,
-                       data.y,
-                       data.z);
+                printf("\t\tAccel Data--> x:%f g, y:%f g, z:%f g\r\n",
+                       sensor_value_to_double((SENSOR_VALUE *) &data.x),
+                       sensor_value_to_double((SENSOR_VALUE *) &data.y),
+                       sensor_value_to_double((SENSOR_VALUE *) &data.z));
             }
 
             if (status.drdy_status & IMU_GYRO_DATA_READY) {
@@ -182,11 +183,10 @@ static void imu_bmi323_demo(void)
                     goto error_poweroff;
                 }
 
-                printf("\t\tGyro Data-->  x:%" PRId16 "mdps, y:%" PRId16 "mdps, z:%" PRId16
-                       "mdps\r\n",
-                       data.x,
-                       data.y,
-                       data.z);
+                printf("\t\tGyro Data-->  x:%f dps, y:%f dps, z:%f dps\r\n",
+                       sensor_value_to_double((SENSOR_VALUE *) &data.x),
+                       sensor_value_to_double((SENSOR_VALUE *) &data.y),
+                       sensor_value_to_double((SENSOR_VALUE *) &data.z));
             }
 
             if (status.drdy_status & IMU_TEMPERATURE_DATA_READY) {
@@ -197,7 +197,8 @@ static void imu_bmi323_demo(void)
                     goto error_poweroff;
                 }
 
-                printf("\t\tTemp Data-->  %fC\r\n\r\n", temperature);
+                printf("\t\tTemp Data-->  %f C\r\n\r\n",
+                       sensor_value_to_double((SENSOR_VALUE *) &temperature));
             }
             /* wait for 1 sec */
             for (iter = 0; iter < 10; iter++) {

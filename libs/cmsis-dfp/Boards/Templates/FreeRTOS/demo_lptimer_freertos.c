@@ -69,7 +69,8 @@ void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer,
 
 void vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName)
 {
-    (void) pxTask;
+    ARG_UNUSED(pxTask);
+    ARG_UNUSED(pcTaskName);
 
    ASSERT_HANG_LOOP
 }
@@ -108,6 +109,7 @@ void lptimer_cb_fun(uint8_t event)
 
 void lptimer_Thread(void *pvParameters)
 {
+    ARG_UNUSED(pvParameters);
     extern ARM_DRIVER_LPTIMER Driver_LPTIMER0;
     ARM_DRIVER_LPTIMER       *ptrDrv = &Driver_LPTIMER0;
 
@@ -163,9 +165,9 @@ void lptimer_Thread(void *pvParameters)
         printf("timer started\r\n");
     }
 
-    xReturned = xTaskNotifyWait(NULL, LPTIMER_CALLBACK_EVENT, NULL, LPTIMER_EVENT_WAIT_TIME);
+    xReturned = xTaskNotifyWait(0, LPTIMER_CALLBACK_EVENT, 0, LPTIMER_EVENT_WAIT_TIME);
     if (xReturned != pdTRUE) {
-        printf("\n\r Task Wait Time out expired \n\r");
+        printf("\n\r Task Wait Time out expired\n\r");
         goto error_poweroff;
     }
 
@@ -195,7 +197,7 @@ error_uninstall:
     printf("demo application: completed \r\n");
 
     /* thread delete  */
-    vTaskDelete(NULL);
+    vTaskDelete(0);
 }
 
 /*----------------------------------------------------------------------------
@@ -218,7 +220,7 @@ int main(void)
     BaseType_t xReturned = xTaskCreate(lptimer_Thread,
                                        "lpTimer_Thread",
                                        512,
-                                       NULL,
+                                       0,
                                        configMAX_PRIORITIES - 1,
                                        &lptimer_xHandle);
     if (xReturned != pdPASS) {

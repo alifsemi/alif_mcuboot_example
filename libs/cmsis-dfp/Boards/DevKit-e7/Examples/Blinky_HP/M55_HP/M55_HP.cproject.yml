@@ -1,0 +1,34 @@
+# A project translates into one executable or library.
+project:
+  device: :M55_HP
+
+  groups:
+    - group: Source Files
+      files:
+        - file: ./main.c
+        - file: ./app_utils.h
+
+  # List components to use for your application.
+  # A software component is a re-usable unit that may be configurable.
+  components:
+    - component: Device:SOC Peripherals:GPIO
+    - component: CMSIS:CORE
+    - component: Device:SOC Peripherals:PINCONF
+    - component: Device:Startup
+    - component: BSP:DevKit Config&DevKit-e7
+    - component: BSP:Board Config
+    - component: Services:Retarget IO:STDOUT
+    - component: Services:Secure Enclave:Initialization Helper&Source
+    - component: Services:Secure Enclave:core&Source
+    - component: Device:SOC Peripherals:MHU
+    - component: CMSIS Driver:USART
+    - component: CMSIS-Compiler:CORE
+    - component: CMSIS-Compiler:STDOUT:Custom
+
+  # List executable file formats to be generated.
+  output:
+    type:
+      - elf
+      - bin
+      - hex
+      - map

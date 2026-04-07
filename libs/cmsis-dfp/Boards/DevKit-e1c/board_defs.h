@@ -151,9 +151,6 @@
 #define BOARD_MISC_ENABLED                              1
 // </e>
 
-// <o> "ISSI RAM" OSPI instance number <0>
-#define BOARD_ISSI_RAM_OSPI_INSTANCE                    0
-
 // <o> "ISSI Flash" OSPI instance number <1>
 #define BOARD_ISSI_FLASH_OSPI_INSTANCE                  1
 
@@ -505,6 +502,14 @@
 #define BOARD_DAC121_OUT_GPIO_PIN                       3
 // <o> "DAC121_OUT" GPIO pin alternate function <0-7>
 #define BOARD_DAC121_ALTERNATE_FUNCTION                 7
+
+// <o> "SD_RESET" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4 <5=> GPIO5
+// <6=> GPIO6 <7=> GPIO7 <8=> GPIO8 <9=> GPIO9 <10=> GPIO10 <11=> GPIO11 <12=> GPIO12 <13=> GPIO13
+// <14=> GPIO14 <15=> LPGPIO
+#define BOARD_SD_RESET_GPIO_PORT                        7
+// <o> "SD_RESET" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4 <5=> PIN5 <6=>
+// PIN6 <7=> PIN7
+#define BOARD_SD_RESET_GPIO_PIN                         0
 
 // <o> "SD_CARD_DETECT" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4 <5=>
 // GPIO5 <6=> GPIO6 <7=> GPIO7 <8=> GPIO8 <9=> GPIO9 <15=> LPGPIO
@@ -1055,7 +1060,7 @@
 #define BOARD_LPI2C0_SDA_GPIO_PORT                      0
 // <o> "LPI2C0_SDA_A" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4 <5=> PIN5
 // <6=> PIN6 <7=> PIN7
-#define BOARD_LPI2C0_SDA_GPIO_PIN                       0
+#define BOARD_LPI2C0_SDA_GPIO_PIN                       1
 // <o> "LPI2C0_SDA_A" GPIO pin alternate function <0-7>
 #define BOARD_LPI2C0_SDA_ALTERNATE_FUNCTION             5
 
@@ -1064,7 +1069,7 @@
 #define BOARD_LPI2C0_SCL_GPIO_PORT                      0
 // <o> "LPI2C0_SCL_A" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4 <5=> PIN5
 // <6=> PIN6 <7=> PIN7
-#define BOARD_LPI2C0_SCL_GPIO_PIN                       1
+#define BOARD_LPI2C0_SCL_GPIO_PIN                       0
 // <o> "LPI2C0_SCL_A" GPIO pin alternate function <0-7>
 #define BOARD_LPI2C0_SCL_ALTERNATE_FUNCTION             5
 
@@ -1286,12 +1291,12 @@
 
 // <o> "LPUART_TX_C" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4 <5=>
 // GPIO5 <6=> GPIO6 <7=> GPIO7 <8=> GPIO8 <9=> GPIO9 <15=> LPGPIO
-#define BOARD_LPUART_TX_GPIO_PORT                       9
+#define BOARD_LPUART_TX_GPIO_PORT                       7
 // <o> "LPUART_TX_C" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4 <5=> PIN5
 // <6=> PIN6 <7=> PIN7
 #define BOARD_LPUART_TX_GPIO_PIN                        1
 // <o> "LPUART_TX_C" GPIO pin alternate function <0-7>
-#define BOARD_LPUART_TX_ALTERNATE_FUNCTION              1
+#define BOARD_LPUART_TX_ALTERNATE_FUNCTION              2
 
 // <o> "CDC_PCLK_A" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4 <5=>
 // GPIO5 <6=> GPIO6 <7=> GPIO7 <8=> GPIO8 <9=> GPIO9 <15=> LPGPIO
@@ -1683,12 +1688,19 @@
 // PIN5 <6=> PIN6 <7=> PIN7
 #define BOARD_IS66_HYPERRAM_RESET_GPIO_PIN              1
 
-// <o> "ISSI_FLASH_RESET" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4
-// <5=> GPIO5 <6=> GPIO6 <7=> GPIO7 <8=> GPIO8 <9=> GPIO9 <15=> LPGPIO
-#define BOARD_ISSI_FLASH_RESET_GPIO_PORT                15
-// <o> "ISSI_FLASH_RESET" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4 <5=>
+// <o> "PSRAM" OSPI instance number <0> (Do Not Modify!)
+#define BOARD_PSRAM_OSPI_INSTANCE                       0
+
+// OSPI Flash instance number (Do Not Modify!)
+#define BOARD_OSPI_FLASH_INSTANCE                       1
+
+// <o> "OSPI_FLASH_RESET" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4
+// <5=> GPIO5 <6=> GPIO6 <7=> GPIO7 <8=> GPIO8 <9=> GPIO9 <10=> GPIO10 <11=> GPIO11 <12=> GPIO12
+// <13=> GPIO13 <14=> GPIO14 <15=> LPGPIO
+#define BOARD_OSPI_FLASH_RESET_GPIO_PORT                15
+// <o> "OSPI_FLASH_RESET" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4 <5=>
 // PIN5 <6=> PIN6 <7=> PIN7
-#define BOARD_ISSI_FLASH_RESET_GPIO_PIN                 1
+#define BOARD_OSPI_FLASH_RESET_GPIO_PIN                 1
 
 // P0_0 ADC12 instance number (Do Not Modify!)
 #define BOARD_P0_0_ADC12_INSTANCE                       0

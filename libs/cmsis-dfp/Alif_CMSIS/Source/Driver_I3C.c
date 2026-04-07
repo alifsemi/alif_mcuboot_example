@@ -22,7 +22,7 @@
 #error "I3C is not enabled in the RTE_Device.h"
 #endif
 
-#define ARM_I3C_DRV_VERSION ARM_DRIVER_VERSION_MAJOR_MINOR(7, 12) /* driver version */
+#define ARM_I3C_DRV_VERSION ARM_DRIVER_VERSION_MAJOR_MINOR(7, 13) /* driver version */
 
 #if I3C_DMA_ENABLE
 /* DMA helper macros */
@@ -896,7 +896,7 @@ static int I3Cx_MasterTransmit(I3C_RESOURCES *i3c, uint8_t addr, const uint8_t *
     {
 #if I3C_DMA_ENABLE
         if (i3c->dma_enable) {
-            i3c_setup_tx(i3c->regs, 0);
+            i3c_setup_tx(i3c->regs, &i3c->xfer, 0);
             ret = I3C_DMA_Start_TX(i3c, data, len);
             if (ret) {
                 return ARM_DRIVER_ERROR;
@@ -905,7 +905,7 @@ static int I3Cx_MasterTransmit(I3C_RESOURCES *i3c, uint8_t addr, const uint8_t *
 #endif
         {
             /* Invoke master send api */
-            i3c_setup_tx(i3c->regs, i3c->xfer.tx_len);
+            i3c_setup_tx(i3c->regs, &i3c->xfer, i3c->xfer.tx_len);
         }
     }
     return ARM_DRIVER_OK;
@@ -1077,7 +1077,7 @@ static int I3Cx_SlaveTransmit(I3C_RESOURCES *i3c, const uint8_t *data, uint16_t 
     {
 #if I3C_DMA_ENABLE
         if (i3c->dma_enable) {
-            i3c_setup_tx(i3c->regs, 0);
+            i3c_setup_tx(i3c->regs, &i3c->xfer, 0);
             ret = I3C_DMA_Start_TX(i3c, data, len);
             if (ret) {
                 return ARM_DRIVER_ERROR;
@@ -1086,7 +1086,7 @@ static int I3Cx_SlaveTransmit(I3C_RESOURCES *i3c, const uint8_t *data, uint16_t 
 #endif
         {
             /* Invoke slave send api */
-            i3c_setup_tx(i3c->regs, i3c->xfer.tx_len);
+            i3c_setup_tx(i3c->regs, &i3c->xfer, i3c->xfer.tx_len);
         }
     }
 
@@ -1737,7 +1737,7 @@ static int32_t I3Cx_Initialize(I3C_RESOURCES *i3c, ARM_I3C_SignalEvent_t cb_even
     }
 #endif
 
-    i3c->core_clk            = get_i3c_core_clock();
+    i3c->core_clk            = get_i3c_core_clock(i3c->instance);
 
     i3c->xfer.xfer_cmd.speed = I3C_SPEED_SDR0;
     /* set the state as initialized. */
@@ -2029,6 +2029,9 @@ static void I3Cx_HandleSuccess(I3C_RESOURCES *i3c, i3c_xfer_t *xfer, uint32_t *e
     } else if (xfer->status & I3C_XFER_STATUS_BUS_RESET_DONE) {
         /* mark event as bus reset is done */
         *event = ARM_I3C_EVENT_BUS_RESET_DONE;
+    } else if (xfer->status & I3C_XFER_STATUS_SLV_RD_RQ_RCVD) {
+        /* mark event as read request received */
+        *event = ARM_I3C_EVENT_READ_REQUEST_RCVD;
     }
 
 #if I3C_DMA_ENABLE

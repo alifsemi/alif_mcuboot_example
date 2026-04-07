@@ -18,11 +18,14 @@
 
 #include "RTE_Components.h"
 #include CMSIS_device_header
+#include "cmsis_vio.h"
 
 #include "main.h"
 
 int main(void)
 {
+    /* Initialize Virtual I/O */
+    vioInit();
 
     return app_main();
 }

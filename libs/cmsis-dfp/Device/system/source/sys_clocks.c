@@ -44,6 +44,13 @@ uint32_t SystemREFClock   = SOC_FEAT_REFCLK_MAX_HZ;
 uint32_t SystemHFOSCClock = SOC_FEAT_HFOSC_MAX_HZ;
 
 /*----------------------------------------------------------------------------
+ * System RTSS HE Clock Variable(RTSS HE CLK)
+ *----------------------------------------------------------------------------
+ */
+uint32_t SystemRTSSHEClock = SOC_FEAT_M55_HE_MAX_HZ;
+
+
+/*----------------------------------------------------------------------------
   Get System AXI Clock function
  *----------------------------------------------------------------------------*/
 uint32_t GetSystemAXIClock(void)
@@ -81,4 +88,13 @@ uint32_t GetSystemREFClock(void)
 uint32_t GetSystemHFOSClock(void)
 {
     return SystemHFOSCClock;
+}
+
+/*----------------------------------------------------------------------------
+ * Get System RTSS HE Clock function
+ *----------------------------------------------------------------------------
+ */
+uint32_t GetSystemRTSSHEClock(void)
+{
+    return SystemRTSSHEClock;
 }

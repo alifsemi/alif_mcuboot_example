@@ -24,6 +24,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <inttypes.h>
 
 #include "RTE_Device.h"
 #include "RTE_Components.h"
@@ -95,7 +96,8 @@ void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer,
 
 void vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName)
 {
-    (void) pxTask;
+    ARG_UNUSED(pxTask);
+    ARG_UNUSED(pcTaskName);
 
     ASSERT_HANG_LOOP
 }
@@ -131,7 +133,7 @@ void vApplicationIdleHook(void)
 static void myUART_callback(uint32_t event)
 {
     if (event & ARM_USART_EVENT_SEND_COMPLETE) {
-        xTaskNotifyFromISR(Hwsem_xHandle, UART_CB_TX_EVENT, eSetBits, NULL);
+        xTaskNotifyFromISR(Hwsem_xHandle, UART_CB_TX_EVENT, eSetBits, 0);
     }
 }
 #endif
@@ -148,7 +150,7 @@ static void myHWSEM_callback(int32_t event, uint8_t sem_id)
     (void) sem_id;
 
     if (event & HWSEM_AVAILABLE_CB_EVENT) {
-        xTaskNotifyFromISR(Hwsem_xHandle, HWSEM_CB_EVENT, eSetBits, NULL);
+        xTaskNotifyFromISR(Hwsem_xHandle, HWSEM_CB_EVENT, eSetBits, 0);
     }
 }
 
@@ -166,6 +168,7 @@ static void Hwsem_Thread(void *pvParameters)
     int32_t            ret, len, init = 1;
     char               uart_msg[30];
     ARM_DRIVER_VERSION version;
+    ARG_UNUSED(pvParameters);
 
     (void) pvParameters;
 
@@ -191,7 +194,7 @@ static void Hwsem_Thread(void *pvParameters)
         }
 
         while (ret == ARM_DRIVER_ERROR_BUSY) {
-            ret = xTaskNotifyWait(NULL, HWSEM_CB_EVENT, NULL, portMAX_DELAY);
+            ret = xTaskNotifyWait(0, HWSEM_CB_EVENT, 0, portMAX_DELAY);
 
             if (ret == pdTRUE) {
                 ret = HWSEMdrv->TryLock();
@@ -210,7 +213,7 @@ static void Hwsem_Thread(void *pvParameters)
             /* pin mux and configuration for all device IOs requested from pins.h*/
             ret = board_pins_config();
             if (ret != 0) {
-                printf("Error in pin-mux configuration: %d\n", ret);
+                printf("Error in pin-mux configuration: %" PRId32 "\n", ret);
                 goto error_unlock;
             }
             init = 0;
@@ -221,7 +224,7 @@ static void Hwsem_Thread(void *pvParameters)
         ret = USARTdrv->Initialize(myUART_callback);
 #else
         /* Initialize UART driver */
-        ret = USARTdrv->Initialize(NULL);
+        ret = USARTdrv->Initialize(0);
 #endif
 
         if (ret != ARM_DRIVER_OK) {
@@ -265,7 +268,7 @@ static void Hwsem_Thread(void *pvParameters)
 
 #if !RTE_UART4_BLOCKING_MODE_ENABLE
         /* wait for event flag after UART call */
-        xTaskNotifyWait(NULL, UART_CB_TX_EVENT, NULL, portMAX_DELAY);
+        xTaskNotifyWait(0, UART_CB_TX_EVENT, 0, portMAX_DELAY);
 #endif
         /* Print 10 messages */
         for (int iter = 1; iter <= 10; iter++) {
@@ -280,7 +283,7 @@ static void Hwsem_Thread(void *pvParameters)
 
 #if !RTE_UART4_BLOCKING_MODE_ENABLE
             /* wait for event flag after UART call */
-            xTaskNotifyWait(NULL, UART_CB_TX_EVENT, NULL, portMAX_DELAY);
+            xTaskNotifyWait(0, UART_CB_TX_EVENT, 0, portMAX_DELAY);
 #endif
             vTaskDelay(pdMS_TO_TICKS(1000));
         }
@@ -294,7 +297,7 @@ static void Hwsem_Thread(void *pvParameters)
 
 #if !RTE_UART4_BLOCKING_MODE_ENABLE
         /* wait for event flag after UART call */
-        xTaskNotifyWait(NULL, UART_CB_TX_EVENT, NULL, portMAX_DELAY);
+        xTaskNotifyWait(0, UART_CB_TX_EVENT, 0, portMAX_DELAY);
 #endif
         ret = USARTdrv->PowerControl(ARM_POWER_OFF);
 
@@ -358,7 +361,7 @@ int main(void)
     BaseType_t xReturned = xTaskCreate(Hwsem_Thread,
                                        "HwsemThread",
                                        STACK_SIZE,
-                                       NULL,
+                                       0,
                                        configMAX_PRIORITIES - 1,
                                        &Hwsem_xHandle);
 

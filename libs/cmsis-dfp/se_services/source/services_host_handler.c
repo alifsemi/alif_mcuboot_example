@@ -29,11 +29,11 @@
 #define SEND_MSG_ACK_TIMEOUT    1000000ul
 #define UNUSED(x)               (void) (x)
 
-static services_lib_t s_services_host;
+static services_lib_t s_services_host            = {0};
 
-static uint32_t      s_pkt_buffer_address_global;
-static volatile bool s_service_req_ack_received ;
-static volatile bool s_new_msg_received         ;
+static uint32_t      s_pkt_buffer_address_global = 0x0;
+static volatile bool s_service_req_ack_received  = false;
+static volatile bool s_new_msg_received          = false;
 
 /**
  * @brief Function to initialize the services library

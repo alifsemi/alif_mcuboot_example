@@ -29,6 +29,7 @@
 /* Include */
 #include <stdio.h>
 #include <string.h>
+#include <inttypes.h>
 
 /* RTOS include */
 #include "FreeRTOS.h"
@@ -98,7 +99,8 @@ void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer,
 
 void vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName)
 {
-    (void) pxTask;
+    ARG_UNUSED(pxTask);
+    ARG_UNUSED(pcTaskName);
 
     ASSERT_HANG_LOOP
 }
@@ -313,6 +315,7 @@ static void i2c_master_task(void *pvParameters)
     uint8_t            iter = 0;
     ARM_DRIVER_VERSION version;
     uint32_t           mst_event = 0;
+    ARG_UNUSED(pvParameters);
 
     version                      = I2C_mstdrv->GetVersion();
     printf("\r\n I2C version api:0x%X driver:0x%X...\r\n", version.api, version.drv);
@@ -345,7 +348,7 @@ static void i2c_master_task(void *pvParameters)
     I2C_mstdrv->MasterTransmit(TAR_ADDRS, MST_TX_BUF, MST_BYTE_TO_TRANSMIT, STOP);
 
     /* Waiting for Master callback */
-    if (xTaskNotifyWait(NULL,
+    if (xTaskNotifyWait(0,
                         (LPI2C_CB_EVENT_SUCCESS | LPI2C_CB_EVENT_ERROR),
                         &mst_event,
                         portMAX_DELAY) != pdFALSE) {
@@ -363,7 +366,7 @@ static void i2c_master_task(void *pvParameters)
         I2C_mstdrv->MasterReceive(TAR_ADDRS, &MST_RX_BUF[iter], 1, STOP);
 
         /* wait for master callback. */
-        if (xTaskNotifyWait(NULL,
+        if (xTaskNotifyWait(0,
                             (LPI2C_CB_EVENT_SUCCESS | LPI2C_CB_EVENT_ERROR),
                             &mst_event,
                             portMAX_DELAY) != pdFALSE) {
@@ -398,7 +401,7 @@ master_error_uninitialize:
         printf("\r\n Error: Master Uninitialize failed.\r\n");
     }
 
-    vTaskDelete(NULL);
+    vTaskDelete(0);
 }
 
 /**
@@ -413,6 +416,7 @@ static void i2c_slave_task(void *pvParameters)
     int32_t            ret = 0;
     ARM_DRIVER_VERSION version;
     uint32_t           slv_event = 0;
+    ARG_UNUSED(pvParameters);
 
     version                      = LPI2C_slvdrv->GetVersion();
     printf("\r\n LPI2C0 version api:0x%X driver:0x%X...\r\n", version.api, version.drv);
@@ -435,7 +439,7 @@ static void i2c_slave_task(void *pvParameters)
     LPI2C_slvdrv->SlaveReceive(SLV_RX_BUF, MST_BYTE_TO_TRANSMIT);
 
     /* Waiting for Slave callback */
-    if (xTaskNotifyWait(NULL,
+    if (xTaskNotifyWait(0,
                         (LPI2C_CB_EVENT_SUCCESS | LPI2C_CB_EVENT_ERROR),
                         &slv_event,
                         portMAX_DELAY) != pdFALSE) {
@@ -447,14 +451,14 @@ static void i2c_slave_task(void *pvParameters)
 
     /* Compare received data. */
     if (memcmp(&SLV_RX_BUF, &MST_TX_BUF, MST_BYTE_TO_TRANSMIT)) {
-        printf("\n Error: Master transmit/Slave receive failed \n");
+        printf("\n Error: Master transmit/Slave receive failed\n");
         goto slave_error_poweroff;
     }
 
     LPI2C_slvdrv->SlaveTransmit(SLV_TX_BUF, SLV_BYTE_TO_TRANSMIT);
 
     /* Waiting for Slave callback */
-    if (xTaskNotifyWait(NULL,
+    if (xTaskNotifyWait(0,
                         (LPI2C_CB_EVENT_SUCCESS | LPI2C_CB_EVENT_ERROR),
                         &slv_event,
                         portMAX_DELAY) != pdFALSE) {
@@ -476,7 +480,7 @@ slave_error_uninitialize:
         printf("\r\n Error: Slave Uninitialize failed.\r\n");
     }
 
-    vTaskDelete(NULL);
+    vTaskDelete(0);
 }
 /**
  * @fn      static void LPI2C0_demo(void)
@@ -507,7 +511,7 @@ static void LPI2C0_demo(void)
      */
     ret_val = board_lpi2c_pins_config();
     if (ret_val != 0) {
-        printf("Error in pin-mux configuration: %d\n", ret_val);
+        printf("Error in pin-mux configuration: %" PRId32 "\n", ret_val);
         return;
     }
 #endif
@@ -516,7 +520,7 @@ static void LPI2C0_demo(void)
     xReturned = xTaskCreate(i2c_master_task,
                             "i2c_master_thread",
                             STACK_SIZE,
-                            NULL,
+                            0,
                             configMAX_PRIORITIES - 1,
                             &master_taskHandle);
     if (xReturned != pdPASS) {
@@ -528,7 +532,7 @@ static void LPI2C0_demo(void)
     xReturned = xTaskCreate(i2c_slave_task,
                             "i2c_slave_thread",
                             STACK_SIZE,
-                            NULL,
+                            0,
                             configMAX_PRIORITIES - 2,
                             &slave_taskHandle);
     if (xReturned != pdPASS) {

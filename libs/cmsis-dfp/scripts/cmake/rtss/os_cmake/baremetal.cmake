@@ -75,7 +75,8 @@ COND_FILE_ADD(${BARE_METAL_APP_DIR}/FatFS/ffsystem.c           ENABLE_SD   SD_TE
 COND_FILE_ADD(${BARE_METAL_APP_DIR}/FatFS/ffunicode.c          ENABLE_SD   SD_TEST_APP_DEP_SRCS   "dependency")
 COND_FILE_ADD(${BARE_METAL_APP_DIR}/demo_sd_fatfs.c            ENABLE_SD          TEST_APP_SRCS   "test-apps" )
 
-COND_FILE_ADD(${BARE_METAL_APP_DIR}/demo_flash_issi.c          ENABLE_ISSI_FLASH      TEST_APP_SRCS   "test-apps")
+eval_flags(TMP_FLAG     OR     ENABLE_ISSI_FLASH     ENABLE_MX66UW1G_FLASH)
+COND_FILE_ADD(${BARE_METAL_APP_DIR}/demo_flash.c               ${TMP_FLAG}            TEST_APP_SRCS   "test-apps")
 COND_FILE_ADD(${BARE_METAL_APP_DIR}/demo_gt911.c               ENABLE_GT911           TEST_APP_SRCS   "test-apps")
 
 eval_flags(TMP_FLAG     AND     ENABLE_HWSEM       ENABLE_USART)
@@ -163,13 +164,13 @@ else()
 endif()
 
 if (${ENABLE_E7_DEVKIT})
-    COND_FILE_ADD(${BARE_METAL_APP_DIR}/demo_hyperram_e7.c     ENABLE_XIP_HYPERRAM    TEST_APP_SRCS   "test-apps")
+    COND_FILE_ADD(${BARE_METAL_APP_DIR}/demo_hyperram_e7.c     ENABLE_XIP_PSRAM         TEST_APP_SRCS   "test-apps")
 elseif (${ENABLE_E8_DEVKIT})
-    COND_FILE_ADD(${BARE_METAL_APP_DIR}/demo_hyperram_e8.c     ENABLE_XIP_HYPERRAM    TEST_APP_SRCS   "test-apps")
+    COND_FILE_ADD(${BARE_METAL_APP_DIR}/demo_psram_e8.c        ENABLE_XIP_PSRAM       TEST_APP_SRCS   "test-apps")
 elseif (${ENABLE_E1C_DEVKIT})
-    COND_FILE_ADD(${BARE_METAL_APP_DIR}/demo_hyperram_e1c.c    ENABLE_XIP_HYPERRAM    TEST_APP_SRCS   "test-apps")
+    COND_FILE_ADD(${BARE_METAL_APP_DIR}/demo_hyperram_e1c.c    ENABLE_XIP_PSRAM         TEST_APP_SRCS   "test-apps")
 elseif (${ENABLE_E4_DEVKIT})
-    message(STATUS             "${Yellow}⚠️ [WARNING] demo_hyperram_e4 is missing ${ColourReset}")
+    COND_FILE_ADD(${BARE_METAL_APP_DIR}/demo_psram_e4.c        ENABLE_XIP_PSRAM       TEST_APP_SRCS   "test-apps")
 endif()
 
 file(GLOB   ALL_DEMO_FILES    "${BARE_METAL_APP_DIR}/demo_*")

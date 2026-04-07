@@ -179,6 +179,9 @@ static ARM_USBD_STATE ARM_USBD_DeviceGetState(void)
     ARM_USBD_STATE state;
 
     memset(&state, 0, sizeof(ARM_USBD_STATE));
+
+    state.speed = ARM_USB_SPEED_HIGH;
+
     return state;
 }
 

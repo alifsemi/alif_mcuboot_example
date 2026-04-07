@@ -37,126 +37,197 @@ def buildDevice(deviceList) {
                         parallel_dis_run_cnt=0
                         parallel_dis_fail_cnt=0
                         parallel_dis_success_cnt=0
+                        parallel_dis_with_mcmse_run_cnt=0
+                        parallel_dis_with_mcmse_fail_cnt=0
+                        parallel_dis_with_mcmse_success_cnt=0
+                        dma_enable_run_cnt=0
+                        dma_enable_fail_cnt=0
+                        dma_enable_success_cnt=0
+                        blocking_mode_run_cnt=0
+                        blocking_mode_fail_cnt=0
+                        blocking_mode_success_cnt=0
                         retargeting_status=-1
 
-                        CURR_OS=("NONE")
-                        CURR_COMPILER=("armclang" "gcc")
+                        CURR_OS=("NONE" "FREERTOS")
+                        #CURR_COMPILER=("armclang" "gcc")
                         CURR_BOARDS=("DevKit-e7" "DevKit-e1c" "DevKit-e8" "DevKit-e4")
                         CURR_RTSS=("HE" "HP")
                         CURR_BOOT=("TCM" "MRAM")
 
-                        for comp in \${!CURR_COMPILER[@]} ; do
-                            for bootType in \${!CURR_BOOT[@]} ; do
-                                for rtssType in \${!CURR_RTSS[@]} ; do
-                                    for brdName in \${!CURR_BOARDS[@]} ; do
-                                        devShortName="\${CURR_BOARDS[brdName]#*-}"
-                                        alifDevShortName="A\$(echo "\${devShortName}" | tr '[:lower:]' '[:upper:]')"
-                                        echo "Device : ${currentDev}, Board: \${CURR_BOARDS[brdName]}, ShortName:\${alifDevShortName}."
-                                        number_of_iter=\$((number_of_iter + 1))
+                        for bootType in \${!CURR_BOOT[@]} ; do
+                            for rtssType in \${!CURR_RTSS[@]} ; do
+                                for brdName in \${!CURR_BOARDS[@]} ; do
+                                    devShortName="\${CURR_BOARDS[brdName]#*-}"
+                                    alifDevShortName="A\$(echo "\${devShortName}" | tr '[:lower:]' '[:upper:]')"
+                                    echo "Device : ${currentDev}, Board: \${CURR_BOARDS[brdName]}, ShortName:\${alifDevShortName}."
+                                    number_of_iter=\$((number_of_iter + 1))
 
-                                        echo "🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱 # \${number_of_iter} starts 🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱"
-                                        if [[ "${currentDev}" == "\$alifDevShortName"* ]]; then
-                                            for osName in \${!CURR_OS[@]} ; do
-                                                echo "=================================================================================="
-                                                if [ -d build ]; then
-                                                    echo -e "Deleting Build directory..."
-                                                    rm -rf build
-                                                fi
+                                    echo "🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱 # \${number_of_iter} starts 🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱🧱"
+                                    if [[ "${currentDev}" == "\$alifDevShortName"* ]]; then
+                                        for osName in \${!CURR_OS[@]} ; do
+                                            echo "=================================================================================="
+                                            if [ -d build ]; then
+                                                echo -e "Deleting Build directory..."
+                                                rm -rf build
+                                            fi
 
-                                                total_cfg_run_cnt=\$((total_cfg_run_cnt + 1))
-                                                echo "🚩 Building for \${CURR_COMPILER[comp]}, ${currentDev}, \${CURR_OS[osName]}, \${CURR_BOOT[bootType]} \${CURR_RTSS[rtssType]} \${CURR_BOARDS[brdName]}"
+                                            total_cfg_run_cnt=\$((total_cfg_run_cnt + 1))
+                                            echo "🚩 Building for ${currentDev}, \${CURR_OS[osName]}, \${CURR_BOOT[bootType]} \${CURR_RTSS[rtssType]} \${CURR_BOARDS[brdName]}"
 
-                                                if [ "${currentDev}" = "AE1C1F4051920" ] && [ "\${CURR_RTSS[rtssType]}" = "HP" ]; then
-                                                    echo -e "🚨 ${currentDev} does not have \${CURR_RTSS[rtssType]} subsystem"
-                                                    skipped_cfg_run_cnt=\$((skipped_cfg_run_cnt + 1))
-                                                    continue
-                                                fi
+                                            if [ "${currentDev}" = "AE1C1F4051920" ] && [ "\${CURR_RTSS[rtssType]}" = "HP" ]; then
+                                                echo -e "🚨 ${currentDev} does not have \${CURR_RTSS[rtssType]} subsystem"
+                                                skipped_cfg_run_cnt=\$((skipped_cfg_run_cnt + 1))
+                                                continue
+                                            fi
 
-                                                actual_cfg_run_cnt=\$((actual_cfg_run_cnt + 1))
-                                                ./run.sh -p \${CURR_COMPILER[comp]},\${CURR_COMPILER[comp]}_build,\${CURR_COMPILER[comp]}_build_test -c --fresh -DBOOT=\${CURR_BOOT[bootType]} -DDEVICE=${currentDev} -DBOARD_NAME=\${CURR_BOARDS[brdName]} -DOS=\${CURR_OS[osName]} -DRTSS=\${CURR_RTSS[rtssType]} -b --clean-first
+                                            actual_cfg_run_cnt=\$((actual_cfg_run_cnt + 1))
+                                            ./run.sh -f -c --fresh -DBOOT=\${CURR_BOOT[bootType]} -DDEVICE=${currentDev} -DBOARD_NAME=\${CURR_BOARDS[brdName]} -DOS=\${CURR_OS[osName]} -DRTSS=\${CURR_RTSS[rtssType]} -b --clean-first
 
-                                                tmp=\$?
-                                                if [[ "\$total_cmakeError" -eq -1 ]] ; then
-                                                    total_cmakeError=\$tmp
-                                                else
-                                                    total_cmakeError=\$((total_cmakeError + tmp))
-                                                fi
-
-                                                echo -e "🚫Error Status total_cmakeError: \$total_cmakeError and tmp: \$tmp"
-                                                if [ "\$tmp" -ne 0 ] ; then
-                                                    fail_cfg_run_cnt=\$((fail_cfg_run_cnt + 1))
-                                                fi
-
-                                                #CDC200
-                                                cdc200_run_cnt=\$((cdc200_run_cnt + 1))
-                                                echo "🚩 Building for \${CURR_COMPILER[comp]}, ${currentDev}, \${CURR_OS[osName]}, \${CURR_BOOT[bootType]} \${CURR_RTSS[rtssType]} \${CURR_BOARDS[brdName]}, demo_cdc200"
-                                                ./run.sh -f -c -DENABLE_MIPI_DSI_ILI9806E_PANEL=OFF -DENABLE_MIPI_DSI_ILI9488E_PANEL=ON -DENABLE_CDC_ILI6122E_PANEL=OFF -DTEST_APP=demo_cdc200 --fresh -DBOOT=\${CURR_BOOT[bootType]} -DDEVICE=${currentDev} -DBOARD_NAME=\${CURR_BOARDS[brdName]} -DOS=\${CURR_OS[osName]} -DRTSS=\${CURR_RTSS[rtssType]} -b --clean-first
-
-                                                tmp=\$?
-                                                if [ "\$tmp" -ne 0 ] ; then
-                                                    cdc200_fail_cnt=\$((cdc200_fail_cnt + 1))
-                                                else
-                                                    cdc200_success_cnt=\$((cdc200_success_cnt + 1))
-                                                fi
+                                            tmp=\$?
+                                            if [[ "\$total_cmakeError" -eq -1 ]] ; then
+                                                total_cmakeError=\$tmp
+                                            else
                                                 total_cmakeError=\$((total_cmakeError + tmp))
+                                            fi
 
-                                                cdc200_run_cnt=\$((cdc200_run_cnt + 1))
+                                            echo -e "🚫Error Status total_cmakeError: \$total_cmakeError and tmp: \$tmp"
+                                            if [ "\$tmp" -ne 0 ] ; then
+                                                fail_cfg_run_cnt=\$((fail_cfg_run_cnt + 1))
+                                            fi
 
-                                                ./run.sh -f -c -DENABLE_MIPI_DSI_ILI9806E_PANEL=ON -DENABLE_MIPI_DSI_ILI9488E_PANEL=OFF -DENABLE_CDC_ILI6122E_PANEL=OFF -DTEST_APP=demo_cdc200 --fresh -DBOOT=\${CURR_BOOT[bootType]} -DDEVICE=${currentDev} -DBOARD_NAME=\${CURR_BOARDS[brdName]} -DOS=\${CURR_OS[osName]} -DRTSS=\${CURR_RTSS[rtssType]} -b --clean-first
-                                                tmp=\$?
+                                            #CDC200
+                                            testAppName="demo_cdc200"
+                                            if [ "\${CURR_OS[osName]}" = "FREERTOS" ] ; then
+                                                testAppName="\${testAppName}_freertos"
+                                            fi
 
-                                                if [ "\$tmp" -ne 0 ] ; then
-                                                    cdc200_fail_cnt=\$((cdc200_fail_cnt + 1))
-                                                else
-                                                    cdc200_success_cnt=\$((cdc200_success_cnt + 1))
-                                                fi
-                                                total_cmakeError=\$((total_cmakeError + tmp))
+                                            cdc200_run_cnt=\$((cdc200_run_cnt + 1))
+                                            echo "🚩 Building for ${currentDev}, \${CURR_OS[osName]}, \${CURR_BOOT[bootType]} \${CURR_RTSS[rtssType]} \${CURR_BOARDS[brdName]}, \${testAppName}"
+                                            ./run.sh -f -c -DENABLE_MIPI_DSI_ILI9806E_PANEL=OFF -DENABLE_MIPI_DSI_ILI9488E_PANEL=ON -DENABLE_CDC_ILI6122E_PANEL=OFF -DTEST_APP=\${testAppName} --fresh -DBOOT=\${CURR_BOOT[bootType]} -DDEVICE=${currentDev} -DBOARD_NAME=\${CURR_BOARDS[brdName]} -DOS=\${CURR_OS[osName]} -DRTSS=\${CURR_RTSS[rtssType]} -b --clean-first
 
-                                                #Parallel Display
-                                                parallel_dis_run_cnt=\$((parallel_dis_run_cnt + 1))
-                                                echo "🚩 Building for \${CURR_COMPILER[comp]}, ${currentDev}, \${CURR_OS[osName]}, \${CURR_BOOT[bootType]} \${CURR_RTSS[rtssType]} \${CURR_BOARDS[brdName]}, demo_parallel_display"
+                                            tmp=\$?
+                                            if [ "\$tmp" -ne 0 ] ; then
+                                                cdc200_fail_cnt=\$((cdc200_fail_cnt + 1))
+                                            else
+                                                cdc200_success_cnt=\$((cdc200_success_cnt + 1))
+                                            fi
+                                            total_cmakeError=\$((total_cmakeError + tmp))
 
-                                                ./run.sh -f -c -DENABLE_MIPI_DSI_ILI9806E_PANEL=OFF -DENABLE_MIPI_DSI_ILI9488E_PANEL=OFF -DENABLE_MIPI_DSI_CSI2_DPHY=OFF -DENABLE_MIPI_DSI=OFF -DTEST_APP=demo_parallel_display --fresh -DBOOT=\${CURR_BOOT[bootType]} -DDEVICE=${currentDev} -DBOARD_NAME=\${CURR_BOARDS[brdName]} -DOS=\${CURR_OS[osName]} -DRTSS=\${CURR_RTSS[rtssType]} -b --clean-first
+                                            cdc200_run_cnt=\$((cdc200_run_cnt + 1))
 
-                                                tmp=\$?
-                                                if [ "\$tmp" -ne 0 ] ; then
-                                                    parallel_dis_fail_cnt=\$((parallel_dis_fail_cnt + 1))
-                                                else
-                                                    parallel_dis_success_cnt=\$((parallel_dis_success_cnt + 1))
-                                                fi
-                                                total_cmakeError=\$((total_cmakeError + tmp))
+                                            ./run.sh -f -c -DENABLE_MIPI_DSI_ILI9806E_PANEL=ON -DENABLE_MIPI_DSI_ILI9488E_PANEL=OFF -DENABLE_CDC_ILI6122E_PANEL=OFF -DTEST_APP=\${testAppName} --fresh -DBOOT=\${CURR_BOOT[bootType]} -DDEVICE=${currentDev} -DBOARD_NAME=\${CURR_BOARDS[brdName]} -DOS=\${CURR_OS[osName]} -DRTSS=\${CURR_RTSS[rtssType]} -b --clean-first
+                                            tmp=\$?
 
-                                                echo "=================================================================================="
-                                            done
-                                        fi
-                                        echo "🧩🧩🧩🧩🧩🧩🧩🧩🧩🧩🧩🧩🧩🧩🧩🧩🧩🧩🧩🧩 # \${number_of_iter} ends 🧩🧩🧩🧩🧩🧩🧩🧩🧩🧩🧩🧩🧩🧩🧩🧩🧩🧩🧩"
-                                        echo -e ""
-                                    done
+                                            if [ "\$tmp" -ne 0 ] ; then
+                                                cdc200_fail_cnt=\$((cdc200_fail_cnt + 1))
+                                            else
+                                                cdc200_success_cnt=\$((cdc200_success_cnt + 1))
+                                            fi
+                                            total_cmakeError=\$((total_cmakeError + tmp))
+
+                                            #Parallel Display
+                                            testAppName="demo_parallel_display"
+                                            if [ "\${CURR_OS[osName]}" = "FREERTOS" ] ; then
+                                                testAppName="\${testAppName}_freertos"
+                                            fi
+
+                                            parallel_dis_run_cnt=\$((parallel_dis_run_cnt + 1))
+                                            echo "🚩 Building for ${currentDev}, \${CURR_OS[osName]}, \${CURR_BOOT[bootType]} \${CURR_RTSS[rtssType]} \${CURR_BOARDS[brdName]}, \${testAppName}"
+                                            ./run.sh -f -c -DENABLE_MIPI_DSI_ILI9806E_PANEL=OFF -DENABLE_MIPI_DSI_ILI9488E_PANEL=OFF -DENABLE_MIPI_DSI_CSI2_DPHY=OFF -DENABLE_MIPI_DSI=OFF -DTEST_APP=\${testAppName} --fresh -DBOOT=\${CURR_BOOT[bootType]} -DDEVICE=${currentDev} -DBOARD_NAME=\${CURR_BOARDS[brdName]} -DOS=\${CURR_OS[osName]} -DRTSS=\${CURR_RTSS[rtssType]} -b --clean-first
+
+                                            tmp=\$?
+                                            if [ "\$tmp" -ne 0 ] ; then
+                                                parallel_dis_fail_cnt=\$((parallel_dis_fail_cnt + 1))
+                                            else
+                                                parallel_dis_success_cnt=\$((parallel_dis_success_cnt + 1))
+                                            fi
+
+                                            total_cmakeError=\$((total_cmakeError + tmp))
+
+                                            #Parallel Display with mcmse
+                                            parallel_dis_with_mcmse_run_cnt=\$((parallel_dis_with_mcmse_run_cnt + 1))
+                                            echo "🚩 Building for ${currentDev}, \${CURR_OS[osName]}, \${CURR_BOOT[bootType]} \${CURR_RTSS[rtssType]} \${CURR_BOARDS[brdName]}, \${testAppName}"
+                                            ./run.sh -f -c -DENABLE_MIPI_DSI_ILI9806E_PANEL=OFF -DENABLE_MIPI_DSI_ILI9488E_PANEL=OFF -DENABLE_MIPI_DSI_CSI2_DPHY=OFF -DENABLE_MIPI_DSI=OFF -DTEST_APP=\${testAppName} --fresh -DBOOT=\${CURR_BOOT[bootType]} -DDEVICE=${currentDev} -DBOARD_NAME=\${CURR_BOARDS[brdName]} -DOS=\${CURR_OS[osName]} -DRTSS=\${CURR_RTSS[rtssType]} -DCOMPILER_USER_ARGS_APPEND=ON -DCOMPILER_USER_ARGS="-mcmse" -b --clean-first
+
+                                            tmp=\$?
+                                            if [ "\$tmp" -ne 0 ] ; then
+                                                parallel_dis_with_mcmse_fail_cnt=\$((parallel_dis_with_mcmse_fail_cnt + 1))
+                                            else
+                                                parallel_dis_with_mcmse_success_cnt=\$((parallel_dis_with_mcmse_success_cnt + 1))
+                                            fi
+
+                                            total_cmakeError=\$((total_cmakeError + tmp))
+
+                                            #DMA Enable
+                                            dma_enable_run_cnt=\$((dma_enable_run_cnt + 1))
+                                            echo "🚩 Building ALL apps for ${currentDev}, \${CURR_OS[osName]}, \${CURR_BOOT[bootType]} \${CURR_RTSS[rtssType]} \${CURR_BOARDS[brdName]}"
+
+                                            ./run.sh -f -c -DCFG_DMA_ENABLE=ON --fresh -DBOOT=\${CURR_BOOT[bootType]} -DDEVICE=${currentDev} -DBOARD_NAME=\${CURR_BOARDS[brdName]} -DOS=\${CURR_OS[osName]} -DRTSS=\${CURR_RTSS[rtssType]} -b --clean-first
+
+                                            tmp=\$?
+                                            if [ "\$tmp" -ne 0 ] ; then
+                                                dma_enable_fail_cnt=\$((dma_enable_fail_cnt + 1))
+                                            else
+                                                dma_enable_success_cnt=\$((dma_enable_success_cnt + 1))
+                                            fi
+                                            total_cmakeError=\$((total_cmakeError + tmp))
+                                            git status
+                                            git reset --hard
+
+                                            #Blocking Mode Enable
+                                            blocking_mode_run_cnt=\$((blocking_mode_run_cnt + 1))
+                                            echo "🚩 Building ALL apps for ${currentDev}, \${CURR_OS[osName]}, \${CURR_BOOT[bootType]} \${CURR_RTSS[rtssType]} \${CURR_BOARDS[brdName]}"
+
+                                            ./run.sh -f -c -DCFG_DMA_ENABLE=ON --fresh -DBOOT=\${CURR_BOOT[bootType]} -DDEVICE=${currentDev} -DBOARD_NAME=\${CURR_BOARDS[brdName]} -DOS=\${CURR_OS[osName]} -DRTSS=\${CURR_RTSS[rtssType]} -b --clean-first
+
+                                            tmp=\$?
+                                            if [ "\$tmp" -ne 0 ] ; then
+                                                blocking_mode_fail_cnt=\$((blocking_mode_fail_cnt + 1))
+                                            else
+                                                blocking_mode_success_cnt=\$((blocking_mode_success_cnt + 1))
+                                            fi
+
+                                            total_cmakeError=\$((total_cmakeError + tmp))
+                                            git status
+                                            git reset --hard
+                                            echo "=================================================================================="
+                                        done
+                                    fi
+                                    echo "🧩🧩🧩🧩🧩🧩🧩🧩🧩🧩🧩🧩🧩🧩🧩🧩🧩🧩🧩🧩 # \${number_of_iter} ends 🧩🧩🧩🧩🧩🧩🧩🧩🧩🧩🧩🧩🧩🧩🧩🧩🧩🧩🧩"
+                                    echo -e ""
                                 done
                             done
                         done
 
                         echo -e ""
-                        # Check Retargetting
+                        # Check Retargeting
                         ./run.sh -c --fresh -DENABLE_STDOUT=1 -DENABLE_STDIN=1 -DENABLE_STDERR=1
                         tmp=\$?
                         retargeting_status=\$tmp
+                        total_cmakeError=\$((total_cmakeError + tmp))
+
+                        # Free-RTOS Retargeting
+                        ./run.sh -c --fresh -DENABLE_STDOUT=1 -DENABLE_STDIN=1 -DENABLE_STDERR=1 -DOS=FREERTOS
+                        tmp=\$?
+                        retargeting_status=\$((retargeting_status + tmp))
                         total_cmakeError=\$((total_cmakeError + tmp))
 
                         echo -e ""
                         echo -e " 🏆Success   : \$((actual_cfg_run_cnt - fail_cfg_run_cnt)), Failed: \$fail_cfg_run_cnt, Skipped: \$skipped_cfg_run_cnt"
                         echo -e " 🏆CDC       : success \$cdc200_success_cnt/\$cdc200_run_cnt, Failed: \$cdc200_fail_cnt/\$cdc200_run_cnt"
                         echo -e " 🏆Retarting : \$retargeting_status"
-                        echo -e " 🏆Parallel_Display : success \$parallel_dis_success_cnt/\$parallel_dis_run_cnt, Failed: \$parallel_dis_fail_cnt/\$parallel_dis_run_cnt"
+                        echo -e " 🏆DMA Enable: success \$dma_enable_success_cnt/\$dma_enable_run_cnt, Failed: \$dma_enable_fail_cnt/\$dma_enable_run_cnt"
+                        echo -e " 🏆Blocking Mode    : success \$parallel_dis_success_cnt/\$parallel_dis_run_cnt, Failed: \$parallel_dis_fail_cnt/\$parallel_dis_run_cnt"
+                        echo -e " 🏆Parallel_Display : success \$blocking_mode_success_cnt/\$blocking_mode_run_cnt, Failed: \$blocking_mode_fail_cnt/\$blocking_mode_run_cnt"
                         echo -e " 🔥Total Run => (\$actual_cfg_run_cnt/\$total_cfg_run_cnt)"
                         collective_total_Error=\$((total_cmakeError))
                         exit \$collective_total_Error
                     """
-				}
-			}
-		}
-	}
-	return stagesMap
+                }
+            }
+        }
+    }
+    return stagesMap
 }
 
 pipeline {

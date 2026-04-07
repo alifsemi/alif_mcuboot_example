@@ -22,6 +22,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <inttypes.h>
 #include <RTE_Components.h>
 #include CMSIS_device_header
 #include "pinconf.h"
@@ -335,7 +336,7 @@ static void canfd_lbe_demo_task(void *pvParameters)
     /* pin mux and configuration for all device IOs requested from pins.h*/
     ret_val = board_pins_config();
     if (ret_val != 0) {
-        printf("Error in pin-mux configuration: %d\n", ret_val);
+        printf("Error in pin-mux configuration: %" PRId32 "\n", ret_val);
         return;
     }
 
@@ -346,26 +347,26 @@ static void canfd_lbe_demo_task(void *pvParameters)
      */
     ret_val = board_canfd_pins_config();
     if (ret_val != 0) {
-        printf("Error in pin-mux configuration: %d\n", ret_val);
+        printf("Error in pin-mux configuration: %" PRId32 "\n", ret_val);
         return;
     }
 #endif
 
     /* Get CANFD capabilities */
     can_capabilities = CANFD_instance->GetCapabilities();
-    printf("Num of objects supported: %d\r\n", can_capabilities.num_objects);
+    printf("Num of objects supported: %u\r\n", can_capabilities.num_objects);
 
     /* Initializing CANFD Access struct */
     ret_val = CANFD_instance->Initialize(cb_unit_event, cb_object_event);
     if (ret_val != ARM_DRIVER_OK) {
-        printf("ERROR: Failed to initialize the CANFD \n");
+        printf("ERROR: Failed to initialize the CANFD\n");
         return;
     }
 
     /* Powering up CANFD */
     ret_val = CANFD_instance->PowerControl(ARM_POWER_FULL);
     if (ret_val != ARM_DRIVER_OK) {
-        printf("ERROR: Failed to Power up the CANFD \n");
+        printf("ERROR: Failed to Power up the CANFD\n");
         goto uninitialise_canfd;
     }
 
@@ -470,7 +471,7 @@ static void canfd_lbe_demo_task(void *pvParameters)
             /* Invoke the below function to prepare and send a message */
             if (canfd_transmit_message(msg_type) != false) {
                 /* wait for receive/error callback. */
-                if (xTaskNotifyWait(NULL,
+                if (xTaskNotifyWait(0,
                                     CANFD_ALL_NOTIFICATIONS,
                                     &task_notified_value,
                                     portMAX_DELAY) != pdFALSE) {
@@ -522,7 +523,7 @@ uninitialise_canfd:
     printf("*** CANFD External Loopback Demo is ended ***\r\n");
 
     /* Task delete */
-    vTaskDelete(NULL);
+    vTaskDelete(0);
 }
 
 /**
@@ -551,7 +552,7 @@ int main()
     BaseType_t xReturned = xTaskCreate(canfd_lbe_demo_task,
                                        "CANFD_LBEM_Task",
                                        CANFD_TASK_STACK_SIZE,
-                                       NULL,
+                                       0,
                                        (configMAX_PRIORITIES - 1U),
                                        &canfd_xHandle);
     if (xReturned != pdPASS) {
@@ -583,7 +584,7 @@ static void canfd_check_error(void)
         if (cur_sts.unit_state == ARM_CAN_UNIT_STATE_BUS_OFF) {
             printf("Error: CANFD Bus OFF:\r\n");
         }
-        printf("Error in CANFD-->Error Code:%d\r\n", cur_sts.last_error_code);
+        printf("Error in CANFD-->Error Code:%u\r\n", cur_sts.last_error_code);
 
         bus_error = false;
     }
@@ -630,7 +631,7 @@ static bool canfd_process_rx_message(void)
                         return false;
                     }
 
-                    printf("Id:%lu, Len:%d:\r\n    Data:",
+                    printf("Id:%lu, Len:%" PRIu8 ":\r\n    Data:",
                            (rx_msg_header.id & (~ARM_CAN_ID_IDE_Msk)),
                            rx_msg_size);
                     for (iter = 0; iter < rx_msg_size; iter++) {
@@ -740,7 +741,7 @@ static bool canfd_transmit_message(const CANFD_FRAME msg_type)
     status = CANFD_instance->MessageSend(tx_obj_id, &tx_msg_header, tx_data, tx_msg_size);
     if (status == ARM_DRIVER_OK) {
         rx_msg_size = tx_msg_size;
-        printf("Tx Msg:\r\n    Id:%lu, Len:%d: \r\n    Data:",
+        printf("Tx Msg:\r\n    Id:%lu, Len:%" PRIu8 ": \r\n    Data:",
                (tx_msg_header.id & (~ARM_CAN_ID_IDE_Msk)),
                tx_msg_size);
         for (iter = 0; iter < tx_msg_size; iter++) {
@@ -748,7 +749,7 @@ static bool canfd_transmit_message(const CANFD_FRAME msg_type)
         }
         printf("\r\n");
     } else {
-        printf("Error: Failed to send message \n");
+        printf("Error: Failed to send message\n");
         stop_execution = true;
         return false;
     }

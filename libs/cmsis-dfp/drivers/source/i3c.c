@@ -1389,11 +1389,13 @@ void i3c_master_setup_cmd(I3C_Type *i3c, const i3c_xfer_t xfer)
   \                               const uint16_t len)
   \brief        Setup Data Tx
   \param[in]    i3c    : Pointer to i3c register set structure
+  \param[in]    xfer   : transfer info
   \param[in]    len    : Data length in bytes
   \return       none
 */
-void i3c_setup_tx(I3C_Type *i3c, const uint16_t len)
+void i3c_setup_tx(I3C_Type *i3c, i3c_xfer_t *xfer, const uint16_t len)
 {
+    uint32_t resp = 0U;
     uint32_t temp =
         (i3c->I3C_QUEUE_THLD_CTRL &
          (~(I3C_QUEUE_THLD_CTRL_CMD_EMPTY_BUF_THLD_Msk | I3C_QUEUE_THLD_CTRL_RESP_BUF_THLD_Msk)));
@@ -1405,14 +1407,39 @@ void i3c_setup_tx(I3C_Type *i3c, const uint16_t len)
     /* Set tx buffer threshold */
     i3c_set_tx_buf_thld(i3c, len);
 
-    if (i3c_is_dma_enable(i3c)) {
-        /* Enable only command queue ready status interrupt if
-         * DMA is enabled */
-        temp = I3C_INTR_STATUS_EN_CMD_QUEUE_READY_STS_EN;
+    /* Set port and dispatch commands to i3c Command Queue */
+    i3c_set_port(i3c, xfer);
+
+    if (xfer->xfer_cmd.port_id != I3C_SLV_TX_TID) {
+        i3c_dispatch_xfer_cmd(i3c, xfer);
     } else {
+        /* As per mipi_i3c_databook Section 2.7.13
+         * no command required for transmit,
+         * only data length is required
+         */
+        i3c->I3C_COMMAND_QUEUE_PORT =
+            I3C_COMMAND_QUEUE_PORT_ARG_DATA_LEN(xfer->xfer_cmd.data_len) |
+            I3C_COMMAND_QUEUE_PORT_SLV_PORT_TID(xfer->xfer_cmd.port_id);
+    }
+
+    xfer->xfer_cmd.cmd_type = I3C_XFER_TYPE_NONE;
+
+    if (i3c_is_dma_enable(i3c)) {
+        /* Don't enable command queue ready and Tx data threshold interrupts */
+        temp = 0;
+    } else {
+        /* write data to tx port (if any) */
+        if ((xfer->tx_buf) && (xfer->tx_cur_cnt < xfer->tx_len)) {
+            resp = i3c_get_empty_tx_buf_len(i3c);
+            i3c_send(i3c, xfer, resp);
+        }
+
         /* Enable command queue ready status with
-         * Tx threshold status interrupt if DMA is not enabled */
-        temp = (I3C_INTR_STATUS_EN_TX_THLD_STS_EN | I3C_INTR_STATUS_EN_CMD_QUEUE_READY_STS_EN);
+         * Tx threshold status interrupt if not all data sent to queue
+         */
+        if (xfer->tx_cur_cnt < xfer->tx_len) {
+            temp = (I3C_INTR_STATUS_EN_TX_THLD_STS_EN | I3C_INTR_STATUS_EN_CMD_QUEUE_READY_STS_EN);
+        }
     }
 
     /* Enable interrupt */
@@ -1475,12 +1502,6 @@ void i3c_master_irq_handler(I3C_Type *i3c, i3c_xfer_t *xfer)
     uint32_t rx_len = 0U;
 
     status          = i3c->I3C_INTR_STATUS;
-
-    if (!(status & i3c->I3C_INTR_STATUS_EN)) {
-        /* there are no interrupts that we are interested in */
-        i3c_clear_intr(i3c, I3C_INTR_STATUS_ALL);
-        return;
-    }
 
     if (status & I3C_INTR_STATUS_RX_THLD_STS) {
         if ((xfer->rx_buf) && (xfer->rx_cur_cnt < xfer->rx_len)) {
@@ -1626,133 +1647,133 @@ void i3c_slave_irq_handler(I3C_Type *i3c, i3c_xfer_t *xfer)
 
     status          = i3c->I3C_INTR_STATUS;
 
-    if (!(status & i3c->I3C_INTR_STATUS_EN)) {
-        /* there are no interrupts that we are interested in */
-        i3c_clear_intr(i3c, I3C_INTR_STATUS_ALL);
+    if (status & I3C_INTR_STATUS_RX_THLD_STS) {
+        resp = i3c_get_avail_rx_buf_len(i3c);
+        i3c_receive(i3c, xfer, resp);
+
+        if (xfer->rx_cur_cnt >= xfer->rx_len) {
+            i3c_disable_intr(i3c, I3C_INTR_STATUS_EN_RX_THLD_STS_EN);
+        }
+    }
+
+    else if (status & I3C_INTR_STATUS_TX_THLD_STS) {
+        /* write data to tx port (if any) */
+        if ((xfer->tx_buf) && (xfer->tx_cur_cnt < xfer->tx_len)) {
+            resp = i3c_get_empty_tx_buf_len(i3c);
+            i3c_send(i3c, xfer, resp);
+
+            if (xfer->tx_cur_cnt >= xfer->tx_len) {
+                i3c_disable_intr(i3c, I3C_INTR_STATUS_EN_TX_THLD_STS_EN);
+            }
+        }
+    }
+
+    if (status & I3C_INTR_STATUS_CMD_QUEUE_READY_STS) {
+        i3c->I3C_QUEUE_THLD_CTRL &= ~I3C_QUEUE_THLD_CTRL_CMD_EMPTY_BUF_THLD_Msk;
+        i3c_disable_intr(i3c, I3C_INTR_STATUS_EN_CMD_QUEUE_READY_STS_EN);
+
+        i3c_set_port(i3c, xfer);
+        if (xfer->xfer_cmd.port_id == I3C_SLV_TX_TID) {
+            /* As per mipi_i3c_databook Section 2.7.13
+             * no command required for transmit,
+             * only data length is required
+             */
+            i3c->I3C_COMMAND_QUEUE_PORT =
+                I3C_COMMAND_QUEUE_PORT_ARG_DATA_LEN(xfer->xfer_cmd.data_len) |
+                I3C_COMMAND_QUEUE_PORT_SLV_PORT_TID(xfer->xfer_cmd.port_id);
+        }
+        xfer->xfer_cmd.cmd_type = I3C_XFER_TYPE_NONE;
+    }
+
+    /* Checking for dynamic address valid */
+    if (status & I3C_INTR_STATUS_DYN_ADDR_ASSGN_STS) {
+        i3c_clear_intr(i3c, I3C_INTR_STATUS_DYN_ADDR_ASSGN_STS);
+        xfer->status = (I3C_XFER_STATUS_DONE | I3C_XFER_STATUS_SLV_DYN_ADDR_ASSGN);
+    }
+    /* Checks for IBI updated status */
+    else if (status & I3C_INTR_STATUS_IBI_UPDATED_STS) {
+        i3c_disable_intr(i3c, I3C_INTR_STATUS_EN_IBI_UPDATED_STS_EN);
+        i3c_ibi_handler(i3c, xfer);
+        i3c_clear_intr(i3c, I3C_INTR_STATUS_IBI_UPDATED_STS);
+    }
+    /* Checks for Busowner updated status */
+    else if (status & I3C_INTR_STATUS_BUSOWNER_UPDATED_STS) {
+        /* Disable updated ownership interrupt */
+        i3c_disable_intr(i3c, I3C_INTR_STATUS_EN_BUSOWNER_UPDATED_STS_EN);
+        xfer->status = (I3C_XFER_STATUS_DONE | I3C_XFER_STATUS_BUSOWNER_UPDATED);
+        i3c_clear_intr(i3c, I3C_INTR_STATUS_BUSOWNER_UPDATED_STS);
+    } else if (status & I3C_INTR_STATUS_CCC_UPDATED_STS) {
+        if (i3c->I3C_SLV_EVENT_STATUS & I3C_SLV_EVENT_STATUS_MWL_UPDATED) {
+            i3c->I3C_SLV_EVENT_STATUS |= I3C_SLV_EVENT_STATUS_MWL_UPDATED;
+        } else if (i3c->I3C_SLV_EVENT_STATUS & I3C_SLV_EVENT_STATUS_MRL_UPDATED) {
+            i3c->I3C_SLV_EVENT_STATUS |= I3C_SLV_EVENT_STATUS_MRL_UPDATED;
+            /* Resume the device as it is halted for Rd len updated reason */
+            i3c_resume(i3c);
+        }
+
+        i3c_clear_intr(i3c, I3C_INTR_STATUS_CCC_UPDATED_STS);
+
+        xfer->status = (I3C_XFER_STATUS_DONE | I3C_XFER_STATUS_SLV_CCC_UPDATED);
+    } else if (status & I3C_INTR_STATUS_READ_REQ_RECV_STS) {
+        /* Read request rcvd from master when cmd queue is empty */
+        i3c_clear_intr(i3c, I3C_INTR_STATUS_READ_REQ_RECV_STS);
+        xfer->status |= (I3C_XFER_STATUS_DONE | I3C_XFER_STATUS_SLV_RD_RQ_RCVD);
+    }
+
+    /* we are only interested in a response interrupt,
+     *  make sure we have a response */
+    nresp = i3c->I3C_QUEUE_STATUS_LEVEL;
+    nresp = I3C_QUEUE_STATUS_LEVEL_RESP_BUF_BLR(nresp);
+
+    if (!nresp) {
+        return;
+    }
+
+    resp        = i3c->I3C_RESPONSE_QUEUE_PORT;
+
+    rx_len      = I3C_RESPONSE_QUEUE_PORT_DATA_LEN(resp);
+    xfer->error = I3C_RESPONSE_QUEUE_PORT_ERR_STATUS(resp);
+
+    if (xfer->error) {
+        /* Fetches error type */
+        i3c_fetch_error_type(xfer);
+
+        /* Invokes error handler */
+        i3c_error_handler(i3c, xfer, status, resp);
     } else {
-        if (status & I3C_INTR_STATUS_RX_THLD_STS) {
-            resp = i3c_get_avail_rx_buf_len(i3c);
-            i3c_receive(i3c, xfer, resp);
+        tid = I3C_RESPONSE_QUEUE_PORT_TID(resp);
 
-            if (xfer->rx_cur_cnt >= xfer->rx_len) {
-                i3c_disable_intr(i3c, I3C_INTR_STATUS_EN_RX_THLD_STS_EN);
-            }
-        }
+        switch (tid) {
+        case I3C_SLV_TX_TID:
+            /* mark all success event also as Transfer DONE */
+            xfer->status |= (I3C_XFER_STATUS_DONE | I3C_XFER_STATUS_SLV_TX_DONE);
+            break;
 
-        else if (status & I3C_INTR_STATUS_TX_THLD_STS) {
-            /* write data to tx port (if any) */
-            if ((xfer->tx_buf) && (xfer->tx_cur_cnt < xfer->tx_len)) {
-                resp = i3c_get_empty_tx_buf_len(i3c);
-                i3c_send(i3c, xfer, resp);
+        case I3C_SLV_RX_TID:
+            if (xfer->rx_len) {
+                i3c_receive(i3c, xfer, rx_len);
 
-                if (xfer->tx_cur_cnt >= xfer->tx_len) {
-                    i3c_disable_intr(i3c, I3C_INTR_STATUS_EN_TX_THLD_STS_EN);
+                if (xfer->rx_cur_cnt >= xfer->rx_len) {
+                    i3c_disable_intr(i3c, I3C_INTR_STATUS_RX_THLD_STS);
                 }
-            }
-        }
 
-        if (status & I3C_INTR_STATUS_CMD_QUEUE_READY_STS) {
-            i3c->I3C_QUEUE_THLD_CTRL &= ~I3C_QUEUE_THLD_CTRL_CMD_EMPTY_BUF_THLD_Msk;
-            i3c_disable_intr(i3c, I3C_INTR_STATUS_EN_CMD_QUEUE_READY_STS_EN);
-
-            i3c_set_port(i3c, xfer);
-            if (xfer->xfer_cmd.port_id == I3C_SLV_TX_TID) {
-                /* As per mipi_i3c_databook Section 2.7.13
-                 * no command required for transmit,
-                 * only data length is required
-                 */
-                i3c->I3C_COMMAND_QUEUE_PORT =
-                    I3C_COMMAND_QUEUE_PORT_ARG_DATA_LEN(xfer->xfer_cmd.data_len) |
-                    I3C_COMMAND_QUEUE_PORT_SLV_PORT_TID(xfer->xfer_cmd.port_id);
-            }
-            xfer->xfer_cmd.cmd_type = I3C_XFER_TYPE_NONE;
-        }
-
-        /* Checking for dynamic address valid */
-        if (status & I3C_INTR_STATUS_DYN_ADDR_ASSGN_STS) {
-            i3c_clear_intr(i3c, I3C_INTR_STATUS_DYN_ADDR_ASSGN_STS);
-            xfer->status = (I3C_XFER_STATUS_DONE | I3C_XFER_STATUS_SLV_DYN_ADDR_ASSGN);
-        }
-        /* Checks for IBI updated status */
-        else if (status & I3C_INTR_STATUS_IBI_UPDATED_STS) {
-            i3c_disable_intr(i3c, I3C_INTR_STATUS_EN_IBI_UPDATED_STS_EN);
-            i3c_ibi_handler(i3c, xfer);
-            i3c_clear_intr(i3c, I3C_INTR_STATUS_IBI_UPDATED_STS);
-        }
-        /* Checks for Busowner updated status */
-        else if (status & I3C_INTR_STATUS_BUSOWNER_UPDATED_STS) {
-            /* Disable updated ownership interrupt */
-            i3c_disable_intr(i3c, I3C_INTR_STATUS_EN_BUSOWNER_UPDATED_STS_EN);
-            xfer->status = (I3C_XFER_STATUS_DONE | I3C_XFER_STATUS_BUSOWNER_UPDATED);
-            i3c_clear_intr(i3c, I3C_INTR_STATUS_BUSOWNER_UPDATED_STS);
-        } else if (status & I3C_INTR_STATUS_CCC_UPDATED_STS) {
-            if (i3c->I3C_SLV_EVENT_STATUS & I3C_SLV_EVENT_STATUS_MWL_UPDATED) {
-                i3c->I3C_SLV_EVENT_STATUS |= I3C_SLV_EVENT_STATUS_MWL_UPDATED;
-            } else if (i3c->I3C_SLV_EVENT_STATUS & I3C_SLV_EVENT_STATUS_MRL_UPDATED) {
-                i3c->I3C_SLV_EVENT_STATUS |= I3C_SLV_EVENT_STATUS_MRL_UPDATED;
-                /* Resume the device as it is halted for Rd len updated reason */
-                i3c_resume(i3c);
-            }
-
-            i3c_clear_intr(i3c, I3C_INTR_STATUS_CCC_UPDATED_STS);
-
-            xfer->status = (I3C_XFER_STATUS_DONE | I3C_XFER_STATUS_SLV_CCC_UPDATED);
-        }
-        /* we are only interested in a response interrupt,
-         *  make sure we have a response */
-        nresp = i3c->I3C_QUEUE_STATUS_LEVEL;
-        nresp = I3C_QUEUE_STATUS_LEVEL_RESP_BUF_BLR(nresp);
-
-        if (!nresp) {
-            return;
-        }
-
-        resp        = i3c->I3C_RESPONSE_QUEUE_PORT;
-
-        rx_len      = I3C_RESPONSE_QUEUE_PORT_DATA_LEN(resp);
-        xfer->error = I3C_RESPONSE_QUEUE_PORT_ERR_STATUS(resp);
-
-        if (xfer->error) {
-            /* Fetches error type */
-            i3c_fetch_error_type(xfer);
-
-            /* Invokes error handler */
-            i3c_error_handler(i3c, xfer, status, resp);
-        } else {
-            tid = I3C_RESPONSE_QUEUE_PORT_TID(resp);
-
-            switch (tid) {
-            case I3C_SLV_TX_TID:
                 /* mark all success event also as Transfer DONE */
-                xfer->status |= (I3C_XFER_STATUS_DONE | I3C_XFER_STATUS_SLV_TX_DONE);
-                break;
-
-            case I3C_SLV_RX_TID:
-                if (xfer->rx_len) {
-                    i3c_receive(i3c, xfer, rx_len);
-
-                    if (xfer->rx_cur_cnt >= xfer->rx_len) {
-                        i3c_disable_intr(i3c, I3C_INTR_STATUS_RX_THLD_STS);
-                    }
-
-                    /* mark all success event also as Transfer DONE */
-                    xfer->status |= (I3C_XFER_STATUS_DONE | I3C_XFER_STATUS_SLV_RX_DONE);
-                }
-                break;
-            case I3C_SLV_DEFSLVS_TID:
-                if (rx_len) {
-                    /* mark all success event also as Transfer DONE */
-                    xfer->status |= (I3C_XFER_STATUS_DONE | I3C_XFER_STATUS_DEFSLV_LIST);
-
-                    i3c_clear_intr(i3c, I3C_INTR_STATUS_DEFSLV_STS);
-
-                    /* Store number of slaves' DEFSLVS data rcvd */
-                    xfer->addr_len = rx_len;
-                }
-                break;
-            default:
-                break;
+                xfer->status |= (I3C_XFER_STATUS_DONE | I3C_XFER_STATUS_SLV_RX_DONE);
             }
+            break;
+        case I3C_SLV_DEFSLVS_TID:
+            if (rx_len) {
+                /* mark all success event also as Transfer DONE */
+                xfer->status |= (I3C_XFER_STATUS_DONE | I3C_XFER_STATUS_DEFSLV_LIST);
+
+                i3c_clear_intr(i3c, I3C_INTR_STATUS_DEFSLV_STS);
+
+                /* Store number of slaves' DEFSLVS data rcvd */
+                xfer->addr_len = rx_len;
+            }
+            break;
+        default:
+            break;
         }
     }
 }

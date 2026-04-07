@@ -67,13 +67,16 @@ DEFAULT_ARGS=()
 # Specify addition argument to packchk
 # Default: empty
 #
-# PACKCHK_ARGS=()
+PACKCHK_ARGS=(-x M353)
 
 # Specify additional dependencies for packchk
 # Default: empty
 #
-# PACKCHK_DEPS="
-# "
+PACKCHK_DEPS="
+  ARM.CMSIS.pdsc
+  ARM.CMSIS-Compiler.pdsc
+  ARM.CMSIS-Driver.pdsc
+"
 
 # Optional: restrict fallback modes for changelog generation
 # Default: full
@@ -132,4 +135,4 @@ fi
 
 gen_pack "${DEFAULT_ARGS[@]}" "$@"
 
-exit 1
+exit 0

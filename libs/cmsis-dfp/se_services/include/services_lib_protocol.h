@@ -58,10 +58,10 @@ extern "C" {
  *  M A C R O   D E F I N E S
  ******************************************************************************/
 /* See SERVICES documentation for change log */
-#define SE_SERVICES_VERSION_STRING    "0.50.7"
-#define SE_SERVICES_VERSION_MAJOR     0
-#define SE_SERVICES_VERSION_MINOR     50
-#define SE_SERVICES_VERSION_PATCH     7
+#define SE_SERVICES_VERSION_STRING                "0.50.9"
+#define SE_SERVICES_VERSION_MAJOR                 0
+#define SE_SERVICES_VERSION_MINOR                 50
+#define SE_SERVICES_VERSION_PATCH                 9
 
 #define IMAGE_NAME_LENGTH             8
 #define VERSION_RESPONSE_LENGTH       80
@@ -85,6 +85,17 @@ extern "C" {
 #define SERVICES_REQ_NOT_ACKNOWLEDGE  0xFF
 #define SERVICES_REQ_TIMEOUT          0xFD
 #define SERVICES_RESP_UNKNOWN_COMMAND 0xFC
+
+/**
+ * Extsys0 configuration field.
+ *
+ * HPA: DCDC configuration for HPA mode.
+ * CSP: DCDC configuration for CSP package.
+ * default: PGA and LPA
+ */
+#define SERVICES_NET_PROC_BOOT_CONFIGURATION_NONE  0x0
+#define SERVICES_NET_PROC_BOOT_CONFIGURATION_HPA   0x1
+#define SERVICES_NET_PROC_BOOT_CONFIGURATION_CSP   0x2
 
 /*******************************************************************************
  *  T Y P E D E F S
@@ -218,6 +229,7 @@ typedef struct {
     volatile uint32_t send_trng_dst_addr;
     volatile uint32_t send_trng_len;
     volatile uint32_t send_internal_clock_select;
+    volatile uint32_t send_configuration;
     volatile int      resp_error_code;
 } net_proc_boot_svc_t;
 
@@ -535,6 +547,14 @@ typedef struct {
     volatile uint32_t send_assets_addr;
     volatile uint32_t resp_error_code;
 } dmpu_svc_t;
+
+// Verify an image signed with an Arm certificate chain
+typedef struct {
+  service_header_t header;
+  volatile uint32_t send_image_addr;
+  volatile uint32_t send_cert_addr;
+  volatile uint32_t resp_error_code;
+} verify_image_svc_t;
 
 /**
  * @struct get_se_revision_t
@@ -954,6 +974,14 @@ typedef struct {
     volatile uint32_t value;
     volatile uint32_t resp_error_code;
 } clock_setting_svc_t;
+
+// struct for Set ACLK API
+typedef struct {
+	service_header_t header;
+	uint32_t send_aclk_entry_delay;
+	uint32_t send_aclk_force_en;
+	uint32_t resp_error_code;
+} set_aclk_svc_t;
 
 /*******************************************************************************
  *  G L O B A L   D E F I N E S

@@ -38,7 +38,8 @@
 
 /* System Includes */
 #include <stdio.h>
-#include "string.h"
+#include <string.h>
+#include <inttypes.h>
 #include "app_utils.h"
 
 /* Project Includes */
@@ -87,7 +88,8 @@ void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer,
 
 void vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName)
 {
-    (void) pxTask;
+    ARG_UNUSED(pxTask);
+    ARG_UNUSED(pcTaskName);
 
     ASSERT_HANG_LOOP
 }
@@ -177,7 +179,7 @@ int32_t hardware_init(void)
     /* pin mux and configuration for all device IOs requested from pins.h*/
     ret = board_pins_config();
     if (ret != ARM_DRIVER_OK) {
-        printf("ERROR: Pin configuration failed: %d\n", ret);
+        printf("ERROR: Pin configuration failed: %" PRId32 "\n", ret);
         return ret;
     }
 
@@ -233,6 +235,7 @@ void i3c_master_loopback_thread(void *pvParameters)
     int32_t  cmp           = 0;
     uint8_t  slave_addr    = 0;
     uint32_t actual_events = 0;
+    ARG_UNUSED(pvParameters);
 
     ARM_I3C_CMD i3c_cmd;
 
@@ -254,7 +257,7 @@ void i3c_master_loopback_thread(void *pvParameters)
     /* Initialize i3c hardware pins using PinMux Driver. */
     ret = hardware_init();
     if (ret != 0) {
-        printf("Error: i3c hardware_init failed: %d\n", ret);
+        printf("Error: i3c hardware_init failed: %" PRId32 "\n", ret);
         return;
     }
 
@@ -317,7 +320,7 @@ void i3c_master_loopback_thread(void *pvParameters)
     }
 
     /* Waiting for the callback */
-    xTaskNotifyWait(NULL, I3C_CB_EVENT_SUCCESS | I3C_CB_EVENT_ERROR, &actual_events, portMAX_DELAY);
+    xTaskNotifyWait(0, I3C_CB_EVENT_SUCCESS | I3C_CB_EVENT_ERROR, &actual_events, portMAX_DELAY);
 
     if (actual_events == I3C_CB_EVENT_ERROR) {
         printf("\r\nError: I3C Slaves' Address Reset failed.\r\n");
@@ -331,7 +334,7 @@ void i3c_master_loopback_thread(void *pvParameters)
     i3c_cmd.len      = 1U;
     /* Assign Slave's Static address */
     i3c_cmd.addr     = I3C_SLV_TAR;
-    i3c_cmd.data     = NULL;
+    i3c_cmd.data     = 0;
     i3c_cmd.def_byte = 0U;
 
     ret              = I3Cdrv->MasterAssignDA(&i3c_cmd);
@@ -341,7 +344,7 @@ void i3c_master_loopback_thread(void *pvParameters)
     }
 
     /* Waiting for the callback */
-    xTaskNotifyWait(NULL, I3C_CB_EVENT_SUCCESS | I3C_CB_EVENT_ERROR, &actual_events, portMAX_DELAY);
+    xTaskNotifyWait(0, I3C_CB_EVENT_SUCCESS | I3C_CB_EVENT_ERROR, &actual_events, portMAX_DELAY);
 
     if (actual_events == I3C_CB_EVENT_ERROR) {
         printf("\r\n Error: First attempt failed. retrying \r\n");
@@ -361,7 +364,7 @@ void i3c_master_loopback_thread(void *pvParameters)
         }
 
         /* Waiting for the callback */
-        xTaskNotifyWait(NULL,
+        xTaskNotifyWait(0,
                         I3C_CB_EVENT_SUCCESS | I3C_CB_EVENT_ERROR,
                         &actual_events,
                         portMAX_DELAY);
@@ -378,7 +381,8 @@ void i3c_master_loopback_thread(void *pvParameters)
         printf("\r\n Error: I3C Failed to get Dynamic Address.\r\n");
         goto error_poweroff;
     } else {
-        printf("\r\n >> i3c: Rcvd dyn_addr:0x%X for static addr:0x%X\r\n", slave_addr, I3C_SLV_TAR);
+        printf("\r\n >> i3c: Rcvd dyn_addr:0x%" PRIX8 " for static addr:0x%" PRIX8 "\r\n",
+                slave_addr, I3C_SLV_TAR);
     }
 
     /* i3c Speed Mode Configuration: Normal I3C mode */
@@ -403,7 +407,7 @@ void i3c_master_loopback_thread(void *pvParameters)
             goto error_poweroff;
         }
 
-        xTaskNotifyWait(NULL,
+        xTaskNotifyWait(0,
                         I3C_CB_EVENT_SUCCESS | I3C_CB_EVENT_ERROR,
                         &actual_events,
                         portMAX_DELAY);
@@ -432,7 +436,7 @@ void i3c_master_loopback_thread(void *pvParameters)
         }
 
         /* wait for callback event. */
-        xTaskNotifyWait(NULL,
+        xTaskNotifyWait(0,
                         I3C_CB_EVENT_SUCCESS | I3C_CB_EVENT_ERROR,
                         &actual_events,
                         portMAX_DELAY);
@@ -470,7 +474,7 @@ error_uninitialize:
     printf("\r\n I3C demo exiting...\r\n");
 
     /* thread delete */
-    vTaskDelete(NULL);
+    vTaskDelete(0);
 }
 
 /*----------------------------------------------------------------------------
@@ -494,7 +498,7 @@ int main(void)
     BaseType_t xReturned = xTaskCreate(i3c_master_loopback_thread,
                                        "i3c_master_loopback_thread",
                                        STACK_SIZE,
-                                       NULL,
+                                       0,
                                        configMAX_PRIORITIES - 1,
                                        &i3c_xHandle);
     if (xReturned != pdPASS) {

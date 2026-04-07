@@ -51,6 +51,18 @@ int32_t system_update_clock_values(void)
         return -1;
     }
     SystemCoreClock = frequency;
+#if defined(RTSS_HE)
+    SystemRTSSHEClock = SystemCoreClock;
+#else
+    error_code = SERVICES_clocks_setting_get(se_services_s_handle,
+                                             CLOCK_SETTING_EXTSYS1_FREQ,
+                                             &frequency,
+                                             &service_error_code);
+    if (error_code) {
+        return -1;
+    }
+    SystemRTSSHEClock = frequency;
+#endif
 
     error_code      = SERVICES_clocks_setting_get(se_services_s_handle,
                                              CLOCK_SETTING_HFOSC_FREQ,

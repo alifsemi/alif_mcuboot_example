@@ -24,7 +24,7 @@ set (CMAKE_C_STANDARD                       99)
 set (ASM_DEBUG_LEVEL                        "-g3")
 set (ASM_OPT_LEVEL                          "-O0")
 set (ASM_WARNINGS_ERRORS                    "-Wall")
-set (ASSEMLBER_ADDITIONAL_FLAGS             "-masm=auto")
+set (ASSEMBLER_ADDITIONAL_FLAGS             "-masm=auto")
 
 if ( (COMPILER STREQUAL ARMCLANG) OR (COMPILER STREQUAL CLANG) )
     set (COMPILER_ADDITIONAL_FLAGS          "-ferror-limit=2048 -Wno-ignored-optimization-argument \
@@ -33,6 +33,7 @@ if ( (COMPILER STREQUAL ARMCLANG) OR (COMPILER STREQUAL CLANG) )
 
     if(COMPILER STREQUAL CLANG)
         set (RETARGET_IO_SRC                "${CMSIS_COMPILER_PATH}/source/clang/retarget_syscalls.c")
+        set_source_files_properties("${RETARGET_IO_SRC}"     PROPERTIES      COMPILE_FLAGS    "-w")
     endif()
 
 elseif (COMPILER STREQUAL GCC)
@@ -45,23 +46,36 @@ elseif (COMPILER STREQUAL GCC)
 endif()
 
 # Checking if user has provided C-Compiler arguments or not
-if (COMPILER_USER_ARG)
-    set (C_COMPILER_FLAGS                   "${COMPILER_USER_ARG}")
+if(${COMPILER_USER_ARGS_APPEND})
+    set (C_COMPILER_FLAGS                   "${C_LANGUAGE_MODE} ${C_OPT_LEVEL} ${C_DEBUG_LEVEL} ${C_WARNINGS_ERRORS} \
+                                            ${COMPILER_ADDITIONAL_FLAGS} ${COMPILER_USER_ARGS}")
 
-else ()
-    set (C_COMPILER_FLAGS                   "${C_LANGUAGE_MODE} ${C_OPT_LEVEL} ${C_DEBUG_LEVEL} \
-                                            ${C_WARNINGS_ERRORS} ${COMPILER_ADDITIONAL_FLAGS}")
+else()
+    if(NOT ${COMPILER_USER_ARGS} STREQUAL "")
+        set (C_COMPILER_FLAGS               "${COMPILER_USER_ARGS}")
 
-endif (COMPILER_USER_ARG)
+    else()
+        set (C_COMPILER_FLAGS               "${C_LANGUAGE_MODE} ${C_OPT_LEVEL} ${C_DEBUG_LEVEL} ${C_WARNINGS_ERRORS} \
+                                            ${COMPILER_ADDITIONAL_FLAGS}")
+    endif()
+
+endif()
 
 # Checking if user has provided ASM-Compiler arguments or not
-if (ASM_USER_ARGS)
-    set (ASM_FLAGS                          "${ASM_USER_ARGS}")
+if (${ASM_USER_ARGS_APPEND})
+    set (ASM_FLAGS                          "${ASM_DEBUG_LEVEL} ${ASM_OPT_LEVEL} ${ASM_WARNINGS_ERRORS} \
+                                            ${ASSEMBLER_ADDITIONAL_FLAGS} ${ASM_USER_ARGS}")
+
 else ()
-    set (ASM_FLAGS                          "${ASM_DEBUG_LEVEL} ${ASM_OPT_LEVEL} \
-                                            ${ASM_WARNINGS_ERRORS} \
-                                            ${ASSEMLBER_ADDITIONAL_FLAGS}")
-endif (ASM_USER_ARGS)
+    if(NOT ${ASM_USER_ARGS} STREQUAL "")
+        set (ASM_FLAGS                      "${ASM_USER_ARGS}")
+
+    else()
+        set (ASM_FLAGS                      "${ASM_DEBUG_LEVEL} ${ASM_OPT_LEVEL} ${ASM_WARNINGS_ERRORS} \
+                                            ${ASSEMBLER_ADDITIONAL_FLAGS}")
+    endif()
+
+endif ()
 
 # Include directories wrt CMSIS pack
 include_directories (${CMSIS_PACK_PATH}/CMSIS/Core/Include)

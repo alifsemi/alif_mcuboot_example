@@ -113,7 +113,8 @@ void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer,
 
 void vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName)
 {
-    (void) pxTask;
+    ARG_UNUSED(pxTask);
+    ARG_UNUSED(pcTaskName);
 
     ASSERT_HANG_LOOP
 }
@@ -340,6 +341,7 @@ void pdm_demo_thread_entry(void *pvParameters)
     int32_t            ret = 0;
     ARM_DRIVER_VERSION version;
     uint32_t           ulNotificationValue;
+    ARG_UNUSED(pvParameters);
 
     printf("\r\n >>> PDM demo starting up!!! <<< \r\n");
 
@@ -361,7 +363,7 @@ void pdm_demo_thread_entry(void *pvParameters)
      */
     ret = board_pdm_pins_config();
     if (ret != 0) {
-        printf("Error in pin-mux configuration: %d\n", ret);
+        printf("Error in pin-mux configuration: %" PRId32 "\n", ret);
         return;
     }
 #endif
@@ -400,21 +402,21 @@ void pdm_demo_thread_entry(void *pvParameters)
     /* To select the PDM channel 4 and channel 5 */
     ret = PDMdrv->Control(ARM_PDM_SELECT_CHANNEL,
                           ARM_PDM_MASK_CHANNEL_4 | ARM_PDM_MASK_CHANNEL_5,
-                          NULL);
+                          0);
     if (ret != ARM_DRIVER_OK) {
         printf("\r\n Error: PDM channel select control failed\n");
         goto error_poweroff;
     }
 
     /* Select Standard voice PDM mode */
-    ret = PDMdrv->Control(ARM_PDM_MODE, ARM_PDM_MODE_AUDIOFREQ_8K_DECM_64, NULL);
+    ret = PDMdrv->Control(ARM_PDM_MODE, ARM_PDM_MODE_AUDIOFREQ_8K_DECM_64, 0);
     if (ret != ARM_DRIVER_OK) {
         printf("\r\n Error: PDM Standard voice control mode failed\n");
         goto error_poweroff;
     }
 
     /* Select the DC blocking IIR filter */
-    ret = PDMdrv->Control(ARM_PDM_BYPASS_IIR_FILTER, ENABLE, NULL);
+    ret = PDMdrv->Control(ARM_PDM_BYPASS_IIR_FILTER, ENABLE, 0);
     if (ret != ARM_DRIVER_OK) {
         printf("\r\n Error: PDM DC blocking IIR control failed\n");
         goto error_poweroff;
@@ -500,7 +502,7 @@ void pdm_demo_thread_entry(void *pvParameters)
         goto error_uninitialize;
     }
 
-    printf("\n------> Start Speaking or Play some Audio!------> \n");
+    printf("\n------> Start Speaking or Play some Audio!------>\n");
 
     /* Receive the audio samples */
     ret = PDMdrv->Receive((uint16_t *) sample_buf, NUM_SAMPLE);
@@ -510,7 +512,7 @@ void pdm_demo_thread_entry(void *pvParameters)
     }
 
     /* wait for the call back event */
-    xTaskNotifyWait(NULL,
+    xTaskNotifyWait(0,
                     PDM_CALLBACK_ERROR_EVENT | PDM_CALLBACK_WARNING_EVENT |
                         PDM_CALLBACK_AUDIO_DETECTION_EVENT,
                     &ulNotificationValue,
@@ -528,14 +530,14 @@ void pdm_demo_thread_entry(void *pvParameters)
 
     /* PDM fifo overflow error event */
     if (ulNotificationValue & PDM_CALLBACK_ERROR_EVENT) {
-        printf("\n PDM error event: Fifo overflow \n");
+        printf("\n PDM error event: Fifo overflow\n");
     }
 
-    printf("\n------> Stop recording ------> \n");
-    printf("\n--> PCM samples will be stored in 0x%p address and size of buffer is %d\n",
+    printf("\n------> Stop recording ------>\n");
+    printf("\n--> PCM samples will be stored in 0x%p address and size of buffer is %u\n",
            sample_buf,
            sizeof(sample_buf));
-    printf("\n ---END--- \r\n <<< wait forever >>> \n");
+    printf("\n ---END--- \r\n <<< wait forever >>>\n");
     WAIT_FOREVER_LOOP
 
 error_capture:
@@ -585,7 +587,7 @@ int main(void)
     BaseType_t xReturned = xTaskCreate(pdm_demo_thread_entry,
                                        "PDMFreertos",
                                        256,
-                                       NULL,
+                                       0,
                                        configMAX_PRIORITIES - 1,
                                        &pdm_xHandle);
     if (xReturned != pdPASS) {

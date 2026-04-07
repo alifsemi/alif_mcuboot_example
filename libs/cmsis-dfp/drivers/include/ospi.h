@@ -251,6 +251,40 @@ typedef enum _SPI_SS_STATE {
 } SPI_SS_STATE;
 
 /**
+ * enum SPI_INST_L.
+ * SPI instruction length.
+ */
+typedef enum _SPI_INST_L {
+    SPI_INST_L_0_BIT   = 0x00, /**< No Instruction            */
+    SPI_INST_L_4_BIT   = 0x01, /**< 4 bit Instruction length  */
+    SPI_INST_L_8_BIT   = 0x02, /**< 8 bit Instruction length  */
+    SPI_INST_L_16_BIT  = 0x03  /**< 16 bit Instruction length */
+} SPI_INST_L;
+
+/**
+ * enum SPI_ADDR_L.
+ * SPI Address length.
+ */
+typedef enum _SPI_ADDR_L {
+    SPI_ADDR_L_0_BIT   = 0x00, /**< No Address            */
+    SPI_ADDR_L_4_BIT   = 0x01, /**< 4 bit Address length  */
+    SPI_ADDR_L_8_BIT   = 0x02, /**< 8 bit Address length  */
+    SPI_ADDR_L_12_BIT  = 0x03, /**< 12 bit Address length */
+    SPI_ADDR_L_16_BIT  = 0x04, /**< 16 bit Address length */
+    SPI_ADDR_L_20_BIT  = 0x05, /**< 20 bit Address length */
+    SPI_ADDR_L_24_BIT  = 0x06, /**< 24 bit Address length */
+    SPI_ADDR_L_28_BIT  = 0x07, /**< 28 bit Address length */
+    SPI_ADDR_L_32_BIT  = 0x08, /**< 32 bit Address length */
+    SPI_ADDR_L_36_BIT  = 0x09, /**< 36 bit Address length */
+    SPI_ADDR_L_40_BIT  = 0x0a, /**< 40 bit Address length */
+    SPI_ADDR_L_44_BIT  = 0x0b, /**< 44 bit Address length */
+    SPI_ADDR_L_48_BIT  = 0x0c, /**< 48 bit Address length */
+    SPI_ADDR_L_52_BIT  = 0x0d, /**< 52 bit Address length */
+    SPI_ADDR_L_56_BIT  = 0x0e, /**< 56 bit Address length */
+    SPI_ADDR_L_60_BIT  = 0x0f, /**< 60 bit Address length */
+} SPI_ADDR_L;
+
+/**
  * enum SPI_TRANSFER_STATUS.
  * Status of an ongoing SPI transfer.
  */
@@ -471,6 +505,18 @@ static inline uint32_t ospi_get_dfs(OSPI_Type *ospi)
 }
 
 /**
+ * \fn          void ospi_set_rx_threshold(OSPI_Type *ospi, uint8_t threshold)
+ * \brief       Set Receive FIFO interrupt threshold for the OSPI instance
+ * \param[in]   ospi       Pointer to the OSPI register map
+ * \param[in]   threshold  Receive FIFO threshold
+ * \return      none
+ */
+static inline void ospi_set_rx_threshold(OSPI_Type *ospi, uint8_t threshold)
+{
+    ospi->OSPI_RXFTLR = threshold;
+}
+
+/**
   \fn          void ospi_set_mode(OSPI_Type *ospi, SPI_MODE mode)
   \brief       Set the OSPI mode for the OSPI instance.
   \param[in]   ospi     Pointer to the OSPI register map
@@ -505,18 +551,6 @@ void ospi_set_tmod(OSPI_Type *ospi, SPI_TMOD tmod);
   \return      none
 */
 void ospi_set_tx_threshold(OSPI_Type *ospi, uint8_t threshold);
-
-/**
-  \fn          void ospi_set_rx_threshold(OSPI_Type *ospi, uint8_t threshold)
-  \brief       Set Receive FIFO interrupt threshold for the OSPI instance
-  \param[in]   ospi       Pointer to the OSPI register map
-  \param[in]   threshold  Receive FIFO threshold
-  \return      none
-*/
-static inline void ospi_set_rx_threshold(OSPI_Type *ospi, uint8_t threshold)
-{
-    ospi->OSPI_RXFTLR = threshold;
-}
 
 /**
   \fn          void ospi_set_tx_fifo_start_level(OSPI_Type *spi, uint16_t level)
@@ -593,6 +627,24 @@ void ospi_receive(OSPI_Type *ospi, ospi_transfer_t *transfer);
 void ospi_transfer(OSPI_Type *ospi, ospi_transfer_t *transfer);
 
 /**
+ * \fn          void ospi_send_polling(OSPI_Type *spi, ospi_transfer_t *transfer)
+ * \brief       Send OSPI data in blocking mode
+ * \param[in]   ospi       Pointer to the OSPI register map
+ * \param[in]   transfer   Transfer parameters
+ * \return      none
+ */
+void ospi_send_polling(OSPI_Type *ospi, ospi_transfer_t *transfer);
+
+/**
+ * \fn          void ospi_transfer_polling(OSPI_Type *spi, ospi_transfer_t *transfer)
+ * \brief       Send OSPI instruction and receive data
+ * \param[in]   ospi       Pointer to the OSPI register map
+ * \param[in]   transfer   Transfer parameters
+ * \return      none
+ */
+void ospi_transfer_polling(OSPI_Type *ospi, ospi_transfer_t *transfer);
+
+/**
   \fn          void ospi_dma_send(OSPI_Type *spi, ospi_transfer_t *transfer)
   \brief       Prepare the OSPI instance for transmission with DMA support
   \param[in]   ospi       Pointer to the OSPI register map
@@ -609,6 +661,17 @@ void ospi_dma_send(OSPI_Type *ospi, ospi_transfer_t *transfer);
   \return      none
 */
 void ospi_dma_transfer(OSPI_Type *ospi, ospi_transfer_t *transfer);
+
+/**
+ * \fn          void ospi_psram_xip_cfg(OSPI_Type *ospi, uint8_t wait_cycles,
+ *                             bool is_dual_octal)
+ * \brief       Initialize OSPI XIP configuration for the PSRAM device
+ * \param[in]   ospi          Pointer to the OSPI register map
+ * \param[in]   wait_cycles   Wait cycles for the RAM device
+ * \param[in]   is_dual_octal OSPI transfer type is Dual Octal
+ * \return      none
+ */
+void ospi_psram_xip_cfg(OSPI_Type *ospi, uint8_t wait_cycles, bool is_dual_octal);
 
 /**
   \fn          void ospi_hyperbus_xip_init(OSPI_Type *ospi, uint8_t wait_cycles, bool is_dual_octal)
@@ -628,6 +691,15 @@ void ospi_hyperbus_xip_init(OSPI_Type *ospi, uint8_t wait_cycles, bool is_dual_o
   \return      none
 */
 void ospi_hyperbus_send(OSPI_Type *ospi, ospi_transfer_t *transfer);
+
+/**
+ * \fn          void ospi_hyperbus_receive(OSPI_Type *spi, ospi_transfer_t *transfer)
+ * \brief       Prepare the OSPI instance for transmission
+ * \param[in]   ospi       Pointer to the OSPI register map
+ * \param[in]   transfer   Transfer parameters
+ * \return      none
+ */
+void ospi_hyperbus_receive(OSPI_Type *ospi, ospi_transfer_t *transfer);
 
 /**
   \fn          void ospi_irq_handler(OSPI_Type *ospi, ospi_transfer_t *transfer)

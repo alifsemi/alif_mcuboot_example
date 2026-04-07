@@ -132,3 +132,28 @@ uint32_t SERVICES_application_ospi_write_key(uint32_t services_handle, uint32_t 
 
     return ret;
 }
+
+/**
+ * @brief Verify an image signed by an Arm certificate cgain
+ * @param services_handle
+ * @param image address
+ * @param certificate chain address
+ * @param error_code
+ * @return
+ */
+uint32_t SERVICES_application_verify_image(uint32_t services_handle, uint32_t image_address,
+                                           uint32_t cert_chain_address, uint32_t *error_code)
+{
+    verify_image_svc_t *p_svc =
+        (verify_image_svc_t *) SERVICES_prepare_packet_buffer(sizeof(verify_image_svc_t));
+
+    p_svc->send_image_addr = image_address;
+    p_svc->send_cert_addr  = cert_chain_address;
+
+    uint32_t ret           = SERVICES_send_request(services_handle,
+                                         SERVICE_APPLICATION_VERIFY_IMAGE_ID,
+                                         DEFAULT_TIMEOUT);
+
+    *error_code            = p_svc->resp_error_code;
+    return ret;
+}

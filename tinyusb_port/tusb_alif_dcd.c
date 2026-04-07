@@ -235,7 +235,7 @@ bool dcd_init(uint8_t rhport, const tusb_rhport_init_t* rh_init) {
     // Disable usb phy isolation
     disable_usb_phy_isolation();
     // Clear usb phy power-on-reset signal
-    usb_ctrl2_phy_power_on_reset_clear();
+    usb_phy_por_clear();
 
     // NOTE: Force stop/disconnect could be used for debug purpose only
     //dcd_disconnect(rhport);
@@ -763,7 +763,7 @@ void dcd_edpt_clear_stall(uint8_t rhport, uint8_t ep_addr) {
 
 bool dcd_deinit(uint8_t rhport) {
     (void) rhport;
-    usb_ctrl2_phy_power_on_reset_set();
+    usb_phy_por_set();
     enable_usb_phy_isolation(); // enable usb phy isolation
     disable_usb_phy_power(); // power down usb phy
     disable_usb_periph_clk(); // disable usb peripheral clock

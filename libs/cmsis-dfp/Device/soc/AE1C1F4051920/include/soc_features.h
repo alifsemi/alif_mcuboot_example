@@ -56,6 +56,7 @@
 #define SOC_FEAT_HAS_BLE                           (0)
 
 #define SOC_FEAT_USB_EP_TOTAL                      (16)
+#define SOC_FEAT_USB_NEED_EXTRA_CLK                (1)
 
 #define SOC_FEAT_LPSPI_HAS_MASTER_SLAVE            (1)
 
@@ -65,6 +66,7 @@
 #define SOC_FEAT_AES_BAUD2_DELAY_VAL               (1)
 #define SOC_FEAT_AES_OSPI_SIGNALS_DELAY            (0)
 #define SOC_FEAT_AES_OSPI_HAS_XIP_WRITE_HC_DFS     (1)
+#define SOC_FEAT_AES_HAS_ADDR_CTRL_SHIM            (0)
 
 #define SOC_FEAT_I2S0_MASTER_MODE                  (1)
 #define SOC_FEAT_I2S1_MASTER_MODE                  (0)
@@ -106,5 +108,7 @@
 #define SOC_FEAT_HAS_ISP                (0)
 
 #define SOC_FEAT_U55_M1_CAN_ACCESS_HIGHER_ADDRESS (1)
+
+#define SOC_FEAT_SDMMC_SUPPORT_1V8                (0)
 
 #endif /* SOC_FEATURES_H */

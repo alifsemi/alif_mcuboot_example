@@ -39,6 +39,7 @@
  ******************************************************************************/
 /* System Includes */
 #include <stdio.h>
+#include <inttypes.h>
 
 #include "RTE_Components.h"
 #include CMSIS_device_header
@@ -90,7 +91,8 @@ void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer,
 
 void vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName)
 {
-    (void) pxTask;
+    ARG_UNUSED(pxTask);
+    ARG_UNUSED(pcTaskName);
 
     ASSERT_HANG_LOOP
 }
@@ -109,7 +111,7 @@ void vApplicationIdleHook(void)
     ASSERT_HANG_LOOP
 }
 
-TaskHandle_t dac_xHandle = NULL;
+TaskHandle_t dac_xHandle;
 
 /* DAC maximum resolution is 12-bit */
 #define DAC_MAX_INPUT_VALUE (0xFFF)
@@ -173,7 +175,7 @@ void dac_demo_Thread_entry()
     /* pin mux and configuration for all device IOs requested from pins.h*/
     ret = board_pins_config();
     if (ret != 0) {
-        printf("Error in pin-mux configuration: %d\n", ret);
+        printf("Error in pin-mux configuration: %" PRId32 "\n", ret);
         return;
     }
 
@@ -184,7 +186,7 @@ void dac_demo_Thread_entry()
      */
     ret = board_dac12_pins_config();
     if (ret != 0) {
-        printf("Error in pin-mux configuration: %d\n", ret);
+        printf("Error in pin-mux configuration: %" PRId32 "\n", ret);
         return;
     }
 #endif
@@ -303,7 +305,7 @@ int main()
     BaseType_t xReturned = xTaskCreate(dac_demo_Thread_entry,
                                        "DACFreertos",
                                        256,
-                                       NULL,
+                                       0,
                                        configMAX_PRIORITIES - 1,
                                        &dac_xHandle);
     if (xReturned != pdPASS) {
