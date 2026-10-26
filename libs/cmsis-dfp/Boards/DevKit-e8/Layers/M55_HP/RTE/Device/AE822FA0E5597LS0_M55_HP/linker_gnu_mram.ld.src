@@ -32,7 +32,7 @@
 #define __HEAP_SIZE              APP_HP_HEAP_SIZE
 #define __APP_HEAP_SIZE          0x00004000
 #define __ROM_BASE               APP_MRAM_HP_BASE
-#define __ROM_SIZE               APP_MRAM_HP_SIZE
+#define __ROM_SIZE               APP_CODE_MRAM_SIZE
 
 /*
  * Note:
@@ -50,6 +50,7 @@ MEMORY
   SRAM1 (rwx) : ORIGIN = APP_SRAM1_BASE, LENGTH = APP_SRAM1_SIZE
   #endif
   MRAM  (rx)  : ORIGIN = __ROM_BASE, LENGTH = __ROM_SIZE
+  MRAM_USER  (rw)  : ORIGIN = APP_MRAM_USER_BASE, LENGTH = APP_MRAM_USER_SIZE
 }
 
 ENTRY(Reset_Handler)
@@ -83,9 +84,6 @@ SECTIONS
   .copy.table : ALIGN(4)
   {
     __copy_table_start__ = .;
-    LONG ( LOADADDR(.tdata.at_dtcm) )
-    LONG ( ADDR(.tdata.at_dtcm) )
-    LONG ( SIZEOF(.tdata.at_dtcm)/4 )
     LONG ( LOADADDR(.data.at_dtcm) )
     LONG ( ADDR(.data.at_dtcm) )
     LONG ( SIZEOF(.data.at_dtcm)/4 )
@@ -99,8 +97,6 @@ SECTIONS
   .zero.table : ALIGN(4)
   {
     __zero_table_start__ = .;
-    LONG (ADDR(.tbss))
-    LONG (SIZEOF(.tbss)/4)
     LONG (ADDR(.bss))
     LONG (SIZEOF(.bss)/4)
 #if __HAS_BULK_SRAM
@@ -111,15 +107,21 @@ SECTIONS
     . = ALIGN(16);
   } > MRAM
 
-  .code.at_itcm : ALIGN(8)
+  /* Caution: .got, .tdata and .tbss sections come under
+   * RELRO section. So keep it adjacent one after another.
+   */
+  .got : ALIGN(8)
   {
-    *(.text*)
-    *(.itcm*)                             /* Object targeting ITCM */
+    *(.got)
+    *(.got*)
+    *(.data.rel.ro)
+    *(.data.rel.ro*)
+    *(.got.plt)
     . = ALIGN(16);
-  } > ITCM AT > MRAM
+  } > MRAM
 
   /* Thread Local Storage sections */
-  .tdata.at_dtcm : ALIGN(16)
+  .tdata.at_mram : ALIGN(16)
   {
     /* TLS base = beginning of TLS block */
     __tls_base = .;
@@ -129,7 +131,7 @@ SECTIONS
     *(.tdata .tdata.* .gnu.linkonce.td.*)
     __tdata_end = .;
     . = ALIGN(16);
-  } > DTCM AT > MRAM
+  } > MRAM
 
   /* Thread-Local Uninitialized Data (.tbss) */
   .tbss (NOLOAD) : ALIGN(16)
@@ -139,14 +141,20 @@ SECTIONS
     *(.tcommon)
     __tbss_end = .;
     . = ALIGN(16);
-  } > DTCM
+  } > MRAM
+
+  .code.at_itcm : ALIGN(8)
+  {
+    *(.text*)
+    *(.itcm*)                             /* Object targeting ITCM */
+    . = ALIGN(16);
+  } > ITCM AT > MRAM
 
   .data.at_dtcm : ALIGN(8)
   {
     *(vtable)
     *(.data)
     *(.data*)
-    *(.dtcm*)                             /* Objects targeting DTCM */
     *arm_common_tables*(.data* .rodata*)
 
     KEEP(*(.jcr*))
@@ -228,6 +236,7 @@ SECTIONS
     . = ALIGN(4);
     /* preinit data */
     PROVIDE_HIDDEN (__preinit_array_start = .);
+    PROVIDE_HIDDEN (__bothinit_array_start = .);
     KEEP(*(.preinit_array))
     PROVIDE_HIDDEN (__preinit_array_end = .);
 
@@ -237,6 +246,7 @@ SECTIONS
     KEEP(*(SORT(.init_array.*)))
     KEEP(*(.init_array))
     PROVIDE_HIDDEN (__init_array_end = .);
+    PROVIDE_HIDDEN (__bothinit_array_end = .);
 
     . = ALIGN(4);
     /* finit data */
@@ -264,6 +274,15 @@ SECTIONS
     KEEP(*(.eh_frame*))
     . = ALIGN(16);
   } > MRAM
+
+  .mram_user (NOLOAD) : ALIGN(16)
+  {
+    __mram_user_start__ = .;
+    *(.mram_user)
+    *(.mram_user*)
+    . = ALIGN(16);
+    __mram_user_end__ = .;
+  } > MRAM_USER
 
   /* Check if data + heap + stack exceeds RAM limit */
   ASSERT(__StackLimit >= __HeapLimit, "region RAM overflowed with stack")

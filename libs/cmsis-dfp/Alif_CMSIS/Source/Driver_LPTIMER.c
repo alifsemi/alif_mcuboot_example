@@ -10,8 +10,8 @@
 
 /*******************************************************************************
  * @file     Driver_LPTIMER.c
- * @author   Girish BN, Manoj A Murudi
- * @email    girish.bn@alifsemi.com, manoj.murudi@alifsemi.com
+ * @author   Girish BN, Manoj A Murudi, Kavya
+ * @email    girish.bn@alifsemi.com, manoj.murudi@alifsemi.com, kavya.s@alifsemi.com
  * @version  V1.0.0
  * @date     27-March-2023
  * @brief    CMSIS_Driver for LPTIMER.
@@ -53,29 +53,6 @@ static int32_t ARM_LPTIMER_Initialize(LPTIMER_RESOURCES *LPTIMER_RES, uint8_t ch
     }
 
     LPTIMER_RES->ch_info[channel].CB_function_ptr = cb_event;
-
-    if (((channel == LPTIMER_CHANNEL_0) || (channel == LPTIMER_CHANNEL_2)) &&
-        (LPTIMER_RES->ch_info[channel].clk_src > LPTIMER_CLK_EXT_SOURCE))
-    {
-        /* channel 0 & 2 does not support cascaded input */
-        return ARM_DRIVER_ERROR;
-    } else if (LPTIMER_RES->ch_info[channel].clk_src > LPTIMER_CLK_SOURCE_CASCADE) {
-        return ARM_DRIVER_ERROR;
-    }
-
-    /* Input Clock select for LPTIMER */
-    select_lptimer_clk(LPTIMER_RES->ch_info[channel].clk_src, channel);
-
-    if (LPTIMER_RES->ch_info[channel].mode) {
-        /* set lptimer as freerun mode */
-        lptimer_set_mode_freerunning(LPTIMER_RES->regs, channel);
-    } else {
-        /* set lptimer as user-defined mode */
-        lptimer_set_mode_userdefined(LPTIMER_RES->regs, channel);
-    }
-
-    /* unmask channel interrupt */
-    lptimer_unmask_interrupt(LPTIMER_RES->regs, channel);
 
     LPTIMER_RES->ch_info[channel].state.initialized = 1;
 
@@ -121,16 +98,41 @@ static int32_t ARM_LPTIMER_PowerControl(LPTIMER_RESOURCES *LPTIMER_RES, uint8_t 
                 return ARM_DRIVER_OK;
             }
 
-            if (LPTIMER_RES->ch_info[channel].state.initialized == 1) {
-                NVIC_ClearPendingIRQ(LPTIMER_CHANNEL_IRQ(channel));
-                NVIC_SetPriority(LPTIMER_CHANNEL_IRQ(channel),
-                                 LPTIMER_RES->ch_info[channel].irq_priority);
-                NVIC_EnableIRQ(LPTIMER_CHANNEL_IRQ(channel));
-
-                LPTIMER_RES->ch_info[channel].state.powered = 1;
-            } else {
+            if (LPTIMER_RES->ch_info[channel].state.initialized == 0) {
                 return ARM_DRIVER_ERROR;
             }
+
+            if (((channel == LPTIMER_CHANNEL_0) || (channel == LPTIMER_CHANNEL_2)) &&
+                (LPTIMER_RES->ch_info[channel].clk_src > LPTIMER_CLK_EXT_SOURCE)) {
+                /* channel 0 & 2 does not support cascaded input */
+                return ARM_DRIVER_ERROR;
+            } else if (LPTIMER_RES->ch_info[channel].clk_src > LPTIMER_CLK_SOURCE_CASCADE) {
+                return ARM_DRIVER_ERROR;
+            }
+
+            /* Input Clock select for LPTIMER */
+            select_lptimer_clk(LPTIMER_RES->ch_info[channel].clk_src, channel);
+
+            if (LPTIMER_RES->ch_info[channel].mode) {
+                /* set lptimer as freerun mode */
+                lptimer_set_mode_freerunning(LPTIMER_RES->regs, channel);
+            } else {
+                /* set lptimer as user-defined mode */
+                lptimer_set_mode_userdefined(LPTIMER_RES->regs, channel);
+            }
+
+            /* clear lptimer interrupt */
+            lptimer_clear_interrupt(LPTIMER_RES->regs, channel);
+
+            /*mask lptimer interrupt */
+            lptimer_mask_interrupt(LPTIMER_RES->regs, channel);
+
+            NVIC_ClearPendingIRQ(LPTIMER_CHANNEL_IRQ(channel));
+            NVIC_SetPriority(LPTIMER_CHANNEL_IRQ(channel),
+                             LPTIMER_RES->ch_info[channel].irq_priority);
+            NVIC_EnableIRQ(LPTIMER_CHANNEL_IRQ(channel));
+
+            LPTIMER_RES->ch_info[channel].state.powered = 1;
             break;
         }
     case ARM_POWER_LOW:
@@ -241,6 +243,9 @@ static int32_t ARM_LPTIMER_Start(LPTIMER_RESOURCES *LPTIMER_RES, uint8_t channel
         return ARM_DRIVER_ERROR;
     }
 
+    /* unmask lptimer interrupt */
+    lptimer_unmask_interrupt(LPTIMER_RES->regs, channel);
+
     /* enable channel counter */
     lptimer_enable_counter(LPTIMER_RES->regs, channel);
 
@@ -263,12 +268,14 @@ static int32_t ARM_LPTIMER_Stop(LPTIMER_RESOURCES *LPTIMER_RES, uint8_t channel)
         return ARM_DRIVER_ERROR_PARAMETER;
     }
 
-#if SOC_FEAT_LPTIMER_HAS_PWM
-    if (LPTIMER_RES->ch_info[channel].pwm_enabled) {
-        /* disable pwm feature */
-        lptimer_disable_pwm(LPTIMER_RES->regs, channel);
-    }
-#endif
+    /* disable pwm feature */
+    lptimer_disable_pwm(LPTIMER_RES->regs, channel);
+
+    /* clear lptimer interrupt */
+    lptimer_clear_interrupt(LPTIMER_RES->regs, channel);
+
+    /* mask lptimer interrupt */
+    lptimer_mask_interrupt(LPTIMER_RES->regs, channel);
 
     /* disable channel counter */
     lptimer_disable_counter(LPTIMER_RES->regs, channel);

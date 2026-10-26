@@ -50,8 +50,8 @@ static ARM_DRIVER_MRAM *MRAM_drv = &Driver_MRAM;
 
 void MRAM_Thread_entry();
 
-/* Valid MRAM address-offset. */
-#define MRAM_ADDR_OFFSET (0x100000)
+/* Valid MRAM address-offset starting from APP_MRAM_USER_BASE. */
+#define MRAM_ADDR_OFFSET (0x0)
 
 #define MRAM_TEST_SIZE            (512*1024)                     /* 512KB size. */
 #define MRAM_TEST_LOOPS           (MRAM_TEST_SIZE / BUFFER_SIZE) /* 512KB/64KB = 8 loops. */

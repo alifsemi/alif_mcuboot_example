@@ -281,7 +281,8 @@
 #define IRQ356_Handler LPUTIMER_IRQ5Handler
 #define IRQ357_Handler LPUTIMER_IRQ6Handler
 #define IRQ358_Handler LPUTIMER_IRQ7Handler
-
+#define IRQ367_Handler ISP_IRQHandler
+#define IRQ368_Handler ISP_MI_IRQHandler
 #define IRQ369_Handler QEC0_CMPA_IRQHandler
 #define IRQ370_Handler QEC0_CMPB_IRQHandler
 #define IRQ371_Handler QEC1_CMPA_IRQHandler

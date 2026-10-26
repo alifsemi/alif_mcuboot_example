@@ -29,7 +29,7 @@
 
 #ifdef __cplusplus
 #if __cplusplus
-extern "C" {
+extern "C"{
 #endif
 #endif
 
@@ -44,7 +44,7 @@ extern "C" {
  */
 
 /*****************************************************************************/
-/*
+/**
  * @brief   Register AWB.
  *
  * @param   IspPort             Port ID
@@ -52,8 +52,8 @@ extern "C" {
  *
  * @retval  VSI_SUCCESS         Operation succeeded
  *
- */
-int VSI_MPI_ISP_AwbRegCallBack(ISP_PORT IspPort, ISP_AWB_FUNC_S * pAwbLib);
+ *****************************************************************************/
+int VSI_MPI_ISP_AwbRegCallBack(ISP_PORT IspPort, ISP_AWB_FUNC_S *pAwbLib);
 
 /*****************************************************************************/
 /**
@@ -101,7 +101,7 @@ int VSI_MPI_ISP_SetWbAttr(ISP_PORT IspPort, ISP_WB_ATTR_S *pWbAttr);
  * @retval  VSI_SUCCESS         Operation succeeded
  *
  *****************************************************************************/
-int VSI_MPI_ISP_QueryAwbInfo(ISP_PORT IspPort, ISP_AWB_INFO_S *pAwbInfo);
+int VSI_MPI_ISP_QueryAwbInfo(ISP_PORT IspPort,  ISP_AWB_INFO_S *pAwbInfo);
 
 /* @} mpi_isp_wb */
 /* @endcond */

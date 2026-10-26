@@ -20,6 +20,7 @@ extern "C" {
 
 /* common helpers */
 #define BIT(nr)                            (1UL << (nr))
+#define TOTAL_BITS(x)                      (sizeof(x) * 8)
 
 #define GENMASK(h, l)                      (((~(0U)) - ((1U) << (l)) + 1) & (~(0U) >> (32 - 1 - (h))))
 
@@ -192,6 +193,7 @@ extern "C" {
 #define I3C_DATA_BUFFER_THLD_CTRL_TX_EMPTY_BUF_THLD_Pos 0U
 #define I3C_DATA_BUFFER_THLD_CTRL_TX_EMPTY_BUF_THLD_Msk                                            \
     GENMASK(2, I3C_DATA_BUFFER_THLD_CTRL_TX_EMPTY_BUF_THLD_Pos)
+#define I3C_DATA_BUFFER_THLD_CTRL_MAX_THLD        0x5
 
 #define I3C_IBI_QUEUE_CTRL_NOTIFY_SIR_REJECTED    (1U << 3U)
 #define I3C_IBI_QUEUE_CTRL_NOTIFY_MR_REJECTED     (1U << 1U)
@@ -439,7 +441,12 @@ typedef enum _I3C_XFER_STATUS {
         (1UL << 18), /**< Transfer status IBI Slave Intr request received*/
     I3C_XFER_STATUS_DEFSLV_LIST    = (1UL << 19), /**< Transfer status Defslvs received */
     I3C_XFER_STATUS_BUS_RESET_DONE = (1UL << 20), /**< Transfer status Bus reset done  */
-    I3C_XFER_STATUS_SLV_RD_RQ_RCVD = (1UL << 21)  /**< Transfer status Read request rcvd from master */
+    I3C_XFER_STATUS_SLV_RD_RQ_RCVD = (1UL << 21), /**< Transfer status Read request rcvd
+                                                    * from master
+                                                    */
+    I3C_XFER_STATUS_DMA_RX_DONE    = (1UL << 22) /**< DMA RX channel completed before
+                                                   * RESP_READY IRQ
+                                                   */
 } I3C_XFER_STATUS;
 
 /* brief I3C Transfer types */
@@ -448,7 +455,8 @@ typedef enum _I3C_XFER_TYPE {
     I3C_XFER_TYPE_ADDR_ASSIGN = 0x1U,
     I3C_XFER_CCC_SET          = 0x2U,
     I3C_XFER_CCC_GET          = 0x3U,
-    I3C_XFER_TYPE_DATA        = 0x4U
+    I3C_XFER_TYPE_TX_DATA     = 0x4U,
+    I3C_XFER_TYPE_RX_DATA     = 0x5U
 } I3C_XFER_TYPE;
 
 /* i3c message communication errors */
@@ -517,6 +525,7 @@ typedef struct _i3c_xfer_t {
     volatile I3C_XFER_STATUS status;     /* transfer status                            */
     volatile uint8_t         error;      /* error if any for this transfer             */
     volatile uint8_t         addr_len;   /* Dual usage: Address of slave or length     */
+    volatile uint8_t         slv_rx_resp_pending; /* set by DMA cb after slave-RX success */
 } i3c_xfer_t;
 
 /**
@@ -879,6 +888,45 @@ static inline uint8_t i3c_get_rx_buf_thld(I3C_Type *i3c)
     }
 
     return rx_thld_val;
+}
+
+/**
+  \fn          uint8_t i3c_get_buflen_to_threshold(uint16_t buflen)
+  \brief       Get buffer threshold for buffer length (in bytes)
+  \            Each entry is of 4 bytes.
+  \param[in]   bytes  Length of data in bytes
+  \return      Buffer thresold value
+*/
+static inline uint8_t i3c_get_buflen_to_threshold(uint16_t buflen)
+{
+    uint8_t threshold = 0;
+    uint8_t pos = TOTAL_BITS(buflen) - 1;
+
+    /* As per DW I3C Datasheet:
+     * threshold = 1 entry when bytes = 16 (4th bit),
+     * threshold = 2 entries when bytes = 32 (5th bit),
+     * threshold = 3 entries when bytes = 64 (6th bit) .. continues
+     */
+    while (pos > 3) {
+        /* Iterate from last bit till 4th bit to find the MSB */
+        if (buflen & BIT(pos)) {
+            threshold = pos;
+            break;
+        } else {
+            pos--;
+        }
+    }
+
+    if (threshold) {
+        /* The valid threshold is from bit 4*/
+        threshold -= 3;
+
+        if (threshold > I3C_DATA_BUFFER_THLD_CTRL_MAX_THLD) {
+            threshold = I3C_DATA_BUFFER_THLD_CTRL_MAX_THLD;
+        }
+    }
+
+    return threshold;
 }
 
 /**

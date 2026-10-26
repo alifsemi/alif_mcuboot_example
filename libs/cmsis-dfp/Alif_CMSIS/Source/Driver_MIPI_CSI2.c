@@ -34,9 +34,7 @@
 #include "Driver_CSI_Private.h"
 #include "Camera_Sensor.h"
 #include "sys_utils.h"
-
-#define PLL_CLK1 SOC_FEAT_PLL_CLK1_MAX_HZ
-#define PLL_CLK3 SOC_FEAT_PLL_CLK3_MAX_HZ
+#include "sys_clocks.h"
 
 #if defined(RTE_Drivers_MIPI_CSI2)
 
@@ -207,8 +205,8 @@ static int32_t CSI2_Initialize(ARM_MIPI_CSI2_SignalEvent_t cb_event, CSI_RESOURC
 
     /* Pixel clock divider */
     CSI2->csi_pixclk_div =
-        (int) (((RTE_CSI2_PIX_CLK_SEL ? (float) PLL_CLK3 : (float) (PLL_CLK1 / 2)) / pixclock) +
-               0.5f);
+        (int) (((RTE_CSI2_PIX_CLK_SEL ? (float) SOC_FEAT_PIX_CLKSEL_PLL_HZ :
+                        (float) GetSystemAXIClock()) / pixclock) + 0.5f);
 
     /* Timing calculation for Camera mode */
     if (ipi_info->ipi_mode == CSI_IPI_MODE_CAM_TIMIMG) {

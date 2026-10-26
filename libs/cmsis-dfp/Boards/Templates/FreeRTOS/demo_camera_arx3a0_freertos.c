@@ -114,24 +114,54 @@ void vApplicationIdleHook(void)
 
 /*****************Only for FreeRTOS use *************************/
 
-/* @Note: ARX3A0 Camera Sensor configurations
- *        are directly borrowed from ARX3A0 Camera Sensor drivers,
- *        for detail refer ARX3A0 driver.
+/* Camera Sensor Selection
+ * Supports: ARX3A0, MT9M114, OV5675
  *
- * Selected ARX3A0 Camera Sensor configurations:
- *   - Interface     : MIPI CSI2
- *   - Resolution    : 560X560
- *   - Output Format : RAW Bayer10
+ * Select sensor by defining one of:
+ *   - CAMERA_SENSOR_ARX3A0  (560x560,  IPI-16 RAW8)
+ *   - CAMERA_SENSOR_MT9M114 (1280x720, IPI-16 RAW8)
+ *   - CAMERA_SENSOR_OV5675  (1296x972, IPI-16 RAW8)
+ *
+ * Note: Sensors output RAW10, but CPI interface default is IPI-16 RAW8.
+ *       CPI color mode can be changed via RTE configuration if needed.
  */
 
-/* ARX3A0 Camera Sensor Resolution. */
-#define ARX3A0_CAMERA_RESOLUTION_560x560 0
-#define ARX3A0_CAMERA_RESOLUTION         ARX3A0_CAMERA_RESOLUTION_560x560
-
-#if (ARX3A0_CAMERA_RESOLUTION == ARX3A0_CAMERA_RESOLUTION_560x560)
-#define FRAME_WIDTH  (560)
-#define FRAME_HEIGHT (560)
+/* Default sensor selection - modify as needed */
+#ifndef CAMERA_SENSOR_SELECT
+#define CAMERA_SENSOR_SELECT         CAMERA_SENSOR_OV5675
 #endif
+
+/* Sensor definitions */
+#define CAMERA_SENSOR_ARX3A0         0
+#define CAMERA_SENSOR_MT9M114        1
+#define CAMERA_SENSOR_OV5675         2
+
+/* Sensor Configuration based on selection */
+#if (CAMERA_SENSOR_SELECT == CAMERA_SENSOR_ARX3A0)
+  #define SELECTED_CAMERA_SENSOR     "ARX3A0"
+  #define FRAME_WIDTH                (560)
+  #define FRAME_HEIGHT               (560)
+
+#elif (CAMERA_SENSOR_SELECT == CAMERA_SENSOR_MT9M114)
+  #define SELECTED_CAMERA_SENSOR     "MT9M114"
+  #define FRAME_WIDTH                (1280)
+  #define FRAME_HEIGHT               (720)
+
+#elif (CAMERA_SENSOR_SELECT == CAMERA_SENSOR_OV5675)
+  #define SELECTED_CAMERA_SENSOR     "OV5675"
+  #define FRAME_WIDTH                (1296)
+  #define FRAME_HEIGHT               (972)
+
+#else
+  #error "Invalid CAMERA_SENSOR_SELECT! Valid: ARX3A0, MT9M114, OV5675"
+#endif
+
+/* Camera Sensor configurations
+ * Resolution and IPI format based on selected sensor:
+ *   - ARX3A0  : 560x560,  IPI-16 RAW8
+ *   - MT9M114 : 1280x720, IPI-16 RAW8
+ *   - OV5675  : 1296x972, IPI-16 RAW8
+ */
 
 /* Allocate Camera frame buffer memory using memory pool section in
  *  Linker script (sct scatter) file.
@@ -470,7 +500,9 @@ void camera_demo_thread_entry(void *pvParameters)
     ARM_DRIVER_VERSION version;
     ARG_UNUSED(pvParameters);
 
-    printf("\r\n \t\t >>> ARX3A0 Camera Sensor demo with FreeRTOS is starting up!!! <<< \r\n");
+    printf("\r\n \t\t >>> %s Camera Sensor demo with FreeRTOS is starting up!!! <<< \r\n",
+           SELECTED_CAMERA_SENSOR);
+    printf("\r\n \t\t Resolution: %dx%d \r\n", FRAME_WIDTH, FRAME_HEIGHT);
 
     /* Allocated memory address for
      *   - Camera frame buffer and
@@ -543,8 +575,7 @@ void camera_demo_thread_entry(void *pvParameters)
      * almost everything.
      */
 
-    runp.memory_blocks  = MRAM_MASK | SRAM0_MASK;
-
+    runp.memory_blocks  = MRAM_MASK | SRAM0_MASK | SRAM1_MASK;
     runp.phy_pwr_gating = MIPI_PLL_DPHY_MASK | MIPI_TX_DPHY_MASK | MIPI_RX_DPHY_MASK | LDO_PHY_MASK;
 
     /* Set the new run configuration */
@@ -686,10 +717,10 @@ void camera_demo_thread_entry(void *pvParameters)
      *   dump binary memory path_with_filename.fileformat starting_address ending_address
      *
      *   example:(update user directory name)
-     *    dump binary memory /home/user/camera_dump/cam_image0_560p.bin 0x8000000 0x804C8FF
+     *    dump binary memory ~/cam_image0_560p.bin 0x8000000 0x804C8FF
      *
      *   Bayer to RGB:
-     *    dump binary memory /home/user/camera_dump/cam_image0_Bayer_to_RGB_560p.tif 0x8000000
+     *    dump binary memory ~/cam_image0_Bayer_to_RGB_560p.tif 0x8000000
      * 0x80E5B69
      *
      *   2)To dump memory using Trace32
@@ -697,10 +728,10 @@ void camera_demo_thread_entry(void *pvParameters)
      *   data.save.binary path_with_filename.fileformat starting_address--ending_address
      *
      *   example:(update user directory name)
-     *    data.save.binary /home/user/camera_dump/cam_image0_560p.bin 0x8000000--0x804C8FF
+     *    data.save.binary ~/cam_image0_%s_%dx%d.bin 0x8000000--0x804C8FF
      *
      *   Bayer to RGB:
-     *    data.save.binary /home/user/camera_dump/cam_image0_Bayer_to_RGB_560p.tif
+     *    data.save.binary ~/cam_image0_%s_Bayer_to_RGB_%dx%d.tif
      * 0x8000000--0x80E5B69
      *
      *   This commands will dump memory from staring address to ending address
@@ -712,22 +743,23 @@ void camera_demo_thread_entry(void *pvParameters)
     printf("\n  Use below commands in Commands tab: update user directory name \r\n");
 
 #if IMAGE_CONVERSION_BAYER_TO_RGB_EN
-    printf("Ulink:\n   dump binary memory /home/user/camera_dump/cam_image0_Bayer_to_RGB_560p.tif "
-           "0x%X 0x%X \r\n",
+    printf("dump binary memory ~/%s_rgb_%dx%d.tif 0x%X 0x%X\n",
+           SELECTED_CAMERA_SENSOR, FRAME_WIDTH, FRAME_HEIGHT,
            (uint32_t) bayer_to_rgb_buffer_pool,
            (uint32_t) (bayer_to_rgb_buffer_pool + BAYER_TO_RGB_BUFFER_POOL_SIZE - 1));
-    printf("T32:\n   data.save.binary /home/user/camera_dump/cam_image0_Bayer_to_RGB_560p.tif "
-           "0x%X--0x%X \r\n",
+    printf("T32: data.save.binary ~/%s_rgb_%dx%d.tif 0x%X--0x%X\n",
+           SELECTED_CAMERA_SENSOR, FRAME_WIDTH, FRAME_HEIGHT,
            (uint32_t) bayer_to_rgb_buffer_pool,
            (uint32_t) (bayer_to_rgb_buffer_pool + BAYER_TO_RGB_BUFFER_POOL_SIZE - 1));
 
 #else
-    printf("Ulink:\n   dump binary memory /home/user/camera_dump/cam_image0_560p.bin 0x%" PRIX32
-           " 0x%" PRIX32 "\r\n",
+    printf("Ulink: ~/%s_%dx%d.bin 0x%" PRIX32 " 0x%" PRIX32 "\n",
+           SELECTED_CAMERA_SENSOR, FRAME_WIDTH, FRAME_HEIGHT,
            (uint32_t) framebuffer_pool,
            (uint32_t) (framebuffer_pool + FRAMEBUFFER_POOL_SIZE - 1));
-    printf("T32:\n   data.save.binary /home/user/camera_dump/cam_image0_560p.bin 0x%" PRIx32
+    printf("T32:\n   data.save.binary ~/cam_image0_%s_%dx%d.bin 0x%" PRIx32
             "--0x%" PRIX32 " \r\n",
+           SELECTED_CAMERA_SENSOR, FRAME_WIDTH, FRAME_HEIGHT,
            (uint32_t) framebuffer_pool,
            (uint32_t) (framebuffer_pool + FRAMEBUFFER_POOL_SIZE - 1));
 #endif

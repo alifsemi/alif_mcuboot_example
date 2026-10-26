@@ -7,17 +7,17 @@ solution:
   select-compiler:
     - compiler: AC6
     - compiler: GCC
-    - compiler: IAR
     - compiler: CLANG
 
   # List the packs that define the device and/or board.
   packs:
-    - pack: AlifSemiconductor::Ensemble@^2.0.4-0
+    - pack: AlifSemiconductor::Ensemble@^2.2.0-0
     - pack: ARM::CMSIS@^6.2.0
     - pack: ARM::CMSIS-Compiler@^2.1.0
 
   # List different hardware targets that are used to deploy the solution.
   target-types:
+
     - type: DevKit-E8
       board: DevKit-E8
       device: AE822FA0E5597LS0

@@ -98,6 +98,9 @@ void rtc_demo_Thread(void *pvParameters);
 #define DEMO_STACK_SIZE 1024
 #define RTC_ALARM_EVENT 0x01
 
+/* RTC prescaler value for 1Hz tick from 32.768 kHz input clock */
+#define RTC_PRESCALER_FOR_1HZ  0x8000
+
 /* Thread id of thread */
 TaskHandle_t rtc_xHandle;
 
@@ -137,7 +140,7 @@ void rtc_demo_Thread(void *pvParameters)
     uint32_t   val     = 0;
     uint32_t   iter    = 5;
     uint32_t   timeout = 5;
-    int        ret     = 0;
+    int32_t    ret     = 0;
     BaseType_t xReturned;
     ARG_UNUSED(pvParameters);
 
@@ -167,6 +170,13 @@ void rtc_demo_Thread(void *pvParameters)
     if (ret != ARM_DRIVER_OK) {
         printf("\r\n Error: RTC Power up failed\n");
         goto error_uninitialize;
+    }
+
+    /* Set the prescaler value for RTC */
+    ret = RTCdrv->Control(ARM_RTC_SET_PRESCALER, RTC_PRESCALER_FOR_1HZ);
+    if (ret != ARM_DRIVER_OK) {
+        printf("\r\n Error: RTC Unable to set prescaler, error = %" PRIi32 "\r\n", ret);
+        goto error_poweroff;
     }
 
     while (iter--) {

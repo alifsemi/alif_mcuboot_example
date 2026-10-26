@@ -64,6 +64,10 @@ uint32_t SERVICES_cryptocell_get_rnd(uint32_t services_handle, uint16_t rnd_len,
 {
     get_rnd_svc_t *p_svc = (get_rnd_svc_t *) SERVICES_prepare_packet_buffer(sizeof(get_rnd_svc_t));
 
+  if (rnd_len > MAX_RND_LENGTH) {
+    return SERVICES_RESP_INVALID_PARAMETER;
+  }
+
     p_svc->send_rnd_length = rnd_len;
 
     uint32_t err =

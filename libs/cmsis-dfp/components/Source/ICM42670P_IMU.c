@@ -20,6 +20,7 @@
 
 #include "RTE_Components.h"
 #include "sys_utils.h"
+#include "board_config.h"
 
 /* IMU Driver */
 #include "Driver_IMU.h"
@@ -37,8 +38,8 @@
 #include "Driver_IO.h"
 
 /* ICM42670 Interrupt pin control IO port */
-extern ARM_DRIVER_GPIO  ARM_Driver_GPIO_(RTE_ICM42670_INT_IO_PORT);
-static ARM_DRIVER_GPIO *IO_Driver_INT = &ARM_Driver_GPIO_(RTE_ICM42670_INT_IO_PORT);
+extern ARM_DRIVER_GPIO  ARM_Driver_GPIO_(BOARD_ICM42670_IMU_IRQ_GPIO_PORT);
+static ARM_DRIVER_GPIO *IO_Driver_INT = &ARM_Driver_GPIO_(BOARD_ICM42670_IMU_IRQ_GPIO_PORT);
 #endif
 
 /* Timeout in Microsec */
@@ -245,10 +246,12 @@ static int32_t ARM_IMU_IntEnable(bool enable)
 
     if (enable) {
         /* Enable interrupt */
-        ret = IO_Driver_INT->Control(RTE_ICM42670_INT_PIN_NO, ARM_GPIO_ENABLE_INTERRUPT, &arg);
+        ret = IO_Driver_INT->Control(BOARD_ICM42670_IMU_IRQ_GPIO_PIN,
+                                     ARM_GPIO_ENABLE_INTERRUPT, &arg);
     } else {
         /* Disable interrupt */
-        ret = IO_Driver_INT->Control(RTE_ICM42670_INT_PIN_NO, ARM_GPIO_DISABLE_INTERRUPT, NULL);
+        ret = IO_Driver_INT->Control(BOARD_ICM42670_IMU_IRQ_GPIO_PIN,
+                                     ARM_GPIO_DISABLE_INTERRUPT, NULL);
     }
 
     return ret;
@@ -412,12 +415,12 @@ static int32_t IMU_Init(void)
 
 #if !RTE_ICM42670_IBI_ENABLE
     /* Initialize IO driver */
-    ret = IO_Driver_INT->Initialize(RTE_ICM42670_INT_PIN_NO, &ARM_IMU_IO_CB);
+    ret = IO_Driver_INT->Initialize(BOARD_ICM42670_IMU_IRQ_GPIO_PIN, &ARM_IMU_IO_CB);
     if (ret != ARM_DRIVER_OK) {
         return ret;
     }
     /* Power-up IO driver */
-    ret = IO_Driver_INT->PowerControl(RTE_ICM42670_INT_PIN_NO, ARM_POWER_FULL);
+    ret = IO_Driver_INT->PowerControl(BOARD_ICM42670_IMU_IRQ_GPIO_PIN, ARM_POWER_FULL);
     if (ret != ARM_DRIVER_OK) {
         return ret;
     }
@@ -858,7 +861,7 @@ static int32_t IMU_Setup(void)
     if (ret != ARM_DRIVER_OK) {
         return ret;
     }
-    ret = IO_Driver_INT->SetDirection(RTE_ICM42670_INT_PIN_NO, GPIO_PIN_DIRECTION_INPUT);
+    ret = IO_Driver_INT->SetDirection(BOARD_ICM42670_IMU_IRQ_GPIO_PIN, GPIO_PIN_DIRECTION_INPUT);
     if (ret != ARM_DRIVER_OK) {
         return ret;
     }

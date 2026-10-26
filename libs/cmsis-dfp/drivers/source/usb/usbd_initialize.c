@@ -681,10 +681,22 @@ void usbd_phy_reset(USB_DRIVER *drv)
 void usbd_disconnect(USB_DRIVER *drv)
 {
     uint32_t reg;
+    uint32_t timeout = USB_DCTL_STOP_TIMEOUT;
 
     reg = drv->regs->DCTL;
     CLEAR_BIT(reg, USB_DCTL_START);
     drv->regs->DCTL = reg;
+    do {
+        reg = drv->regs->DSTS;
+        if (reg & USB_DSTS_DEVCTRLHLT) {
+            break;
+        }
+    } while (--timeout);
+#ifdef DEBUG
+    if (!timeout) {
+        printf("Timeout waiting for DEVCTRLHLT to be set\n");
+    }
+#endif
     NVIC_ClearPendingIRQ(USB_IRQ_IRQn);
     NVIC_DisableIRQ(USB_IRQ_IRQn);
 }

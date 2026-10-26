@@ -97,6 +97,7 @@
 #define SOC_FEAT_CRC_RESULT_REFLECT_ENABLE         (0)
 
 #define SOC_FEAT_ADC_REG_ALIASING                  (0)
+#define SOC_FEAT_ADC_HAS_SAMPLE_INT_CLR_BIT        (1)
 
 #define SOC_FEAT_I3C_CORE_CLK_AXI                  (1)
 
@@ -104,8 +105,9 @@
 
 #define SOC_FEAT_I2C_HAS_RESTART_CAP               (0)
 
-#define SOC_FEAT_CPI_HAS_CROPPING       (0)
-#define SOC_FEAT_HAS_ISP                (0)
+#define SOC_FEAT_CPI_HAS_CROPPING                  (0)
+#define SOC_FEAT_HAS_ISP                           (0)
+#define SOC_FEAT_CPI_HAS_STREAM_ENABLE             (0)
 
 #define SOC_FEAT_U55_M1_CAN_ACCESS_HIGHER_ADDRESS (1)
 

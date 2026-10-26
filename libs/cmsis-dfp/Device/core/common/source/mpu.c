@@ -92,8 +92,11 @@ __attribute__((weak)) void MPU_Load_Regions(void)
                               MEMATTRIDX_NORMAL_WB_RA_WA)},
 #endif
         {/* MRAM - 5.5MB : RO-1, NP-1, XN-0  */
-         .RBAR = ARM_MPU_RBAR(0x80000000, ARM_MPU_SH_NON, 1, 1, 0),
-         .RLAR = ARM_MPU_RLAR(0x8057FFFF, MEMATTRIDX_NORMAL_WT_RA)},
+         .RBAR = ARM_MPU_RBAR(APP_MRAM_HE_BASE, ARM_MPU_SH_NON, 1, 1, 0),
+         .RLAR = ARM_MPU_RLAR(APP_MRAM_USER_BASE - 1, MEMATTRIDX_NORMAL_WT_RA)},
+        {/* MRAM User - 1.5MB: RO-0, NP-1, XN-1  */
+         .RBAR = ARM_MPU_RBAR(APP_MRAM_USER_BASE, ARM_MPU_SH_NON, 0, 1, 1),
+         .RLAR = ARM_MPU_RLAR((APP_MRAM_USER_BASE + APP_MRAM_USER_SIZE - 1), MEMATTRIDX_DEVICE_nGnRE)},
         {/* OSPI Regs - 16MB : RO-0, NP-1, XN-1  */
          .RBAR = ARM_MPU_RBAR(0x83000000, ARM_MPU_SH_NON, 0, 1, 1),
          .RLAR = ARM_MPU_RLAR(0x83FFFFFF, MEMATTRIDX_DEVICE_nGnRE)},

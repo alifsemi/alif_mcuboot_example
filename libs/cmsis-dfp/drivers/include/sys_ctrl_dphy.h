@@ -24,6 +24,7 @@ extern "C" {
 #endif
 
 #include "soc.h"
+#include "sys_utils.h"
 
 /* CLKCTL_PER_MST DPHY_PLL_CTRL0 field definitions */
 #define DPHY_PLL_CTRL0_FORCE_LOCK              (1U << 0) /* Force lock to device */
@@ -72,6 +73,18 @@ extern "C" {
 #define MIPI_CLKEN_RXDPHY_CKEN                 (1U << 4) /* Enable configure clock for RX D-PHY */
 #define MIPI_CLKEN_PLLREF_CKEN                 (1U << 8) /* Enable reference clock for MIPI D-PHY PLL */
 #define MIPI_CLKEN_BYPASS_CKEN                 (1U << 12) /* Enable bypass clock for MIPI D-PHY PLL */
+
+/* CLKCTL_PER_MST DSI_CTRL field definitions */
+#define DSI_CTRL_CAM2_EN                       (1U << 9) /* Enable second camera port */
+
+/**
+ * enum SECOND_CAM_PORT
+ * second camera port
+ */
+typedef enum _SECOND_CAM_PORT {
+    SECOND_CAM_PORT_DISABLE, /**< Second camera port disable */
+    SECOND_CAM_PORT_ENABLE,  /**< Second camera port enable  */
+} SECOND_CAM_PORT;
 
 /**
  * enum DPHY_PLL_CLKSEL
@@ -134,461 +147,483 @@ typedef struct _pll_config_t {
 } pll_config_t;
 
 /**
-  \fn          static inline void enable_dphy_pll_force_lock (void)
-  \brief       Enable Force lock to device.
-  \return      none.
-*/
+ * \fn          static inline void enable_dphy_pll_force_lock (void)
+ * \brief       Enable Force lock to device.
+ * \return      none.
+ */
 static inline void enable_dphy_pll_force_lock(void)
 {
-    CLKCTL_PER_MST->DPHY_PLL_CTRL0 |= DPHY_PLL_CTRL0_FORCE_LOCK;
+    SET_BIT(CLKCTL_PER_MST->DPHY_PLL_CTRL0, DPHY_PLL_CTRL0_FORCE_LOCK);
 }
 
 /**
-  \fn          static inline void disable_dphy_pll_force_lock (void)
-  \brief       Disable Force lock to device.
-  \return      none.
-*/
+ * \fn          static inline void disable_dphy_pll_force_lock (void)
+ * \brief       Disable Force lock to device.
+ * \return      none.
+ */
 static inline void disable_dphy_pll_force_lock(void)
 {
-    CLKCTL_PER_MST->DPHY_PLL_CTRL0 &= ~DPHY_PLL_CTRL0_FORCE_LOCK;
+    CLEAR_BIT(CLKCTL_PER_MST->DPHY_PLL_CTRL0, DPHY_PLL_CTRL0_FORCE_LOCK);
 }
 
 /**
-  \fn          static inline void enable_dphy_pll_shadow_control (void)
-  \brief       Enable dphy pll shadow control.
-  \return      none.
-*/
+ * \fn          static inline void enable_dphy_pll_shadow_control (void)
+ * \brief       Enable dphy pll shadow control.
+ * \return      none.
+ */
 static inline void enable_dphy_pll_shadow_control(void)
 {
-    CLKCTL_PER_MST->DPHY_PLL_CTRL0 |= DPHY_PLL_CTRL0_SHADOW_CONTROL;
+    SET_BIT(CLKCTL_PER_MST->DPHY_PLL_CTRL0, DPHY_PLL_CTRL0_SHADOW_CONTROL);
 }
 
 /**
-  \fn          static inline void disable_dphy_pll_shadow_control (void)
-  \brief       Disable dphy pll shadow control.
-  \return      none.
-*/
+ * \fn          static inline void disable_dphy_pll_shadow_control (void)
+ * \brief       Disable dphy pll shadow control.
+ * \return      none.
+ */
 static inline void disable_dphy_pll_shadow_control(void)
 {
-    CLKCTL_PER_MST->DPHY_PLL_CTRL0 &= ~DPHY_PLL_CTRL0_SHADOW_CONTROL;
+    CLEAR_BIT(CLKCTL_PER_MST->DPHY_PLL_CTRL0, DPHY_PLL_CTRL0_SHADOW_CONTROL);
 }
 
 /**
-  \fn          static inline void enable_dphy_updatepll (void)
-  \brief       Enable dphy updatepll.
-  \return      none.
-*/
+ * \fn          static inline void enable_dphy_updatepll (void)
+ * \brief       Enable dphy updatepll.
+ * \return      none.
+ */
 static inline void enable_dphy_updatepll(void)
 {
-    CLKCTL_PER_MST->DPHY_PLL_CTRL0 |= DPHY_PLL_CTRL0_UPDATEPLL;
+    SET_BIT(CLKCTL_PER_MST->DPHY_PLL_CTRL0, DPHY_PLL_CTRL0_UPDATEPLL);
 }
 
 /**
-  \fn          static inline void disable_dphy_updatepll (void)
-  \brief       Disable dphy updatepll.
-  \return      none.
-*/
+ * \fn          static inline void disable_dphy_updatepll (void)
+ * \brief       Disable dphy updatepll.
+ * \return      none.
+ */
 static inline void disable_dphy_updatepll(void)
 {
-    CLKCTL_PER_MST->DPHY_PLL_CTRL0 &= ~DPHY_PLL_CTRL0_UPDATEPLL;
+    CLEAR_BIT(CLKCTL_PER_MST->DPHY_PLL_CTRL0, DPHY_PLL_CTRL0_UPDATEPLL);
 }
 
 /**
-  \fn          static inline void enable_dphy_pll_shadow_clear (void)
-  \brief       Enable dphy pll shadow clear.
-  \return      none.
-*/
+ * \fn          static inline void enable_dphy_pll_shadow_clear (void)
+ * \brief       Enable dphy pll shadow clear.
+ * \return      none.
+ */
 static inline void enable_dphy_pll_shadow_clear(void)
 {
-    CLKCTL_PER_MST->DPHY_PLL_CTRL0 |= DPHY_PLL_CTRL0_SHADOW_CLEAR;
+    SET_BIT(CLKCTL_PER_MST->DPHY_PLL_CTRL0, DPHY_PLL_CTRL0_SHADOW_CLEAR);
 }
 
 /**
-  \fn          static inline void disable_dphy_pll_shadow_clear (void)
-  \brief       Disable dphy pll shadow clear.
-  \return      none.
-*/
+ * \fn          static inline void disable_dphy_pll_shadow_clear (void)
+ * \brief       Disable dphy pll shadow clear.
+ * \return      none.
+ */
 static inline void disable_dphy_pll_shadow_clear(void)
 {
-    CLKCTL_PER_MST->DPHY_PLL_CTRL0 &= ~DPHY_PLL_CTRL0_SHADOW_CLEAR;
+    CLEAR_BIT(CLKCTL_PER_MST->DPHY_PLL_CTRL0, DPHY_PLL_CTRL0_SHADOW_CLEAR);
 }
 
 /**
-  \fn          static inline void set_dphy_pll_configuration (pll_config_t *info)
-  \brief       Set dphy pll configuration.
-  \param[in]    info   Pointer to pll configuration structure.
-  \return      none.
-*/
+ * \fn          static inline void set_dphy_pll_configuration (pll_config_t *info)
+ * \brief       Set dphy pll configuration.
+ * \param[in]    info   Pointer to pll configuration structure.
+ * \return      none.
+ */
 static inline void set_dphy_pll_configuration(pll_config_t *info)
 {
-    CLKCTL_PER_MST->DPHY_PLL_CTRL0 &= ~DPHY_PLL_CTRL0_GMP_CTRL_Msk;
-    CLKCTL_PER_MST->DPHY_PLL_CTRL0 |= (info->pll_gmp_ctrl << DPHY_PLL_CTRL0_GMP_CTRL_Pos);
+    CLEAR_BIT(CLKCTL_PER_MST->DPHY_PLL_CTRL0, DPHY_PLL_CTRL0_GMP_CTRL_Msk);
+    SET_BIT(CLKCTL_PER_MST->DPHY_PLL_CTRL0, (info->pll_gmp_ctrl << DPHY_PLL_CTRL0_GMP_CTRL_Pos));
 
-    CLKCTL_PER_MST->DPHY_PLL_CTRL1 &= ~DPHY_PLL_CTRL1_FEEDBACK_MULT_RATIO_Msk;
-    CLKCTL_PER_MST->DPHY_PLL_CTRL1 |= (info->pll_m << DPHY_PLL_CTRL1_FEEDBACK_MULT_RATIO_Pos);
+    CLEAR_BIT(CLKCTL_PER_MST->DPHY_PLL_CTRL1, DPHY_PLL_CTRL1_FEEDBACK_MULT_RATIO_Msk);
+    SET_BIT(CLKCTL_PER_MST->DPHY_PLL_CTRL1,
+            (info->pll_m << DPHY_PLL_CTRL1_FEEDBACK_MULT_RATIO_Pos));
 
-    CLKCTL_PER_MST->DPHY_PLL_CTRL1 &= ~DPHY_PLL_CTRL1_INPUT_DIV_FACTOR_Msk;
-    CLKCTL_PER_MST->DPHY_PLL_CTRL1 |= (info->pll_n << DPHY_PLL_CTRL1_INPUT_DIV_FACTOR_Pos);
+    CLEAR_BIT(CLKCTL_PER_MST->DPHY_PLL_CTRL1, DPHY_PLL_CTRL1_INPUT_DIV_FACTOR_Msk);
+    SET_BIT(CLKCTL_PER_MST->DPHY_PLL_CTRL1, (info->pll_n << DPHY_PLL_CTRL1_INPUT_DIV_FACTOR_Pos));
 
-    CLKCTL_PER_MST->DPHY_PLL_CTRL2 &= ~DPHY_PLL_CTRL2_CPBIAS_CTRL_Msk;
-    CLKCTL_PER_MST->DPHY_PLL_CTRL2 |= (info->pll_cpbias_ctrl << DPHY_PLL_CTRL2_CPBIAS_CTRL_Pos);
+    CLEAR_BIT(CLKCTL_PER_MST->DPHY_PLL_CTRL2, DPHY_PLL_CTRL2_CPBIAS_CTRL_Msk);
+    SET_BIT(CLKCTL_PER_MST->DPHY_PLL_CTRL2,
+            (info->pll_cpbias_ctrl << DPHY_PLL_CTRL2_CPBIAS_CTRL_Pos));
 
-    CLKCTL_PER_MST->DPHY_PLL_CTRL2 &= ~DPHY_PLL_CTRL2_INT_CTRL_Msk;
-    CLKCTL_PER_MST->DPHY_PLL_CTRL2 |= (info->pll_int_ctrl << DPHY_PLL_CTRL2_INT_CTRL_Pos);
+    CLEAR_BIT(CLKCTL_PER_MST->DPHY_PLL_CTRL2, DPHY_PLL_CTRL2_INT_CTRL_Msk);
+    SET_BIT(CLKCTL_PER_MST->DPHY_PLL_CTRL2, (info->pll_int_ctrl << DPHY_PLL_CTRL2_INT_CTRL_Pos));
 
-    CLKCTL_PER_MST->DPHY_PLL_CTRL2 &= ~DPHY_PLL_CTRL2_PROP_CTRL_Msk;
-    CLKCTL_PER_MST->DPHY_PLL_CTRL2 |= (info->pll_prop_ctrl << DPHY_PLL_CTRL2_PROP_CTRL_Pos);
+    CLEAR_BIT(CLKCTL_PER_MST->DPHY_PLL_CTRL2, DPHY_PLL_CTRL2_PROP_CTRL_Msk);
+    SET_BIT(CLKCTL_PER_MST->DPHY_PLL_CTRL2, (info->pll_prop_ctrl << DPHY_PLL_CTRL2_PROP_CTRL_Pos));
 
-    CLKCTL_PER_MST->DPHY_PLL_CTRL2 &= ~DPHY_PLL_CTRL2_VCO_CTRL_Msk;
-    CLKCTL_PER_MST->DPHY_PLL_CTRL2 |= (info->pll_vco_ctrl << DPHY_PLL_CTRL2_VCO_CTRL_Pos);
+    CLEAR_BIT(CLKCTL_PER_MST->DPHY_PLL_CTRL2, DPHY_PLL_CTRL2_VCO_CTRL_Msk);
+    SET_BIT(CLKCTL_PER_MST->DPHY_PLL_CTRL2, (info->pll_vco_ctrl << DPHY_PLL_CTRL2_VCO_CTRL_Pos));
 }
 
 /**
-  \fn          static inline void set_dphy_pll_clksel (void)
-  \brief       Set dphy CLKEXT divider selection.
-  \param[in]   clksel dphy CLKEXT divider selection to set.
-  \return      none.
-*/
+ * \fn          static inline void set_dphy_pll_clksel (void)
+ * \brief       Set dphy CLKEXT divider selection.
+ * \param[in]   clksel dphy CLKEXT divider selection to set.
+ * \return      none.
+ */
 static inline void set_dphy_pll_clksel(DPHY_PLL_CLKSEL clksel)
 {
-    CLKCTL_PER_MST->DPHY_PLL_CTRL0 &= ~DPHY_PLL_CTRL0_CLKSEL_Msk;
-    CLKCTL_PER_MST->DPHY_PLL_CTRL0 |= (clksel << DPHY_PLL_CTRL0_CLKSEL_Pos);
+    CLEAR_BIT(CLKCTL_PER_MST->DPHY_PLL_CTRL0, DPHY_PLL_CTRL0_CLKSEL_Msk);
+    SET_BIT(CLKCTL_PER_MST->DPHY_PLL_CTRL0, (clksel << DPHY_PLL_CTRL0_CLKSEL_Pos));
 }
 
 /**
-  \fn          static inline void set_tx_dphy_txrx (DPHY_MODE mode)
-  \brief       Selects master or slave configuration for the dphy.
-  \param[in]   mode select Mater/Slave.
-  \return      none.
-*/
+ * \fn          static inline void enable_second_cam_port (void)
+ * \brief       Enable second camera port.
+ * \return      none.
+ */
+static inline void enable_second_cam_port(void)
+{
+    SET_BIT(CLKCTL_PER_MST->DSI_CTRL, DSI_CTRL_CAM2_EN);
+}
+
+/**
+ * \fn          static inline void disable_second_cam_port (void)
+ * \brief       Disable second camera port.
+ * \return      none.
+ */
+static inline void disable_second_cam_port(void)
+{
+    CLEAR_BIT(CLKCTL_PER_MST->DSI_CTRL, DSI_CTRL_CAM2_EN);
+}
+
+/**
+ * \fn          static inline void set_tx_dphy_txrx (DPHY_MODE mode)
+ * \brief       Selects master or slave configuration for the dphy.
+ * \param[in]   mode select Master/Slave.
+ * \return      none.
+ */
 static inline void set_tx_dphy_txrx(DPHY_MODE mode)
 {
     if (mode == DPHY_MODE_MASTER) {
-        CLKCTL_PER_MST->TX_DPHY_CTRL0 |= DPHY_CTRL0_TXRXZ;
+        SET_BIT(CLKCTL_PER_MST->TX_DPHY_CTRL0, DPHY_CTRL0_TXRXZ);
     } else {
-        CLKCTL_PER_MST->TX_DPHY_CTRL0 &= ~DPHY_CTRL0_TXRXZ;
+        CLEAR_BIT(CLKCTL_PER_MST->TX_DPHY_CTRL0, DPHY_CTRL0_TXRXZ);
     }
 }
 
 /**
-  \fn          static inline void set_rx_dphy_txrx (DPHY_MODE mode)
-  \brief       Selects master or slave configuration for the dphy.
-  \param[in]   mode select Mater/Slave.
-  \return      none.
-*/
+ * \fn          static inline void set_rx_dphy_txrx (DPHY_MODE mode)
+ * \brief       Selects master or slave configuration for the dphy.
+ * \param[in]   mode select Mater/Slave.
+ * \return      none.
+ */
 static inline void set_rx_dphy_txrx(DPHY_MODE mode)
 {
     if (mode == DPHY_MODE_MASTER) {
-        CLKCTL_PER_MST->RX_DPHY_CTRL0 |= DPHY_CTRL0_TXRXZ;
+        SET_BIT(CLKCTL_PER_MST->RX_DPHY_CTRL0, DPHY_CTRL0_TXRXZ);
     } else {
-        CLKCTL_PER_MST->RX_DPHY_CTRL0 &= ~DPHY_CTRL0_TXRXZ;
+        CLEAR_BIT(CLKCTL_PER_MST->RX_DPHY_CTRL0, DPHY_CTRL0_TXRXZ);
     }
 }
 
 /**
-  \fn          static inline void set_tx_dphy_testport_select (DPHY_TESTPORT_SELECT testport)
-  \brief       Test port select for dphy.
-  \param[in]   testport dphy CLKEXT divider selection to set.
-  \return      none.
-*/
+ * \fn          static inline void set_tx_dphy_testport_select (DPHY_TESTPORT_SELECT testport)
+ * \brief       Test port select for dphy.
+ * \param[in]   testport dphy CLKEXT divider selection to set.
+ * \return      none.
+ */
 static inline void set_tx_dphy_testport_select(DPHY_TESTPORT_SELECT testport)
 {
     if (testport == DPHY_TESTPORT_SELECT_RX) {
-        CLKCTL_PER_MST->TX_DPHY_CTRL0 |= DPHY_CTRL0_TESTPORT_SEL;
+        SET_BIT(CLKCTL_PER_MST->TX_DPHY_CTRL0, DPHY_CTRL0_TESTPORT_SEL);
     } else {
-        CLKCTL_PER_MST->TX_DPHY_CTRL0 &= ~DPHY_CTRL0_TESTPORT_SEL;
+        CLEAR_BIT(CLKCTL_PER_MST->TX_DPHY_CTRL0, DPHY_CTRL0_TESTPORT_SEL);
     }
 }
 
 /**
-  \fn          static inline void set_rx_dphy_testport_select (DPHY_TESTPORT_SELECT testport)
-  \brief       Test port select for dphy.
-  \param[in]   testport dphy CLKEXT divider selection to set.
-  \return      none.
-*/
+ * \fn          static inline void set_rx_dphy_testport_select (DPHY_TESTPORT_SELECT testport)
+ * \brief       Test port select for dphy.
+ * \param[in]   testport dphy CLKEXT divider selection to set.
+ * \return      none.
+ */
 static inline void set_rx_dphy_testport_select(DPHY_TESTPORT_SELECT testport)
 {
     if (testport == DPHY_TESTPORT_SELECT_RX) {
-        CLKCTL_PER_MST->RX_DPHY_CTRL0 |= DPHY_CTRL0_TESTPORT_SEL;
+        SET_BIT(CLKCTL_PER_MST->RX_DPHY_CTRL0, DPHY_CTRL0_TESTPORT_SEL);
     } else {
-        CLKCTL_PER_MST->RX_DPHY_CTRL0 &= ~DPHY_CTRL0_TESTPORT_SEL;
+        CLEAR_BIT(CLKCTL_PER_MST->RX_DPHY_CTRL0, DPHY_CTRL0_TESTPORT_SEL);
     }
 }
 
 /**
-  \fn          static inline void set_tx_dphy_hsfreqrange (uint32_t range)
-  \brief       Set dphy Module operating frequency.
-  \param[in]   range dphy hsfreqrange to set.
-  \return      none.
-*/
+ * \fn          static inline void set_tx_dphy_hsfreqrange (uint32_t range)
+ * \brief       Set dphy Module operating frequency.
+ * \param[in]   range dphy hsfreqrange to set.
+ * \return      none.
+ */
 static inline void set_tx_dphy_hsfreqrange(uint32_t range)
 {
-    CLKCTL_PER_MST->TX_DPHY_CTRL0 &= ~DPHY_CTRL0_HSFREQRANGE_Msk;
-    CLKCTL_PER_MST->TX_DPHY_CTRL0 |= (range << DPHY_CTRL0_HSFREQRANGE_Pos);
+    CLEAR_BIT(CLKCTL_PER_MST->TX_DPHY_CTRL0, DPHY_CTRL0_HSFREQRANGE_Msk);
+    SET_BIT(CLKCTL_PER_MST->TX_DPHY_CTRL0, (range << DPHY_CTRL0_HSFREQRANGE_Pos));
 }
 
 /**
-  \fn          static inline void set_rx_dphy_hsfreqrange (uint32_t range)
-  \brief       Set dphy Module operating frequency.
-  \param[in]   range dphy hsfreqrange to set.
-  \return      none.
-*/
+ * \fn          static inline void set_rx_dphy_hsfreqrange (uint32_t range)
+ * \brief       Set dphy Module operating frequency.
+ * \param[in]   range dphy hsfreqrange to set.
+ * \return      none.
+ */
 static inline void set_rx_dphy_hsfreqrange(uint32_t range)
 {
-    CLKCTL_PER_MST->RX_DPHY_CTRL0 &= ~DPHY_CTRL0_HSFREQRANGE_Msk;
-    CLKCTL_PER_MST->RX_DPHY_CTRL0 |= (range << DPHY_CTRL0_HSFREQRANGE_Pos);
+    CLEAR_BIT(CLKCTL_PER_MST->RX_DPHY_CTRL0, DPHY_CTRL0_HSFREQRANGE_Msk);
+    SET_BIT(CLKCTL_PER_MST->RX_DPHY_CTRL0, (range << DPHY_CTRL0_HSFREQRANGE_Pos));
 }
 
 /**
-  \fn          static inline void set_tx_dphy_cfgclkfreqrange (uint32_t range)
-  \brief       Set dphy Input configure clock frequency
-  \param[in]   range dphy cfgclkfreqrange to set.
-  \return      none.
-*/
+ * \fn          static inline void set_tx_dphy_cfgclkfreqrange (uint32_t range)
+ * \brief       Set dphy Input configure clock frequency
+ * \param[in]   range dphy cfgclkfreqrange to set.
+ * \return      none.
+ */
 static inline void set_tx_dphy_cfgclkfreqrange(uint32_t range)
 {
-    CLKCTL_PER_MST->TX_DPHY_CTRL0 &= ~DPHY_CTRL0_CFGCLKFREQRANGE_Msk;
-    CLKCTL_PER_MST->TX_DPHY_CTRL0 |= (range << DPHY_CTRL0_CFGCLKFREQRANGE_Pos);
+    CLEAR_BIT(CLKCTL_PER_MST->TX_DPHY_CTRL0, DPHY_CTRL0_CFGCLKFREQRANGE_Msk);
+    SET_BIT(CLKCTL_PER_MST->TX_DPHY_CTRL0, (range << DPHY_CTRL0_CFGCLKFREQRANGE_Pos));
 }
 
 /**
-  \fn          static inline void set_rx_dphy_cfgclkfreqrange (uint32_t range)
-  \brief       Set dphy Input configure clock frequency
-  \param[in]   range dphy cfgclkfreqrange to set.
-  \return      none.
-*/
+ * \fn          static inline void set_rx_dphy_cfgclkfreqrange (uint32_t range)
+ * \brief       Set dphy Input configure clock frequency
+ * \param[in]   range dphy cfgclkfreqrange to set.
+ * \return      none.
+ */
 static inline void set_rx_dphy_cfgclkfreqrange(uint32_t range)
 {
-    CLKCTL_PER_MST->RX_DPHY_CTRL0 &= ~DPHY_CTRL0_CFGCLKFREQRANGE_Msk;
-    CLKCTL_PER_MST->RX_DPHY_CTRL0 |= (range << DPHY_CTRL0_CFGCLKFREQRANGE_Pos);
+    CLEAR_BIT(CLKCTL_PER_MST->RX_DPHY_CTRL0, DPHY_CTRL0_CFGCLKFREQRANGE_Msk);
+    SET_BIT(CLKCTL_PER_MST->RX_DPHY_CTRL0, (range << DPHY_CTRL0_CFGCLKFREQRANGE_Pos));
 }
 
 /**
-  \fn          static inline void set_tx_dphy_basedir (DPHY_DATA_LANE lane)
-  \brief       Configures the base direction for dphy data lane
-  \param[in]   lane dphy base direction for data lane.
-  \return      none.
-*/
+ * \fn          static inline void set_tx_dphy_basedir (DPHY_DATA_LANE lane)
+ * \brief       Configures the base direction for dphy data lane
+ * \param[in]   lane dphy base direction for data lane.
+ * \return      none.
+ */
 static inline void set_tx_dphy_basedir(DPHY_DATA_LANE lane)
 {
-    CLKCTL_PER_MST->TX_DPHY_CTRL0 |= (lane << DPHY_CTRL0_BASEDIR_Pos);
+    SET_BIT(CLKCTL_PER_MST->TX_DPHY_CTRL0, (lane << DPHY_CTRL0_BASEDIR_Pos));
 }
 
 /**
-  \fn          static inline void unset_tx_dphy_basedir (DPHY_DATA_LANE lane)
-  \brief       Configures the base direction for dphy data lane
-  \param[in]   lane dphy base direction for data lane.
-  \return      none.
-*/
+ * \fn          static inline void unset_tx_dphy_basedir (DPHY_DATA_LANE lane)
+ * \brief       Configures the base direction for dphy data lane
+ * \param[in]   lane dphy base direction for data lane.
+ * \return      none.
+ */
 static inline void unset_tx_dphy_basedir(DPHY_DATA_LANE lane)
 {
-    CLKCTL_PER_MST->TX_DPHY_CTRL0 &= ~(lane << DPHY_CTRL0_BASEDIR_Pos);
+    CLEAR_BIT(CLKCTL_PER_MST->TX_DPHY_CTRL0, (lane << DPHY_CTRL0_BASEDIR_Pos));
 }
 
 /**
-  \fn          static inline void set_rx_dphy_basedir (DPHY_DATA_LANE lane)
-  \brief       Configures the base direction for dphy data lane
-  \param[in]   lane dphy base direction for data lane.
-  \return      none.
-*/
+ * \fn          static inline void set_rx_dphy_basedir (DPHY_DATA_LANE lane)
+ * \brief       Configures the base direction for dphy data lane
+ * \param[in]   lane dphy base direction for data lane.
+ * \return      none.
+ */
 static inline void set_rx_dphy_basedir(DPHY_DATA_LANE lane)
 {
-    CLKCTL_PER_MST->RX_DPHY_CTRL0 |= (lane << DPHY_CTRL0_BASEDIR_Pos);
+    SET_BIT(CLKCTL_PER_MST->RX_DPHY_CTRL0, (lane << DPHY_CTRL0_BASEDIR_Pos));
 }
 
 /**
-  \fn          static inline void unset_rx_dphy_basedir (DPHY_DATA_LANE lane)
-  \brief       Configures the base direction for dphy data lane
-  \param[in]   lane dphy base direction for data lane.
-  \return      none.
-*/
+ * \fn          static inline void unset_rx_dphy_basedir (DPHY_DATA_LANE lane)
+ * \brief       Configures the base direction for dphy data lane
+ * \param[in]   lane dphy base direction for data lane.
+ * \return      none.
+ */
 static inline void unset_rx_dphy_basedir(DPHY_DATA_LANE lane)
 {
-    CLKCTL_PER_MST->RX_DPHY_CTRL0 &= ~(lane << DPHY_CTRL0_BASEDIR_Pos);
+    CLEAR_BIT(CLKCTL_PER_MST->RX_DPHY_CTRL0, (lane << DPHY_CTRL0_BASEDIR_Pos));
 }
 
 /**
-  \fn          static inline void set_tx_dphy_forcerxmode (DPHY_DATA_LANE lane)
-  \brief       Controls forcerxmode pin of dphy.
-  \param[in]   lane controls forcerxmode pin for data lane.
-  \return      none.
-*/
+ * \fn          static inline void set_tx_dphy_forcerxmode (DPHY_DATA_LANE lane)
+ * \brief       Controls forcerxmode pin of dphy.
+ * \param[in]   lane controls forcerxmode pin for data lane.
+ * \return      none.
+ */
 static inline void set_tx_dphy_forcerxmode(DPHY_DATA_LANE lane)
 {
-    CLKCTL_PER_MST->TX_DPHY_CTRL1 |= (lane << DPHY_CTRL1_FORCERXMODE_Pos);
+    SET_BIT(CLKCTL_PER_MST->TX_DPHY_CTRL1, (lane << DPHY_CTRL1_FORCERXMODE_Pos));
 }
 
 /**
-  \fn          static inline void unset_tx_dphy_forcerxmode (DPHY_DATA_LANE lane)
-  \brief       Controls forcerxmode pin of dphy.
-  \param[in]   lane controls forcerxmode pin for data lane.
-  \return      none.
-*/
+ * \fn          static inline void unset_tx_dphy_forcerxmode (DPHY_DATA_LANE lane)
+ * \brief       Controls forcerxmode pin of dphy.
+ * \param[in]   lane controls forcerxmode pin for data lane.
+ * \return      none.
+ */
 static inline void unset_tx_dphy_forcerxmode(DPHY_DATA_LANE lane)
 {
-    CLKCTL_PER_MST->TX_DPHY_CTRL1 &= ~(lane << DPHY_CTRL1_FORCERXMODE_Pos);
+    CLEAR_BIT(CLKCTL_PER_MST->TX_DPHY_CTRL1, (lane << DPHY_CTRL1_FORCERXMODE_Pos));
 }
 
 /**
-  \fn          static inline void set_rx_dphy_forcerxmode (DPHY_DATA_LANE lane)
-  \brief       Controls forcerxmode pin of dphy.
-  \param[in]   lane controls forcerxmode pin for data lane.
-  \return      none.
-*/
+ * \fn          static inline void set_rx_dphy_forcerxmode (DPHY_DATA_LANE lane)
+ * \brief       Controls forcerxmode pin of dphy.
+ * \param[in]   lane controls forcerxmode pin for data lane.
+ * \return      none.
+ */
 static inline void set_rx_dphy_forcerxmode(DPHY_DATA_LANE lane)
 {
-    CLKCTL_PER_MST->RX_DPHY_CTRL1 |= (lane << DPHY_CTRL1_FORCERXMODE_Pos);
+    SET_BIT(CLKCTL_PER_MST->RX_DPHY_CTRL1, (lane << DPHY_CTRL1_FORCERXMODE_Pos));
 }
 
 /**
-  \fn          static inline void unset_rx_dphy_forcerxmode (DPHY_DATA_LANE lane)
-  \brief       Controls forcerxmode pin of dphy.
-  \param[in]   lane controls forcerxmode pin for data lane.
-  \return      none.
-*/
+ * \fn          static inline void unset_rx_dphy_forcerxmode (DPHY_DATA_LANE lane)
+ * \brief       Controls forcerxmode pin of dphy.
+ * \param[in]   lane controls forcerxmode pin for data lane.
+ * \return      none.
+ */
 static inline void unset_rx_dphy_forcerxmode(DPHY_DATA_LANE lane)
 {
-    CLKCTL_PER_MST->RX_DPHY_CTRL1 &= ~(lane << DPHY_CTRL1_FORCERXMODE_Pos);
+    CLEAR_BIT(CLKCTL_PER_MST->RX_DPHY_CTRL1, (lane << DPHY_CTRL1_FORCERXMODE_Pos));
 }
 
 /**
-  \fn          static inline void enable_tx_dphy_bist_on (void)
-  \brief       Enable configure clock for TX D-PHY
-  \return      none.
-*/
+ * \fn          static inline void enable_tx_dphy_bist_on (void)
+ * \brief       Enable configure clock for TX D-PHY
+ * \return      none.
+ */
 static inline void enable_tx_dphy_bist_on(void)
 {
-    CLKCTL_PER_MST->TX_DPHY_CTRL0 |= DPHY_CTRL0_BIST_ON;
+    SET_BIT(CLKCTL_PER_MST->TX_DPHY_CTRL0, DPHY_CTRL0_BIST_ON);
 }
 
 /**
-  \fn          static inline void disable_tx_dphy_bist_on (void)
-  \brief       Disable configure clock for TX D-PHY
-  \return      none.
-*/
+ * \fn          static inline void disable_tx_dphy_bist_on (void)
+ * \brief       Disable configure clock for TX D-PHY
+ * \return      none.
+ */
 static inline void disable_tx_dphy_bist_on(void)
 {
-    CLKCTL_PER_MST->TX_DPHY_CTRL0 &= ~DPHY_CTRL0_BIST_ON;
+    CLEAR_BIT(CLKCTL_PER_MST->TX_DPHY_CTRL0, DPHY_CTRL0_BIST_ON);
 }
 
 /**
-  \fn          static inline void enable_rx_dphy_bist_on (void)
-  \brief       Enable configure clock for RX D-PHY
-  \return      none.
-*/
+ * \fn          static inline void enable_rx_dphy_bist_on (void)
+ * \brief       Enable configure clock for RX D-PHY
+ * \return      none.
+ */
 static inline void enable_rx_dphy_bist_on(void)
 {
-    CLKCTL_PER_MST->RX_DPHY_CTRL0 |= DPHY_CTRL0_BIST_ON;
+    SET_BIT(CLKCTL_PER_MST->RX_DPHY_CTRL0, DPHY_CTRL0_BIST_ON);
 }
 
 /**
-  \fn          static inline void disable_rx_dphy_bist_on (void)
-  \brief       Disable configure clock for TX D-PHY
-  \return      none.
-*/
+ * \fn          static inline void disable_rx_dphy_bist_on (void)
+ * \brief       Disable configure clock for TX D-PHY
+ * \return      none.
+ */
 static inline void disable_rx_dphy_bist_on(void)
 {
-    CLKCTL_PER_MST->RX_DPHY_CTRL0 &= ~DPHY_CTRL0_BIST_ON;
+    CLEAR_BIT(CLKCTL_PER_MST->RX_DPHY_CTRL0, DPHY_CTRL0_BIST_ON);
 }
 
 /**
-  \fn          static inline void disable_tx_dphy_bist_on (void)
-  \brief       Disable configure clock for TX D-PHY
-  \return      none.
-*/
+ * \fn          static inline void disable_tx_dphy_bist_on (void)
+ * \brief       Disable configure clock for TX D-PHY
+ * \return      none.
+ */
 static inline DPHY_BIST_OK_STATUS get_tx_dphy_bist_ok(void)
 {
-    return (CLKCTL_PER_MST->TX_DPHY_CTRL0 & DPHY_CTRL0_BIST_OK);
+    return READ_BIT(CLKCTL_PER_MST->TX_DPHY_CTRL0, DPHY_CTRL0_BIST_OK);
 }
 
 /**
-  \fn          static inline void disable_rx_dphy_bist_on (void)
-  \brief       Disable configure clock for TX D-PHY
-  \return      none.
-*/
+ * \fn          static inline void disable_rx_dphy_bist_on (void)
+ * \brief       Disable configure clock for TX D-PHY
+ * \return      none.
+ */
 static inline DPHY_BIST_OK_STATUS get_rx_dphy_bist_ok(void)
 {
-    return (CLKCTL_PER_MST->RX_DPHY_CTRL0 & DPHY_CTRL0_BIST_OK);
+    return READ_BIT(CLKCTL_PER_MST->RX_DPHY_CTRL0, DPHY_CTRL0_BIST_OK);
 }
 
 /**
-  \fn          static inline void enable_txdphy_configure_clock (void)
-  \brief       Enable configure clock for TX D-PHY
-  \return      none.
-*/
+ * \fn          static inline void enable_txdphy_configure_clock (void)
+ * \brief       Enable configure clock for TX D-PHY
+ * \return      none.
+ */
 static inline void enable_txdphy_configure_clock(void)
 {
-    CLKCTL_PER_MST->MIPI_CKEN |= MIPI_CLKEN_TXDPHY_CKEN;
+    SET_BIT(CLKCTL_PER_MST->MIPI_CKEN, MIPI_CLKEN_TXDPHY_CKEN);
 }
 
 /**
-  \fn          static inline void disable_txdphy_configure_clock (void)
-  \brief       Disable configure clock for TX D-PHY.
-  \return      none.
-*/
+ * \fn          static inline void disable_txdphy_configure_clock (void)
+ * \brief       Disable configure clock for TX D-PHY.
+ * \return      none.
+ */
 static inline void disable_txdphy_configure_clock(void)
 {
-    CLKCTL_PER_MST->MIPI_CKEN &= ~MIPI_CLKEN_TXDPHY_CKEN;
+    CLEAR_BIT(CLKCTL_PER_MST->MIPI_CKEN, MIPI_CLKEN_TXDPHY_CKEN);
 }
 
 /**
-  \fn          static inline void enable_rxdphy_configure_clock (void)
-  \brief       Enable configure clock for RX D-PHY.
-  \return      none.
-*/
+ * \fn          static inline void enable_rxdphy_configure_clock (void)
+ * \brief       Enable configure clock for RX D-PHY.
+ * \return      none.
+ */
 static inline void enable_rxdphy_configure_clock(void)
 {
-    CLKCTL_PER_MST->MIPI_CKEN |= MIPI_CLKEN_RXDPHY_CKEN;
+    SET_BIT(CLKCTL_PER_MST->MIPI_CKEN, MIPI_CLKEN_RXDPHY_CKEN);
 }
 
 /**
-  \fn          static inline void disable_rxdphy_configure_clock (void)
-  \brief       Disable configure clock for RX D-PHY.
-  \return      none.
-*/
+ * \fn          static inline void disable_rxdphy_configure_clock (void)
+ * \brief       Disable configure clock for RX D-PHY.
+ * \return      none.
+ */
 static inline void disable_rxdphy_configure_clock(void)
 {
-    CLKCTL_PER_MST->MIPI_CKEN &= ~MIPI_CLKEN_RXDPHY_CKEN;
+    CLEAR_BIT(CLKCTL_PER_MST->MIPI_CKEN, MIPI_CLKEN_RXDPHY_CKEN);
 }
 
 /**
-  \fn          static inline void enable_dphy_pll_reference_clock (void)
-  \brief       Enable reference clock for MIPI D-PHY PLL.
-  \return      none.
-*/
+ * \fn          static inline void enable_dphy_pll_reference_clock (void)
+ * \brief       Enable reference clock for MIPI D-PHY PLL.
+ * \return      none.
+ */
 static inline void enable_dphy_pll_reference_clock(void)
 {
-    CLKCTL_PER_MST->MIPI_CKEN |= MIPI_CLKEN_PLLREF_CKEN;
+    SET_BIT(CLKCTL_PER_MST->MIPI_CKEN, MIPI_CLKEN_PLLREF_CKEN);
 }
 
 /**
-  \fn          static inline void disable_dphy_pll_reference_clock (void)
-  \brief       Disable reference clock for MIPI D-PHY PLL.
-  \return      none.
-*/
+ * \fn          static inline void disable_dphy_pll_reference_clock (void)
+ * \brief       Disable reference clock for MIPI D-PHY PLL.
+ * \return      none.
+ */
 static inline void disable_dphy_pll_reference_clock(void)
 {
-    CLKCTL_PER_MST->MIPI_CKEN &= ~MIPI_CLKEN_PLLREF_CKEN;
+    CLEAR_BIT(CLKCTL_PER_MST->MIPI_CKEN, MIPI_CLKEN_PLLREF_CKEN);
 }
 
 /**
-  \fn          static inline void enable_dphy_pll_bypass_clock (void)
-  \brief       Enable bypass clock for MIPI D-PHY PLL.
-  \return      none.
-*/
+ * \fn          static inline void enable_dphy_pll_bypass_clock (void)
+ * \brief       Enable bypass clock for MIPI D-PHY PLL.
+ * \return      none.
+ */
 static inline void enable_dphy_pll_bypass_clock(void)
 {
-    CLKCTL_PER_MST->MIPI_CKEN |= MIPI_CLKEN_BYPASS_CKEN;
+    SET_BIT(CLKCTL_PER_MST->MIPI_CKEN, MIPI_CLKEN_BYPASS_CKEN);
 }
 
 /**
-  \fn          static inline void disable_dphy_pll_bypass_clock (void)
-  \brief       Disable bypass clock for MIPI D-PHY PLL.
-  \return      none.
-*/
+ * \fn          static inline void disable_dphy_pll_bypass_clock (void)
+ * \brief       Disable bypass clock for MIPI D-PHY PLL.
+ * \return      none.
+ */
 static inline void disable_dphy_pll_bypass_clock(void)
 {
-    CLKCTL_PER_MST->MIPI_CKEN &= ~MIPI_CLKEN_BYPASS_CKEN;
+    CLEAR_BIT(CLKCTL_PER_MST->MIPI_CKEN, MIPI_CLKEN_BYPASS_CKEN);
 }
 
 #ifdef __cplusplus

@@ -29,7 +29,7 @@
 
 #ifdef __cplusplus
 #if __cplusplus
-extern "C" {
+extern "C"{
 #endif
 #endif
 
@@ -41,15 +41,16 @@ extern "C" {
  *
  */
 
-#define ISP_GAMMA_OUT_CURVE_SIZE     17 /* @brief Gamma out v10 curve size. */
 
-#define VSI_ISP_GAMMA_OUT_GAMMAY_MAX 4095 /* @brief The maximum value of GAMMA OUT GammaY. */
-#define VSI_ISP_GAMMA_OUT_GAMMAY_MIN 0    /* @brief The minimum value of GAMMA OUT GammaY. */
+#define ISP_GAMMA_OUT_CURVE_SIZE 17 /**< \brief Gamma out v10 curve size. */
+
+#define VSI_ISP_GAMMA_OUT_GAMMAY_MAX 4095          /**< \brief The maximum value of GAMMA OUT GammaY. */
+#define VSI_ISP_GAMMA_OUT_GAMMAY_MIN 0             /**< \brief The minimum value of GAMMA OUT GammaY. */
 
 /** \brief   GAMMA_OUT attributes. */
 typedef struct vsiISP_GAMMA_OUT_ATTR_S {
-    vsi_bool_t enable; /* @brief Whether to enable DPF. \n 0: Disable. \n 1: Enable. */
-    vsi_u16_t  gammaY[ISP_GAMMA_OUT_CURVE_SIZE]; /* @brief Gamma curve */
+    vsi_bool_t enable;                             /**< \brief Whether to enable DPF. \n 0: Disable. \n 1: Enable. */
+    vsi_u16_t  gammaY[ISP_GAMMA_OUT_CURVE_SIZE]; /**< \brief Gamma curve */
 } ISP_GAMMA_OUT_ATTR_S;
 
 /*****************************************************************************/
@@ -68,10 +69,10 @@ int VSI_MPI_ISP_GetGammaOutAttr(ISP_PORT IspPort, ISP_GAMMA_OUT_ATTR_S *pGammaOu
 /**
  * @brief   Sets GammaOut attributes.
  *
- * @param   IspPort           Port ID
+ * @param   IspPort             Port ID
  * @param   pGammaOutAttr     Pointer to the GammaOut attributes
  *
- * @retval  VSI_SUCCESS       Operation succeeded
+ * @retval  VSI_SUCCESS         Operation succeeded
  *
  *****************************************************************************/
 int VSI_MPI_ISP_SetGammaOutAttr(ISP_PORT IspPort, ISP_GAMMA_OUT_ATTR_S *pGammaOutAttr);

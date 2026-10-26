@@ -8,6 +8,7 @@
 #if defined(RTE_CMSIS_Compiler_STDOUT)
 #include "retarget_stdout.h"
 #include "retarget_init.h"
+#include "Driver_Common.h"
 #endif /* RTE_Compiler_IO_STDOUT */
 #include <stdio.h>
 #include <inttypes.h>
@@ -33,7 +34,6 @@ static const osThreadAttr_t app_main_attr = {
 __NO_RETURN static void app_main(void *argument)
 {
     (void) argument;
-    printf("USB Device App Started\n");
     /* SE -Service calls  */
     uint32_t      error_code         = 0;
     uint32_t      service_error_code = 0;
@@ -46,6 +46,7 @@ __NO_RETURN static void app_main(void *argument)
         WAIT_FOREVER_LOOP
     }
 #endif
+    printf("Cmsis USB Device App Started\n");
     /* Initialize the SE services */
     se_services_port_init();
     /* Example code to enable the CLKEN_USB clock */

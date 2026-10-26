@@ -44,8 +44,8 @@ extern "C" {
  * CPI pixel clock source selection
  */
 typedef enum _CPI_PIX_CLKSEL {
-    CPI_PIX_CLKSEL_400MZ, /**< Select 400 MHz clock source (PLL_CLK1/2) */
-    CPI_PIX_CLKSEL_480MZ  /**< Select 480 MHz clock source (PLL_CLK3) */
+    CPI_PIX_CLKSEL_AXI, /**< Select AXI Clock - SystemAXIClock */
+    CPI_PIX_CLKSEL_PLL  /**< Select PLL Clock - 160MHz-B1/E1C, 480MHz-E7, 400MHz-E8 */
 } CPI_PIX_CLKSEL;
 
 /**
@@ -102,13 +102,13 @@ static inline void set_cpi_pixel_clk(CPI_PIX_CLKSEL clksel, uint32_t div)
     CLKCTL_PER_MST->CAMERA_PIXCLK_CTRL |= (div << CAMERA_PIXCLK_CTRL_DIVISOR_Pos);
 
     switch (clksel) {
-    case CPI_PIX_CLKSEL_400MZ:
+    case CPI_PIX_CLKSEL_AXI:
         {
             CLKCTL_PER_MST->CAMERA_PIXCLK_CTRL &= ~CAMERA_PIXCLK_CTRL_CLK_SEL;
             break;
         }
 
-    case CPI_PIX_CLKSEL_480MZ:
+    case CPI_PIX_CLKSEL_PLL:
         {
             CLKCTL_PER_MST->CAMERA_PIXCLK_CTRL |= CAMERA_PIXCLK_CTRL_CLK_SEL;
             break;

@@ -52,6 +52,15 @@ typedef enum _RAM_TYPE {
     RAM_TYPE_HYPERRAM
 } RAM_TYPE;
 
+/**
+ * enum CONFIG_MODE.
+ * Configuration mode.
+ */
+typedef enum _CONFIG_MODE {
+    CONFIG_MODE_RTE = 0,
+    CONFIG_MODE_USER_PARAMETERS
+} CONFIG_MODE;
+
 typedef struct _ospi_psram_xip_config {
     /**< The OSPI instance to be setup in ram XIP mode */
     OSPI_INSTANCE instance;
@@ -83,21 +92,17 @@ typedef struct _ospi_psram_xip_config {
     /**< RAM type */
     RAM_TYPE ram_type;
 
+    /**< Use config parameters as passed or overwrite from build time RTE config */
+    CONFIG_MODE config_mode;
+
 #if SOC_FEAT_AES_OSPI_SIGNALS_DELAY
     /**< Delay applied to the OSPI baud2 signal delay */
     uint8_t signal_delay;
 #endif
+
 } ospi_psram_xip_config;
 
-/**
-  \fn          int ospi_psram_xip_init(ospi_psram_xip_config *config)
-  \brief       Initialize OSPI RAM xip configuration. After a successful return
-               from this function, the OSPI XIP region (for the OSPI instance specified
-               in the ospi_ram_xip_config input parameter) will be active and can be
-               used to directly read/write the memory area provided by the ram device.
-  \param[in]   config    Pointer to ram configuration information
-  \return      -1 on configuration error, 0 on success
-*/
+
 int ospi_psram_xip_init(ospi_psram_xip_config *config);
 
 #ifdef __cplusplus

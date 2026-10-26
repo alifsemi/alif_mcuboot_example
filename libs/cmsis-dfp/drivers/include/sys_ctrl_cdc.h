@@ -39,8 +39,8 @@ extern "C" {
  * CDC pixel clock source selection
  */
 typedef enum _CDC_PIX_CLKSEL {
-    CDC_PIX_CLKSEL_400MZ, /**< Select 400 MHz clock source (PLL_CLK1/2) */
-    CDC_PIX_CLKSEL_480MZ  /**< Select 480 MHz clock source (PLL_CLK3) */
+    CDC_PIX_CLKSEL_AXI, /**< Select AXI Clock - SystemAXIClock */
+    CDC_PIX_CLKSEL_PLL  /**< Select PLL Clock - 160MHz-B1/E1C, 480MHz-E7, 400MHz-E8 */
 } CDC_PIX_CLKSEL;
 
 /**
@@ -77,10 +77,10 @@ static inline void set_cdc_pixel_clk(CDC_PIX_CLKSEL clksel, uint32_t div)
     CLKCTL_PER_MST->CDC200_PIXCLK_CTRL |= (div << CDC200_PIXCLK_CTRL_DIVISOR_Pos);
 
     switch (clksel) {
-    case CDC_PIX_CLKSEL_400MZ:
+    case CDC_PIX_CLKSEL_AXI:
         CLKCTL_PER_MST->CDC200_PIXCLK_CTRL &= ~CDC200_PIXCLK_CTRL_CLK_SEL;
         break;
-    case CDC_PIX_CLKSEL_480MZ:
+    case CDC_PIX_CLKSEL_PLL:
         CLKCTL_PER_MST->CDC200_PIXCLK_CTRL |= CDC200_PIXCLK_CTRL_CLK_SEL;
         break;
     default:

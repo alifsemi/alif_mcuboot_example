@@ -38,8 +38,8 @@ extern "C" {
  * CSI pixel clock source selection
  */
 typedef enum _CSI_PIX_CLKSEL {
-    CSI_PIX_CLKSEL_400MZ, /**< Select 400 MHz clock source (PLL_CLK1/2) */
-    CSI_PIX_CLKSEL_480MZ  /**< Select 480 MHz clock source (PLL_CLK3)   */
+    CSI_PIX_CLKSEL_AXI, /**< Select AXI Clock - SystemAXIClock */
+    CSI_PIX_CLKSEL_PLL  /**< Select PLL Clock - 160MHz-B1/E1C, 480MHz-E7, 400MHz-E8 */
 } CSI_PIX_CLKSEL;
 
 /**
@@ -76,13 +76,13 @@ static inline void set_csi_pixel_clk(CSI_PIX_CLKSEL clksel, uint32_t div)
     CLKCTL_PER_MST->CSI_PIXCLK_CTRL |= (div << CSI_PIXCLK_CTRL_DIVISOR_Pos);
 
     switch (clksel) {
-    case CSI_PIX_CLKSEL_400MZ:
+    case CSI_PIX_CLKSEL_AXI:
         {
             CLKCTL_PER_MST->CSI_PIXCLK_CTRL &= ~CSI_PIXCLK_CTRL_CLK_SEL;
             break;
         }
 
-    case CSI_PIX_CLKSEL_480MZ:
+    case CSI_PIX_CLKSEL_PLL:
         {
             CLKCTL_PER_MST->CSI_PIXCLK_CTRL |= CSI_PIXCLK_CTRL_CLK_SEL;
             break;

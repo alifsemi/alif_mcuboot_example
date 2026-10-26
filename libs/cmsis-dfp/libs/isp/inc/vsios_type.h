@@ -29,7 +29,7 @@
 
 #ifdef __cplusplus
 #if __cplusplus
-extern "C" {
+extern "C"{
 #endif
 #endif
 
@@ -47,10 +47,10 @@ typedef unsigned int       vsi_dma_t;
 typedef unsigned int       vsi_phy_t;
 typedef unsigned int       vsi_reg_t;
 
-typedef bool vsi_bool_t;
+typedef bool               vsi_bool_t;
 
-#define VSI_SUCCESS 0
-#define VSI_FAILURE (-1)
+#define VSI_SUCCESS        0
+#define VSI_FAILURE        (-1)
 
 #ifdef __cplusplus
 #if __cplusplus

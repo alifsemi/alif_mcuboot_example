@@ -30,6 +30,8 @@
 #include "vsi_comm_calib.h"
 #include "mpi_isp.h"
 
+#include "mpi_isp_binning.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -54,6 +56,7 @@ typedef struct _ISP_RESOURCES {
     ISP_DEV               isp_dev_id;     /**< ISP device ID                    */
     ISP_PORT              isp_port_id;
     ISP_CHN               isp_chn_id;
+    ISP_BINNING_ATTR_S   *isp_binning_attr; /**< ISP Binning Attributes         */
     ISP_DRIVER_STATE      state;          /**< ISP driver status                */
 } ISP_RESOURCES;
 

@@ -69,6 +69,7 @@
 /*Define for FreeRTOS notification objects */
 #define I2C_MST_TRANSFER_DONE         0x01
 #define I2C_SLV_TRANSFER_DONE         0x02
+#define I2C_TRANSFER_ERR              0x04
 #define I2C_TWO_WAY_TRANSFER_DONE     (I2C_MST_TRANSFER_DONE | I2C_SLV_TRANSFER_DONE)
 /*Define for FreeRTOS*/
 #define TASK_STACK_SIZE               512
@@ -211,7 +212,17 @@ static void i2c_mst_transfer_callback(uint32_t event)
 {
     BaseType_t xHigherPriorityTaskWoken = pdFALSE, xResult = pdFALSE;
 
-    if (event & ARM_I2C_EVENT_TRANSFER_DONE) {
+    /* callback event occurred */
+    if (event & (ARM_I2C_EVENT_TRANSFER_INCOMPLETE | ARM_I2C_EVENT_ADDRESS_NACK |
+                 ARM_I2C_EVENT_BUS_ERROR | ARM_I2C_EVENT_ARBITRATION_LOST)) {
+        /* Transfer Error. */
+	event = I2C_TRANSFER_ERR;
+    } else if (event & ARM_I2C_EVENT_TRANSFER_DONE) {
+        /* Transfer Done. */
+	event = I2C_MST_TRANSFER_DONE;
+    }
+
+    if (event & I2C_MST_TRANSFER_DONE) {
         /* Transfer or receive is finished */
         xResult = xEventGroupSetBitsFromISR(i2c_event_group,
                                             I2C_MST_TRANSFER_DONE,
@@ -233,7 +244,15 @@ static void i2c_slv_transfer_callback(uint32_t event)
 {
     BaseType_t xHigherPriorityTaskWoken = pdFALSE, xResult = pdFALSE;
 
-    if (event & ARM_I2C_EVENT_TRANSFER_DONE) {
+    /* callback event occurred */
+    if (event & (ARM_I2C_EVENT_TRANSFER_INCOMPLETE | ARM_I2C_EVENT_BUS_ERROR)) {
+        /* Transfer Error. */
+	event = I2C_TRANSFER_ERR;
+    } else if (event & ARM_I2C_EVENT_TRANSFER_DONE) {
+        /* Transfer Done. */
+	event = I2C_SLV_TRANSFER_DONE;
+    }
+    if (event & I2C_SLV_TRANSFER_DONE) {
         /* Transfer or receive is finished */
         xResult = xEventGroupSetBitsFromISR(i2c_event_group,
                                             I2C_SLV_TRANSFER_DONE,

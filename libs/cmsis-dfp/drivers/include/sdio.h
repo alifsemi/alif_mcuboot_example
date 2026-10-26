@@ -23,7 +23,7 @@
 #define _SDIO_H_
 
 #include <stdint.h>
-
+#include "sd_types.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -218,17 +218,17 @@ extern "C" {
 #define SDIO_FBR_CSA_DATA           0x0FU
 #define SDIO_FBR_BLKSIZE            0x10U /* block size (2 bytes) */
 
-typedef struct _sdio_opcond_t {
-    uint8_t isInitialized;  /*!< indicates Card is initialized              */
-    uint8_t func_number;    /*!< Number of function available in the card   */
-    uint8_t memory_present; /*!< Memory Present Flag                        */
-    uint8_t s18a;           /*!< low voltage support flag                   */
-    uint8_t ocr;            /*!< operating voltage                          */
-} sdio_opcond_t;
-
-typedef struct _sdio_t {
-    sdio_opcond_t sdio_opcd; /*!< sdio card information */
-} sdio_t;
+/* ======================================================================== */
+/* SDIO Protocol API                                                        */
+/* ======================================================================== */
+SD_DRV_STATUS sdio_reset(sd_handle_t *pHsd);
+SD_DRV_STATUS sdio_get_opcond(sd_handle_t *pHsd, uint32_t ocr,
+                              uint32_t *p_resp_OPcond);
+SD_DRV_STATUS sdio_rw_direct(sd_handle_t *pHsd, uint32_t rwFlag, uint32_t fn,
+                                uint32_t addr, uint8_t writeData, uint8_t *readPtr);
+SD_DRV_STATUS sdio_rw_extended(sd_handle_t *pHsd, uint32_t rwFlag, uint32_t fn,
+                                  uint32_t addr, uint32_t incr_addr, uint8_t *buf,
+                                  uint32_t blk_cnt, uint32_t blkSize);
 
 #ifdef __cplusplus
 }

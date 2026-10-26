@@ -1,23 +1,9 @@
-/* Copyright (C) 2025 Alif Semiconductor - All Rights Reserved.
- * Use, distribution and modification of this code is permitted under the
- * terms stated in the Alif Semiconductor Software License Agreement
+/*
+ * vsios_isp.h
  *
- * You should have received a copy of the Alif Semiconductor Software
- * License Agreement with this file. If not, please write to:
- * contact@alifsemi.com, or visit: https://alifsemi.com/license
- *
+ *  Created on: 05-Sep-2025
+ *      Author: yogender
  */
-
-/*******************************************************************************
- * @file     isp_interface.h
- * @author   Shivakumar Malke
- * @email    shivakumar.malke@alifsemi.com
- * @version  V1.0.0
- * @date     07-Jun-2025
- * @brief    This header file configures which ISP modules are enabled/disabled
- * @bug      None.
- * @Note     None
- ******************************************************************************/
 
 #ifndef LIB_ISP_INC_VSIOS_ISP_H_
 #define LIB_ISP_INC_VSIOS_ISP_H_

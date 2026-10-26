@@ -21,8 +21,10 @@
 
 #include "usbd.h"
 #include "Driver_USBD.h"
+#include "sys_ctrl_usb.h"
 
 #define EP_NUM(ep_addr)      (ep_addr & ARM_USB_ENDPOINT_NUMBER_MASK)
+#define EP_DIR(ep_addr)      (ep_addr & ARM_USB_ENDPOINT_DIRECTION_MASK) ? USB_DIR_IN : USB_DIR_OUT;
 
 #define ARM_USBD_DRV_VERSION ARM_DRIVER_VERSION_MAJOR_MINOR(1, 0) /* driver version */
 
@@ -96,14 +98,22 @@ static int32_t ARM_USBD_Initialize(ARM_USBD_SignalDeviceEvent_t   cb_device_even
 }
 
 /**
- *\fn          ARM_USBD_Uninitialize
- *\brief       De-initialize USB Device Interface.
- *\param[in]   none
+ *\fn          int32_t ARM_USBD_EndpointTransferAbort(uint8_t ep_addr)
+ *\brief       Abort current USB Endpoint transfer.
+ *\param[in]   ep_addr  Endpoint Address
+                - ep_addr.0..3: Address
+                - ep_addr.7:    Direction
  *\return      execution_status
  */
-static int32_t ARM_USBD_Uninitialize(void)
+static int32_t ARM_USBD_EndpointTransferAbort(uint8_t ep_addr)
 {
-    return ARM_DRIVER_OK;
+    uint8_t  ep_num;
+    uint8_t  ep_dir;
+
+    ep_num = EP_NUM(ep_addr);
+    ep_dir = (ep_addr & ARM_USB_ENDPOINT_DIRECTION_MASK) ? USB_DIR_IN : USB_DIR_OUT;
+
+    return usbd_ep_transfer_abort(&usb_drv, ep_num, ep_dir);
 }
 
 /**
@@ -118,10 +128,16 @@ static int32_t ARM_USBD_PowerControl(ARM_POWER_STATE state)
 
     switch (state) {
     case ARM_POWER_OFF:
-        usbd_drv.drv_status.initialized = 0;
+        /* stop the controller and disable the interrupts */
+        usbd_disconnect(&usb_drv);
+        /* Disable the peripheral clock */
+        disable_usb_periph_clk();
+        /* Set the usb phy PoR mask */
+        usb_phy_por_set();
         usbd_drv.drv_status.powered     = 0;
-        NVIC_DisableIRQ(USB_IRQ_IRQn);
-        NVIC_ClearPendingIRQ(USB_IRQ_IRQn);
+        usbd_drv.usbd_state.active      = 0;
+        usbd_drv.usbd_state.speed       = 0;
+        usbd_drv.usbd_state.vbus        = 0;
         break;
     case ARM_POWER_LOW:
         return ARM_DRIVER_ERROR_UNSUPPORTED;
@@ -136,6 +152,22 @@ static int32_t ARM_USBD_PowerControl(ARM_POWER_STATE state)
         usbd_drv.drv_status.powered = 1;
         break;
     }
+
+    return ARM_DRIVER_OK;
+}
+
+/**
+ *\fn          ARM_USBD_Uninitialize
+ *\brief       De-initialize USB Device Interface.
+ *\param[in]   none
+ *\return      execution_status
+ */
+static int32_t ARM_USBD_Uninitialize(void)
+{
+    if (usbd_drv.drv_status.powered != 0) {
+        return ARM_DRIVER_ERROR;
+    }
+    usbd_drv.drv_status.initialized = 0;
 
     return ARM_DRIVER_OK;
 }
@@ -164,6 +196,7 @@ static int32_t ARM_USBD_DeviceDisconnect(void)
         return ARM_DRIVER_ERROR;
     }
     usbd_disconnect(&usb_drv);
+    usbd_drv.usbd_state.active = 0;
 
     return ARM_DRIVER_OK;
 }
@@ -176,13 +209,12 @@ static int32_t ARM_USBD_DeviceDisconnect(void)
  */
 static ARM_USBD_STATE ARM_USBD_DeviceGetState(void)
 {
-    ARM_USBD_STATE state;
+    USB_DRIVER *drv                 = &usb_drv;
 
-    memset(&state, 0, sizeof(ARM_USBD_STATE));
+    usbd_drv.usbd_state.speed = drv->speed;
+    usbd_drv.usbd_state.active = drv->active;
 
-    state.speed = ARM_USB_SPEED_HIGH;
-
-    return state;
+    return usbd_drv.usbd_state;
 }
 
 /**
@@ -349,36 +381,20 @@ static int32_t ARM_USBD_EndpointTransfer(uint8_t ep_addr, uint8_t *data, uint32_
 static uint32_t ARM_USBD_EndpointTransferGetResult(uint8_t ep_addr)
 {
     uint8_t  ep_num;
+    uint8_t  ep_dir;
     uint32_t transferred;
 
     ep_num = EP_NUM(ep_addr);
     if (ep_num == 0) {
         transferred = usb_drv.actual_length;
     } else {
-        transferred = usb_drv.num_bytes;
+        ep_dir = EP_DIR(ep_addr);
+        transferred = usb_drv.eps[USB_GET_PHYSICAL_EP(ep_num, ep_dir)].bytes_txed;
     }
 
     return transferred;
 }
 
-/**
- *\fn          int32_t ARM_USBD_EndpointTransferAbort(uint8_t ep_addr)
- *\brief       Abort current USB Endpoint transfer.
- *\param[in]   ep_addr  Endpoint Address
-                - ep_addr.0..3: Address
-                - ep_addr.7:    Direction
- *\return      execution_status
- */
-static int32_t ARM_USBD_EndpointTransferAbort(uint8_t ep_addr)
-{
-    uint8_t  ep_num;
-    uint8_t  ep_dir;
-
-    ep_num = EP_NUM(ep_addr);
-    ep_dir = (ep_addr & ARM_USB_ENDPOINT_DIRECTION_MASK) ? USB_DIR_IN : USB_DIR_OUT;
-
-    return usbd_ep_transfer_abort(&usb_drv, ep_num, ep_dir);
-}
 
 /**
  *\fn          uint16_t ARM_USBD_GetFrameNumber(void)

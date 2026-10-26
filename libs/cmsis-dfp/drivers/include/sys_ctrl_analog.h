@@ -28,6 +28,8 @@ extern "C" {
 
 #define ADC_REF_VAL         (ADC_VREF_BUF_RDIV_EN | ADC_VREF_BUF_EN | ADC_VREF_CONT)
 
+#define ANA_PERIPH_LDO_BG_CONT_VAL (ANA_PERIPH_LDO_CONT | ANA_PERIPH_BG_CONT)
+
 #define CMP_REG2_BASE       (CMP0_BASE + 0x00000004) /* CMP register2 base address */
 
 extern uint32_t analog_ldo_ref_cnt;
@@ -178,10 +180,12 @@ static inline void disable_dac12_ref_voltage(void)
 static inline void enable_adc_ref_voltage(void)
 {
     __disable_irq();
+
 #if SOC_FEAT_ADC_REG_ALIASING
     ADC_VREF->ADC_VREF_REG |= ADC_REF_VAL;
+    *((volatile uint32_t *) CMP_REG2_BASE) |= ANA_PERIPH_LDO_BG_CONT_VAL;
 #else
-    *((volatile uint32_t *) CMP_REG2_BASE) |= ADC_REF_VAL;
+    *((volatile uint32_t *) CMP_REG2_BASE) |= (ADC_REF_VAL | ANA_PERIPH_LDO_BG_CONT_VAL);
 #endif
 
     adc_vref_cnt++;
@@ -202,9 +206,10 @@ static inline void disable_adc_ref_voltage(void)
         adc_vref_cnt--;
         if (adc_vref_cnt == 0) {
 #if SOC_FEAT_ADC_REG_ALIASING
-            ADC_VREF->ADC_VREF_REG &= ~ADC_REF_VAL;
+             ADC_VREF->ADC_VREF_REG &= ~ADC_REF_VAL;
+             *((volatile uint32_t *) CMP_REG2_BASE) &= ~ANA_PERIPH_LDO_BG_CONT_VAL;
 #else
-            *((volatile uint32_t *) CMP_REG2_BASE) &= ~ADC_REF_VAL;
+             *((volatile uint32_t *) CMP_REG2_BASE) &= ~(ADC_REF_VAL | ANA_PERIPH_LDO_BG_CONT_VAL);
 #endif
         }
     }

@@ -21,6 +21,9 @@
 #define DPHY_H_
 #include "RTE_Device.h"
 
+/*Bitrate in MBPS*/
+#define CALC_BITRATE_MBPS(clock_freq) (((clock_freq) * 2U) / 1000000U)
+
 /*DPHY TX register index*/
 #define dphy4txtester_DIG_RDWR_TX_SYS_3              (0x004U)
 #define dphy4txtester_DIG_RD_TX_SYS_0                (0x01EU)
@@ -121,5 +124,61 @@
 #define DPHY_DEFAULT_PLL_INPUT_DIV_FACTOR_N     3
 /*Minimum DPHY clock frequency*/
 #define DPHY_MINIMUM_FREQUENCY                  40000000
+/*Datarate in mbps*/
+#define DATA_RATE_MBPS_MIN                      80
+#define DATA_RATE_MBPS_MAX                      2500
+
+/* PLL Analog Programmability Control */
+#define DPHY_PLL_MPLL_PROG                      0x3
+/* HS frequency range selected */
+#define DPHY_HS_FREQ_RANGE_SELECT               0x85
+/**
+ * enum DPHY_CB_SEL_VREF_LPRX_RW
+ * DPHY LP RX reference voltage
+ */
+typedef enum _DPHY_CB_SEL_VREF_LPRX_RW {
+    DPHY_CB_SEL_VREF_LPRX_RW_275MV,  /**< DPHY LPRX reference voltage 275mV */
+    DPHY_CB_SEL_VREF_LPRX_RW_300MV,  /**< DPHY LPRX reference voltage 300mV */
+    DPHY_CB_SEL_VREF_LPRX_RW_325MV,  /**< DPHY LPRX reference voltage 325mV */
+    DPHY_CB_SEL_VREF_LPRX_RW_350MV,  /**< DPHY LPRX reference voltage 350mV */
+} DPHY_CB_SEL_VREF_LPRX_RW;
+
+/**
+ * enum DPHY_CB_SEL_VREFCD_LPRX_RW
+ * DPHY contention detector reference voltage
+ */
+typedef enum _DPHY_CB_SEL_VREFCD_LPRX_RW {
+    DPHY_CB_SEL_VREFCD_LPRX_RW_275MV,  /**< DPHY contention detector reference voltage 275mV */
+    DPHY_CB_SEL_VREFCD_LPRX_RW_300MV,  /**< DPHY contention detector reference voltage 300mV */
+    DPHY_CB_SEL_VREFCD_LPRX_RW_325MV,  /**< DPHY contention detector reference voltage 325mV */
+    DPHY_CB_SEL_VREFCD_LPRX_RW_350MV,  /**< DPHY contention detector reference voltage 350mV */
+} DPHY_CB_SEL_VREFCD_LPRX_RW;
+
+/**
+ * enum DPHY_PLL_LOCK_STATE_OVERRIDE
+ * DPHY PLL lock state override
+ */
+typedef enum _DPHY_PLL_LOCK_STATE_OVERRIDE {
+    DPHY_PLL_LOCK_STATE_OVERRIDE_DISABLE, /**< DPHY PLL lock state override disable */
+    DPHY_PLL_LOCK_STATE_OVERRIDE_ENABLE,  /**< DPHY PLL lock state override enable  */
+} DPHY_PLL_LOCK_STATE_OVERRIDE;
+
+/**
+ * enum DPHY_RXCLK_RXHS_PULL_LONG_CHANNEL
+ * DPHY RX HS pull long channel
+ */
+typedef enum _DPHY_RXCLK_RXHS_PULL_LONG_CHANNEL {
+    DPHY_RXCLK_RXHS_PULL_LONG_CHANNEL_DISABLE, /**< DPHY RX HS pull long channel disable */
+    DPHY_RXCLK_RXHS_PULL_LONG_CHANNEL_ENABLE,  /**< DPHY RX HS pull long channel enable  */
+} DPHY_RXCLK_RXHS_PULL_LONG_CHANNEL;
+
+/**
+ * enum DPHY_DDL_OSC_FREQ_OVERRIDE
+ * DPHY DDL oscillation frequency override
+ */
+typedef enum _DPHY_DDL_OSC_FREQ_OVERRIDE {
+    DPHY_DDL_OSC_FREQ_OVERRIDE_DISABLE, /**< DPHY DDL oscillation frequency override disable */
+    DPHY_DDL_OSC_FREQ_OVERRIDE_ENABLE,  /**< DPHY DDL oscillation frequency override enable  */
+} DPHY_DDL_OSC_FREQ_OVERRIDE;
 
 #endif /* DPHY_H_ */

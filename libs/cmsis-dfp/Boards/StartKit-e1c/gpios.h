@@ -180,18 +180,18 @@ const struct gpioconf board_gpioconf[] = {
         5 - Pins that will generate interrupts
         6 - Interrupts that are edge sensitive. Other interrupts are level sensitive
         7 - Interrupts generated on high level or on rising edge - depending on previous setting.
-       Other pins are low level/falling edge sensitive 8 - Interrupts generated on both edges. Other
-       pins behavior is based on previous 2 settings */
+            Other pins are low level/falling edge sensitive
+        8 - Interrupts generated on both edges. Other pins behavior is based on previous 2 settings */
     {
         PORT_15,
         0,
-        (1 << PIN_7) | (1 << PIN_6) | (1 << PIN_5),
-        (1 << PIN_7) | (1 << PIN_6) | (1 << PIN_5),
-        (1 << PIN_4) | (1 << PIN_3) | (1 << PIN_2) | (1 << PIN_1) | (1 << PIN_0),
-        (1 << PIN_4) | (1 << PIN_3) | (1 << PIN_2) | (1 << PIN_1) | (1 << PIN_0),
-        (1 << PIN_4) | (1 << PIN_3) | (1 << PIN_2) | (1 << PIN_1) | (1 << PIN_0),
+        (1<<PIN_1) | (1<<PIN_0),
+        (1<<PIN_1) | (1<<PIN_0),
         0,
-        (1 << PIN_2),
+        0,
+        0,
+        0,
+        0,
     }};
 
 #endif /* __GPIOS_H__ */

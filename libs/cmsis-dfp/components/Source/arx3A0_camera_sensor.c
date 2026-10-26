@@ -18,6 +18,7 @@
  ******************************************************************************/
 /* System Includes */
 #include "RTE_Device.h"
+#include "board_config.h"
 #include "RTE_Components.h"
 #include CMSIS_device_header
 #include "Camera_Sensor.h"
@@ -99,14 +100,14 @@ static uint32_t current_integration_time;
 static uint32_t max_integration_time;
 
 /* ARX3A0 Camera reset GPIO port */
-extern ARM_DRIVER_GPIO  ARM_Driver_GPIO_(RTE_ARX3A0_CAMERA_SENSOR_RESET_GPIO_PORT);
+extern ARM_DRIVER_GPIO  ARM_Driver_GPIO_(BOARD_CAMERA_RESET_GPIO_PORT);
 static ARM_DRIVER_GPIO *GPIO_Driver_CAM_RST =
-    &ARM_Driver_GPIO_(RTE_ARX3A0_CAMERA_SENSOR_RESET_GPIO_PORT);
+    &ARM_Driver_GPIO_(BOARD_CAMERA_RESET_GPIO_PORT);
 
 /* ARX3A0 Camera power GPIO port */
-extern ARM_DRIVER_GPIO  ARM_Driver_GPIO_(RTE_ARX3A0_CAMERA_SENSOR_POWER_GPIO_PORT);
+extern ARM_DRIVER_GPIO  ARM_Driver_GPIO_(BOARD_CAMERA_POWER_GPIO_PORT);
 static ARM_DRIVER_GPIO *GPIO_Driver_CAM_PWR =
-    &ARM_Driver_GPIO_(RTE_ARX3A0_CAMERA_SENSOR_POWER_GPIO_PORT);
+    &ARM_Driver_GPIO_(BOARD_CAMERA_POWER_GPIO_PORT);
 
 /* I2C Driver Instance */
 extern ARM_DRIVER_I2C ARM_Driver_I2C_(CAMERA_SENSOR_I2C_INSTANCE);
@@ -1418,7 +1419,7 @@ static int32_t ARX3A0_Bulk_Write_Reg(const ARX3A0_REG arx3A0_reg[], uint32_t tot
   */
 static void ARX3A0_Sensor_Enable_Clk_Src(void)
 {
-    set_cpi_pixel_clk(CPI_PIX_CLKSEL_400MZ, RTE_ARX3A0_CAMERA_SENSOR_CSI_CLK_SCR_DIV);
+    set_cpi_pixel_clk(CPI_PIX_CLKSEL_AXI, RTE_ARX3A0_CAMERA_SENSOR_CSI_CLK_SCR_DIV);
 }
 
 /**
@@ -1442,39 +1443,39 @@ static int32_t ARX3A0_Camera_Hard_Reseten(void)
 {
     int32_t ret = 0;
 
-    ret         = GPIO_Driver_CAM_RST->Initialize(RTE_ARX3A0_CAMERA_SENSOR_RESET_PIN_NO, NULL);
+    ret         = GPIO_Driver_CAM_RST->Initialize(BOARD_CAMERA_RESET_GPIO_PIN, NULL);
     if (ret != ARM_DRIVER_OK) {
         return ret;
     }
 
-    ret = GPIO_Driver_CAM_RST->PowerControl(RTE_ARX3A0_CAMERA_SENSOR_RESET_PIN_NO, ARM_POWER_FULL);
+    ret = GPIO_Driver_CAM_RST->PowerControl(BOARD_CAMERA_RESET_GPIO_PIN, ARM_POWER_FULL);
     if (ret != ARM_DRIVER_OK) {
         return ret;
     }
 
-    ret = GPIO_Driver_CAM_RST->SetDirection(RTE_ARX3A0_CAMERA_SENSOR_RESET_PIN_NO,
+    ret = GPIO_Driver_CAM_RST->SetDirection(BOARD_CAMERA_RESET_GPIO_PIN,
                                             GPIO_PIN_DIRECTION_OUTPUT);
     if (ret != ARM_DRIVER_OK) {
         return ret;
     }
 
-    ret = GPIO_Driver_CAM_PWR->Initialize(RTE_ARX3A0_CAMERA_SENSOR_POWER_PIN_NO, NULL);
+    ret = GPIO_Driver_CAM_PWR->Initialize(BOARD_CAMERA_POWER_GPIO_PIN, NULL);
     if (ret != ARM_DRIVER_OK) {
         return ret;
     }
 
-    ret = GPIO_Driver_CAM_PWR->PowerControl(RTE_ARX3A0_CAMERA_SENSOR_POWER_PIN_NO, ARM_POWER_FULL);
+    ret = GPIO_Driver_CAM_PWR->PowerControl(BOARD_CAMERA_POWER_GPIO_PIN, ARM_POWER_FULL);
     if (ret != ARM_DRIVER_OK) {
         return ret;
     }
 
-    ret = GPIO_Driver_CAM_PWR->SetDirection(RTE_ARX3A0_CAMERA_SENSOR_POWER_PIN_NO,
+    ret = GPIO_Driver_CAM_PWR->SetDirection(BOARD_CAMERA_POWER_GPIO_PIN,
                                             GPIO_PIN_DIRECTION_OUTPUT);
     if (ret != ARM_DRIVER_OK) {
         return ret;
     }
 
-    ret = GPIO_Driver_CAM_RST->SetValue(RTE_ARX3A0_CAMERA_SENSOR_RESET_PIN_NO,
+    ret = GPIO_Driver_CAM_RST->SetValue(BOARD_CAMERA_RESET_GPIO_PIN,
                                         GPIO_PIN_OUTPUT_STATE_LOW);
     if (ret != ARM_DRIVER_OK) {
         return ret;
@@ -1482,7 +1483,7 @@ static int32_t ARX3A0_Camera_Hard_Reseten(void)
 
     ARX3A0_DELAY_uSEC(2000);
 
-    ret = GPIO_Driver_CAM_PWR->SetValue(RTE_ARX3A0_CAMERA_SENSOR_POWER_PIN_NO,
+    ret = GPIO_Driver_CAM_PWR->SetValue(BOARD_CAMERA_POWER_GPIO_PIN,
                                         GPIO_PIN_OUTPUT_STATE_HIGH);
     if (ret != ARM_DRIVER_OK) {
         return ret;
@@ -1490,7 +1491,7 @@ static int32_t ARX3A0_Camera_Hard_Reseten(void)
 
     ARX3A0_DELAY_uSEC(1000);
 
-    ret = GPIO_Driver_CAM_RST->SetValue(RTE_ARX3A0_CAMERA_SENSOR_RESET_PIN_NO,
+    ret = GPIO_Driver_CAM_RST->SetValue(BOARD_CAMERA_RESET_GPIO_PIN,
                                         GPIO_PIN_OUTPUT_STATE_HIGH);
     if (ret != ARM_DRIVER_OK) {
         return ret;
@@ -1564,11 +1565,12 @@ static int32_t ARX3A0_Camera_Gain(const uint32_t gain)
     uint32_t coarse_gain;
 
     if (max_integration_time == 0) {
+        int32_t ret;
         /* Record the integration time set by the configuration tables. We won't adjust it upwards,
          * as it may interfere with frame timing, but we can freely adjust it downwards.
          */
-        int32_t ret =
-            ARX3A0_READ_REG(ARX3A0_COARSE_INTEGRATION_TIME_REGISTER, &current_integration_time, 2);
+        ret = ARX3A0_READ_REG(ARX3A0_COARSE_INTEGRATION_TIME_REGISTER,
+                              &current_integration_time, 2);
         if (ret != 0) {
             return ret;
         }
@@ -1615,17 +1617,26 @@ static int32_t ARX3A0_Camera_Gain(const uint32_t gain)
          * First clamp analogue gain, using digital gain to get more if
          * necessary. Otherwise digital gain is used to fine adjust.
          */
-        uint32_t new_integration_time = max_integration_time;
         if (gain < 0x10000) {
             /* Minimum gain is 1.0 */
             fine_gain = 0x10000;
-
-            /* But we can lower integration time */
-            new_integration_time =
-                (uint32_t) (((float) max_integration_time * gain) * 0x1p-16f + 0.5f);
         } else if (gain > 0x80000) {
             /* Maximum analogue gain is 8.0 */
             fine_gain = 0x80000;
+        }
+
+#if !defined(RTE_ISP) || (RTE_ISP == 0)
+        /* Integration-time auto-management is only active when ISP is
+         * NOT handling exposure. With ISP enabled, exposure is set
+         * independently via CPI_ISP_CAMERA_SENSOR_EXPOSURE and must not be
+         * overridden here.
+         */
+        uint32_t new_integration_time = max_integration_time;
+
+        if (gain < 0x10000) {
+            /* For gain < 1.0x we lower integration time instead */
+            new_integration_time =
+                (uint32_t) (((float) max_integration_time * gain) * 0x1p-16f + 0.5f);
         }
 
         /* Set integration time */
@@ -1637,6 +1648,7 @@ static int32_t ARX3A0_Camera_Gain(const uint32_t gain)
             }
             current_integration_time = new_integration_time;
         }
+#endif /* !RTE_ISP */
 
         /*
          * First get coarse analogue power of two, leaving fine gain in range [0x10000,0x1FFFF]
@@ -1703,6 +1715,67 @@ static int32_t ARX3A0_Camera_Gain(const uint32_t gain)
                         0.5f);
     }
     return resulting_gain;
+}
+
+/**
+ * \fn           static int32_t ARX3A0_Camera_Gain_Set(const uint32_t gain)
+ * \brief        Set camera gain register (Q16.16 format)
+ *               This function writes the gain to the sensor without adjusting
+ *               integration time. Used by ISP AE which handles exposure separately.
+ * \param[in]    gain: gain value in Q16.16 format (0x10000 = 1.0x)
+ * \return       execution status
+ */
+static int32_t ARX3A0_Camera_Gain_Set(const uint32_t gain)
+{
+    uint32_t digital_gain;
+    uint32_t fine_gain = gain;
+    uint32_t coarse_gain;
+    uint32_t val;
+
+    if (gain == 0) {
+        return ARM_DRIVER_ERROR_PARAMETER;
+    }
+
+    /* Clamp gain to valid range [1.0, 8.0] */
+    if (gain < 0x10000) {
+        fine_gain = 0x10000;  /* Minimum gain is 1.0 */
+    } else if (gain > 0x80000) {
+        fine_gain = 0x80000;  /* Maximum gain is 8.0 */
+    }
+
+    /*
+     * From the Design Guide:
+     * Total Gain = (R0x305E[0:3]/16 + 1) * 2^R0x0305E[4:6] *
+     *              (R0x305E[7:15]/64)
+     *
+     * Get coarse analogue power of two, leaving fine gain in [0x10000, 0x1FFFF].
+     */
+    coarse_gain = 0;
+    while (fine_gain >= 0x20000) {
+        coarse_gain++;
+        fine_gain /= 2;
+    }
+
+    /* Round down to 16 steps of fine gain. */
+    fine_gain = (fine_gain - 0x10000) / 0x1000;
+
+    /*
+     * Use digital gain to extend gain beyond the analogue limits of x1 to x8,
+     * or to fine-tune within that range.
+     */
+    val = ((fine_gain + 16) << coarse_gain) * 0x1000;
+    digital_gain = (64 * gain + (val / 2)) / val;
+
+    if (digital_gain > 0x1FF) {
+        /* Maximum digital gain is just under 8.0 */
+        digital_gain = 0x1FF;
+    } else if (digital_gain < 64) {
+        /* Digital gain >= 1.0 */
+        digital_gain = 64;
+    }
+
+    val = (digital_gain << 7) | (coarse_gain << 4) | fine_gain;
+    return ARX3A0_WRITE_REG(ARX3A0_GLOBAL_GAIN_REGISTER, val, 2);
 }
 
 /**
@@ -1839,6 +1912,17 @@ static int32_t ARX3A0_Control(uint32_t control, uint32_t arg)
     case CPI_CAMERA_SENSOR_GAIN:
         return ARX3A0_Camera_Gain(arg);
         break;
+    case CPI_ISP_CAMERA_SENSOR_GAIN:
+        return ARX3A0_Camera_Gain_Set(arg);
+        break;
+    case CPI_ISP_CAMERA_SENSOR_EXPOSURE:
+        /* Direct write of integration lines computed by ISP AE.
+         * arg is the coarse integration time in sensor lines (16-bit).
+         * Gain is handled separately via CPI_ISP_CAMERA_SENSOR_GAIN using a
+         * combined Q16.16 total gain computed by the application.
+         */
+        return ARX3A0_WRITE_REG(ARX3A0_COARSE_INTEGRATION_TIME_REGISTER,
+                                arg & 0xFFFF, 2);
     default:
         return ARM_DRIVER_ERROR_PARAMETER;
     }
@@ -1857,34 +1941,34 @@ static int32_t ARX3A0_Uninit(void)
     /*Disable camera sensor clock source config*/
     ARX3A0_Sensor_Disable_Clk_Src();
 
-    ret = GPIO_Driver_CAM_RST->SetValue(RTE_ARX3A0_CAMERA_SENSOR_RESET_PIN_NO,
+    ret = GPIO_Driver_CAM_RST->SetValue(BOARD_CAMERA_RESET_GPIO_PIN,
                                         GPIO_PIN_OUTPUT_STATE_LOW);
     if (ret != ARM_DRIVER_OK) {
         return ret;
     }
 
-    ret = GPIO_Driver_CAM_RST->PowerControl(RTE_ARX3A0_CAMERA_SENSOR_RESET_PIN_NO, ARM_POWER_OFF);
+    ret = GPIO_Driver_CAM_RST->PowerControl(BOARD_CAMERA_RESET_GPIO_PIN, ARM_POWER_OFF);
     if (ret != ARM_DRIVER_OK) {
         return ret;
     }
 
-    ret = GPIO_Driver_CAM_RST->Uninitialize(RTE_ARX3A0_CAMERA_SENSOR_RESET_PIN_NO);
+    ret = GPIO_Driver_CAM_RST->Uninitialize(BOARD_CAMERA_RESET_GPIO_PIN);
     if (ret != ARM_DRIVER_OK) {
         return ret;
     }
 
-    ret = GPIO_Driver_CAM_PWR->SetValue(RTE_ARX3A0_CAMERA_SENSOR_POWER_PIN_NO,
+    ret = GPIO_Driver_CAM_PWR->SetValue(BOARD_CAMERA_POWER_GPIO_PIN,
                                         GPIO_PIN_OUTPUT_STATE_LOW);
     if (ret != ARM_DRIVER_OK) {
         return ret;
     }
 
-    ret = GPIO_Driver_CAM_PWR->PowerControl(RTE_ARX3A0_CAMERA_SENSOR_POWER_PIN_NO, ARM_POWER_OFF);
+    ret = GPIO_Driver_CAM_PWR->PowerControl(BOARD_CAMERA_POWER_GPIO_PIN, ARM_POWER_OFF);
     if (ret != ARM_DRIVER_OK) {
         return ret;
     }
 
-    ret = GPIO_Driver_CAM_PWR->Uninitialize(RTE_ARX3A0_CAMERA_SENSOR_POWER_PIN_NO);
+    ret = GPIO_Driver_CAM_PWR->Uninitialize(BOARD_CAMERA_POWER_GPIO_PIN);
     if (ret != ARM_DRIVER_OK) {
         return ret;
     }

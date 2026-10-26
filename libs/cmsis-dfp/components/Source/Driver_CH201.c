@@ -25,9 +25,6 @@
 /* Project Includes */
 #include "CH201_Private.h"
 
-/* RTC Driver */
-#include "Driver_RTC.h"
-
 #include "sensor_utils.h"
 
 #include "RTE_Device.h"
@@ -35,7 +32,7 @@
 
 #if defined(RTE_Drivers_CH201)
 
-#define ARM_CH201_DRV_VERSION       ARM_DRIVER_VERSION_MAJOR_MINOR(1, 0)
+#define ARM_CH201_DRV_VERSION       ARM_DRIVER_VERSION_MAJOR_MINOR(1, 1)
 
 /* Driver version*/
 static const ARM_DRIVER_VERSION DriverVersion = {
@@ -50,9 +47,6 @@ static const ARM_RANGE_SENSOR_CAPABILITIES DriverCapabilities = {
 };
 
 extern CH201_DRV_INFO ch201_drv_info;
-
-/* Ch201 RTC driver */
-extern ARM_DRIVER_RTC *RTCdrv;
 
 /* CH201 GPRMT - multi threshold */
 #define CHIRP_SENSOR_FW_INIT_FUNC   ch201_gprmt_init
@@ -73,16 +67,7 @@ extern ARM_DRIVER_RTC *RTCdrv;
  */
 static void ARM_CH201_Periodic_Timer_Trigger(void)
 {
-    uint32_t cur_cnt;
-
     ch_group_trigger(&ch201_drv_info.ch201_group);
-
-    if (ch201_drv_info.continue_rtc_timeout) {
-        (void)RTCdrv->ReadCounter(&cur_cnt);
-        /* Set RTC Alarm */
-        RTCdrv->Control(ARM_RTC_SET_ALARM,
-                       (cur_cnt + ch201_drv_info.rtc_timeout_val));
-    }
 }
 
 /**
@@ -178,12 +163,14 @@ ARM_RANGE_SENSOR_STATUS ARM_CH201_GetStatus(void)
  */
 static int32_t ARM_CH201_Control(uint32_t control, uint32_t arg)
 {
+    int32_t ret;
     uint8_t iter;
     ARM_RANGE_SENSOR_THRESHOLD *thresh_ptr = (ARM_RANGE_SENSOR_THRESHOLD *)(arg);
     ch_dev_t *dev_ptr = ch_get_dev_ptr(&ch201_drv_info.ch201_group,
                                        ch201_drv_info.dev_num);
 
-    if (ch201_drv_info.state != CH201_DRIVER_READY) {
+    if ((ch201_drv_info.state & CH201_DRIVER_READY)
+        != CH201_DRIVER_READY) {
         return ARM_DRIVER_ERROR;
     }
 
@@ -195,10 +182,30 @@ static int32_t ARM_CH201_Control(uint32_t control, uint32_t arg)
     case ARM_RANGE_SENSOR_SET_MODE:
 
         if (arg == ARM_RANGE_SENSOR_MODE_TRIGGERED_TX_RX) {
+            ret = chbsp_periodic_timer_init();
+            if (ret != ARM_DRIVER_OK) {
+                return ret;
+            }
+            /* Acquired periodic timer trigger */
+            ch201_drv_info.periodic_timer_acq = true;
             ch201_drv_info.dev_config.mode = CH_MODE_TRIGGERED_TX_RX;
         } else if (arg == ARM_RANGE_SENSOR_MODE_FREERUN) {
+            if (ch201_drv_info.periodic_timer_acq) {
+                ret = chbsp_periodic_timer_deinit();
+                if (ret != ARM_DRIVER_OK) {
+                    return ret;
+                }
+                ch201_drv_info.periodic_timer_acq = false;
+            }
             ch201_drv_info.dev_config.mode = CH_MODE_FREERUN;
         } else {
+            if (ch201_drv_info.periodic_timer_acq) {
+                ret = chbsp_periodic_timer_deinit();
+                if (ret != ARM_DRIVER_OK) {
+                    return ret;
+                }
+                ch201_drv_info.periodic_timer_acq = false;
+            }
             ch201_drv_info.dev_config.mode = CH_MODE_IDLE;
         }
         break;
@@ -242,12 +249,17 @@ static int32_t ARM_CH201_Control(uint32_t control, uint32_t arg)
         ch_set_rx_pretrigger(&ch201_drv_info.ch201_group, CHIRP_RX_PRETRIGGER_ENABLE);
 
         if (ch201_drv_info.dev_config.mode == CH_MODE_TRIGGERED_TX_RX) {
-
-            /* Set the board's periodic timer trigger */
-            ch201_drv_info.continue_rtc_timeout       = true;
             ch201_drv_info.dev_config.sample_interval = 0;
-            chbsp_periodic_timer_init(ch201_drv_info.meas_interval_ms,
-                                      ARM_CH201_Periodic_Timer_Trigger);
+            if (ch201_drv_info.periodic_timer_acq) {
+                /* Start the timer only when it's acquired */
+                ret = chbsp_periodic_timer_start(ch201_drv_info.meas_interval_ms,
+                                                 ARM_CH201_Periodic_Timer_Trigger);
+                if (ret != ARM_DRIVER_OK) {
+                    return ret;
+                }
+            } else {
+                return ARM_DRIVER_ERROR;
+            }
         } else {
             /* Configure sample interval */
             ch201_drv_info.dev_config.sample_interval = ch201_drv_info.meas_interval_ms;
@@ -273,8 +285,13 @@ static int32_t ARM_CH201_Control(uint32_t control, uint32_t arg)
             /* Disable INT interrupt */
             chdrv_int_group_interrupt_disable(&ch201_drv_info.ch201_group);
         } else {
-            /* Disable board's timer trigger */
-            ch201_drv_info.continue_rtc_timeout = false;
+            if (ch201_drv_info.periodic_timer_acq) {
+                /* Stop the timer only when it's acquired */
+                ret = chbsp_periodic_timer_stop();
+                if (ret != ARM_DRIVER_OK) {
+                    return ret;
+                }
+            }
         }
         break;
 
@@ -319,7 +336,8 @@ static int32_t ARM_CH201_Initialize(void)
 {
     int32_t ret;
 
-    if (ch201_drv_info.state & CH201_DRIVER_READY) {
+    if ((ch201_drv_info.state & CH201_DRIVER_READY)
+        == CH201_DRIVER_READY) {
         return ARM_DRIVER_OK;
     }
 
@@ -337,9 +355,13 @@ static int32_t ARM_CH201_Initialize(void)
     }
 
     /* Initializes driver state and data received status */
-    ch201_drv_info.grp_ptr       = NULL;
-    ch201_drv_info.int1_wait_mode = false;
-    ch201_drv_info.dev_num       = 0;
+    ch201_drv_info.grp_ptr             = NULL;
+    ch201_drv_info.int1_wait_mode      = false;
+    ch201_drv_info.dev_num             = 0;
+
+    ch201_drv_info.data_ready          = false;
+    ch201_drv_info.periodic_timeout_cb = NULL;
+    ch201_drv_info.periodic_timer_acq  = false;
 
     return ARM_DRIVER_OK;
 }
@@ -353,6 +375,19 @@ static int32_t ARM_CH201_Uninitialize(void)
 {
     int32_t ret;
 
+    /* Stop and de-init the timer if acquired */
+    if (ch201_drv_info.periodic_timer_acq == true) {
+        ret = chbsp_periodic_timer_stop();
+        if (ret != ARM_DRIVER_OK) {
+            return ret;
+        }
+        ret = chbsp_periodic_timer_deinit();
+        if (ret != ARM_DRIVER_OK) {
+            return ret;
+        }
+        ch201_drv_info.periodic_timer_acq  = false;
+    }
+
     /* Uninitialize board drivers */
     ret = chbsp_board_deinit();
     if (ret != ARM_DRIVER_OK) {
@@ -360,9 +395,8 @@ static int32_t ARM_CH201_Uninitialize(void)
     }
 
     /* Resets driver state and data received status */
-    ch201_drv_info.state          = 0U;
-    ch201_drv_info.data_ready     = false;
-    ch201_drv_info.rtc_timeout_cb = NULL;
+    ch201_drv_info.state               = 0U;
+    ch201_drv_info.data_ready          = false;
 
     return ARM_DRIVER_OK;
 }

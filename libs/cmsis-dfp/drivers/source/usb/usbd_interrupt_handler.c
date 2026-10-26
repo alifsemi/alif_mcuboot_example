@@ -739,8 +739,11 @@ void usbd_devt_handler(USB_DRIVER *drv, uint32_t reg)
         break;
     case USB_EVENT_CONNECT_DONE:
         usbd_connectionDone_event(drv);
-        if (drv->cb_device_event != NULL) {
-            drv->cb_device_event(ARM_USBD_EVENT_HIGH_SPEED);
+        drv->active = 1;
+        if (drv->speed == ARM_USB_SPEED_HIGH) {
+            if (drv->cb_device_event != NULL) {
+                drv->cb_device_event(ARM_USBD_EVENT_HIGH_SPEED);
+            }
         }
         usbd_prepare_setup(drv);
         break;
@@ -825,13 +828,17 @@ void usbd_reset_event(USB_DRIVER *drv)
 void usbd_connectionDone_event(USB_DRIVER *drv)
 {
     uint32_t reg;
+    uint32_t speed;
 
     reg   = drv->regs->DSTS;
+    speed = reg & USB_DSTS_CONNECTSPD;
     /* if speed value is 0 then it's HIGH SPEED */
-    if ((reg & USB_DSTS_CONNECTSPD) == USB_DSTS_HIGHSPEED) {
-#ifdef DEBUG
-        printf("High speed device\n");
-#endif
+    if (speed == USB_DSTS_HIGHSPEED) {
+        drv->speed = ARM_USB_SPEED_HIGH;
+    } else if (speed == USB_DSTS_FULLSPEED) {
+        drv->speed = ARM_USB_SPEED_FULL;
+    } else {
+        drv->speed = ARM_USB_SPEED_LOW;
     }
     /* Enable USB2 LPM Capability */
     reg   = drv->regs->DCFG;

@@ -282,6 +282,7 @@
 #define IRQ357_Handler LPUTIMER_IRQ6Handler
 #define IRQ358_Handler LPUTIMER_IRQ7Handler
 
+#define IRQ360_Handler JPEG_IRQHandler
 #define IRQ367_Handler ISP_IRQHandler
 #define IRQ368_Handler ISP_MI_IRQHandler
 #define IRQ369_Handler QEC0_CMPA_IRQHandler

@@ -94,6 +94,10 @@ static ARM_DRIVER_I2C *I2C_Driver = &ARM_Driver_I2C_(GT911_TOUCH_I2C_INSTANCE);
 #define GT911_FLAG_DRV_INIT_DONE    (1U << 0)
 #define GT911_FLAG_POWER_ENABLED    (1U << 1)
 
+/* I2C tranfer status */
+#define GT911_I2C_XFER_DONE         (1 << 0)
+#define GT911_I2C_XFER_ERR          (1 << 1)
+
 /* GT911 Touch event variables */
 volatile uint8_t touch_event_gpio;
 volatile uint8_t touch_event_i2c;
@@ -190,7 +194,7 @@ static int32_t TOUCH_Write(uint8_t dev_addr, uint16_t reg_addr, uint8_t *reg_dat
         }
     }
 
-    if (!(touch_event_i2c & ARM_I2C_EVENT_TRANSFER_DONE)) {
+    if (!(touch_event_i2c & GT911_I2C_XFER_DONE)) {
         return ARM_DRIVER_ERROR;
     }
 
@@ -234,7 +238,7 @@ static int32_t TOUCH_Read(uint8_t dev_addr, uint16_t reg_addr, uint8_t *reg_data
         }
     }
 
-    if (!(touch_event_i2c & ARM_I2C_EVENT_TRANSFER_DONE)) {
+    if (!(touch_event_i2c & GT911_I2C_XFER_DONE)) {
         return ARM_DRIVER_ERROR;
     }
 
@@ -272,7 +276,15 @@ static int32_t TOUCH_IntEnable(bool enable)
   */
 static void TOUCH_I2C_CB(uint32_t event)
 {
-    touch_event_i2c |= event;
+    /* callback event occurred */
+    if (event & (ARM_I2C_EVENT_TRANSFER_INCOMPLETE | ARM_I2C_EVENT_ADDRESS_NACK |
+                 ARM_I2C_EVENT_BUS_ERROR | ARM_I2C_EVENT_ARBITRATION_LOST)) {
+        /* Transfer Error. */
+        touch_event_i2c = GT911_I2C_XFER_ERR;
+    } else if (event & ARM_I2C_EVENT_TRANSFER_DONE) {
+        /* Transfer Done. */
+        touch_event_i2c = GT911_I2C_XFER_DONE;
+    }
 }
 
 /**

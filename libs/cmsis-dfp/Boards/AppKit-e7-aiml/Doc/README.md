@@ -13,4 +13,4 @@ The board provides an on-board JLink debug-adapter with COM port routed to UART4
 
 ## Links
 
-- [Ensemble AppKit Gen 2](https://alifsemi.com/support/kits/ai-ml-appkit/)
+- [Ensemble AppKit D1](https://alifsemi.com/support/kits/ai-ml-appkit/)

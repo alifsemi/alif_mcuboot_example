@@ -83,6 +83,7 @@ extern "C" {
 #define CONVERT_US_TO_NS(n)              (n * 1000U)
 #define CONVERT_US_TO_MS(n)              (n / 1000U)
 #define CONVERT_MS_TO_US(n)              (n * 1000U)
+#define CONVERT_S_TO_MS(n)               (n * 1000U)
 
 /* Function documentation */
 

@@ -3386,7 +3386,7 @@ typedef struct { /*!< (@ 0xE000E100) M55HE_NVIC_S Structure                     
 #define EVTRTR2                   ((EVTRTR_Type *) EVTRTR2_BASE)
 #define WDT_HE_CTRL               ((WDT_HE_CTRL_Type *) WDT_HE_CTRL_BASE)
 #define WDT_HE_REFRESH            ((WDT_HE_CTRL_Type *) WDT_HE_REFRESH_BASE)
-#define LPRTC                     ((LPRTC_Type *) LPRTC_BASE)
+#define LPRTC0                    ((LPRTC_Type *) LPRTC0_BASE)
 #define LPTIMER                   ((LPTIMER_Type *) LPTIMER_BASE)
 #define LPGPIO                    ((GPIO_Type *) LPGPIO_BASE)
 #define LPGPIO_CTRL               ((LPGPIO_CTRL_Type *) LPGPIO_CTRL_BASE)

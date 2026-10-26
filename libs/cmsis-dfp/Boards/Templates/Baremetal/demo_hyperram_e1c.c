@@ -57,13 +57,12 @@ ARM_DRIVER_GPIO       *GPIODrv = &ARM_Driver_GPIO_(BOARD_IS66_HYPERRAM_RESET_GPI
 /*
  * Default OSPI macros are configured for ISSI Flash in RTE_Device.h
  * Set below configurations for ISSI HyperRAM:
- *     RTE_OSPI0_SPI_MODE = 0,
  *     RTE_OSPI0_BUS_SPEED = 80000000,
  *     RTE_OSPI0_DDR_DRIVE_EDGE = 0,
  *     RTE_OSPI0_RXDS_DELAY = 8,
  *     RTE_OSPI0_DFS = 16,
  *     RTE_OSPI0_CHIP_SELECTION_PIN = 0,
- *     RTE_OSPI0_WAIT_CYCLES = 6
+ *     RTE_OSPI0_WAIT_CYCLES = 7
  **/
 
 #define HRAM_SIZE_BYTES        (64 * 1024 * 1024) /* 64MB */

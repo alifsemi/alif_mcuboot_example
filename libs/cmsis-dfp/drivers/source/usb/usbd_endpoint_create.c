@@ -283,6 +283,11 @@ int32_t usbd_ep_disable(USB_DRIVER *drv, uint8_t ep_num, uint8_t dir)
 
     phy_ep               = USB_GET_PHYSICAL_EP(ep_num, dir);
     ept                  = &drv->eps[phy_ep];
+    if ((ept->ep_status & USB_EP_ENABLED) == 0) {
+        /* Endpoint is already disabled */
+        return USB_SUCCESS;
+    }
+    /* Proceed with endpoint disable */
     reg                  = drv->regs->DALEPENA;
     reg                 &= ~USB_DALEPENA_EP(phy_ep);
     drv->regs->DALEPENA  = reg;

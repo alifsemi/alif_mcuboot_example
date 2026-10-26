@@ -38,7 +38,8 @@ extern "C" {
 #define CH201_RTC_DRIVER_READY        (1 << 0U)
 #define CH201_GPIO_DRIVER_READY       (1 << 1U)
 #define CH201_I2C_DRIVER_READY        (1 << 2U)
-#define CH201_DRIVER_READY            (7 << 0U)
+#define CH201_DRIVER_READY            (0x7 << 0U)
+#define CH201_LPTIMER_DRIVER_READY    (1 << 3U)
 
 /* Supported Max detection range is 5000 mm */
 #define CH201_MAX_DETECTION_RANGE   5000
@@ -66,10 +67,12 @@ typedef struct _CH201_DRV_INFO {
     ch_rangefinder_algo_config_t dev_algo_config;
     /* Device Multiple detection threshold   */
     ch_thresholds_t              dev_threshold;
-    /* Timeout value                         */
-    volatile uint32_t            rtc_timeout_val;
-    /* Timeout callback                      */
-    ch_timer_callback_t          rtc_timeout_cb;
+    /* Periodic Timeout value                */
+    uint32_t                     periodic_timeout_val;
+    /* Periodic Timeout callback             */
+    ch_timer_callback_t          periodic_timeout_cb;
+    /* Periodic Timer acquired status        */
+    bool                         periodic_timer_acq;
     /* I2C Event status                      */
     volatile uint32_t            ch201_i2c_event;
     /* Measurement interval in millisec      */
@@ -82,8 +85,6 @@ typedef struct _CH201_DRV_INFO {
     volatile bool                int1_wait_mode;
     /* Data ready flag                       */
     volatile bool                data_ready;
-    /* Flag to Timeout continuously from RTC */
-    volatile bool                continue_rtc_timeout;
 } CH201_DRV_INFO;
 
 /**
@@ -102,12 +103,33 @@ int chbsp_board_deinit(void);
 
 /**
  * @brief       Initialize the periodic timer.
+ * @param       None
+ * @return      Execution status
+ */
+int chbsp_periodic_timer_init(void);
+
+/**
+ * @brief       De-Initialize the periodic timer.
+ * @param       None
+ * @return      Execution status
+ */
+int chbsp_periodic_timer_deinit(void);
+
+/**
+ * @brief       Start the periodic timer.
  * @param[in]   interval_ms       Interval in millisec
  * @param[in]   callback_func_ptr Callback function
  * @return      Execution status
  */
-int chbsp_periodic_timer_init(uint16_t interval_ms,
-                              ch_timer_callback_t callback_func_ptr);
+int chbsp_periodic_timer_start(uint16_t interval_ms,
+                               ch_timer_callback_t callback_func_ptr);
+
+/**
+ * @brief       Stop the periodic timer.
+ * @param       None
+ * @return      Execution status
+ */
+int chbsp_periodic_timer_stop(void);
 
 #ifdef __cplusplus
 }

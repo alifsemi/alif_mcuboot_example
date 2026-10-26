@@ -70,15 +70,20 @@ typedef struct _CPI_FIFO_CONFIG {
 /** \brief CPI Configurations */
 typedef struct _CPI_CONFIG {
 #if SOC_FEAT_HAS_ISP
-    bool                   axi_port_en;    /* CPI AXI port                                      */
-    bool                   isp_port_en;    /* CPI ISP port                                      */
+    bool                   axi_port_en;     /**< CPI AXI port                                   */
+    bool                   isp_port_en;     /**< CPI ISP port                                   */
 #endif
 #if SOC_FEAT_CPI_HAS_CROPPING
-    CPI_HORIZONTAL_CONFIG *horizontal_cfg; /**< Horizontal Configuration                        */
-    CPI_VERTICAL_CONFIG   *vertical_cfg;   /**< Vertical Configuration                          */
+    CPI_HORIZONTAL_CONFIG *horizontal_cfg;  /**< Horizontal Configuration                       */
+    CPI_VERTICAL_CONFIG   *vertical_cfg;    /**< Vertical Configuration                         */
 #endif
-    uint32_t              framebuff_saddr; /**< Frame Buffer Start Address Configuration        */
-    CPI_FIFO_CONFIG       *fifo;           /**< FIFO Configuration                              */
+    uint32_t              framebuff_saddr;  /**< Frame Buffer Start Address Configuration       */
+#if SOC_FEAT_CPI_HAS_STREAM_ENABLE
+    uint32_t              framebuff_saddrB; /**< Sequential FrameBuffer StartAddr Configuration */
+    uint32_t              framebuff_saddrC; /**< Sequential FrameBuffer StartAddr Configuration */
+    uint32_t              framebuff_saddrD; /**< Sequential FrameBuffer StartAddr Configuration */
+#endif
+    CPI_FIFO_CONFIG       *fifo;            /**< FIFO Configuration                             */
 } CPI_CONFIG;
 
 /** \brief CPI Status */
@@ -91,15 +96,20 @@ typedef struct CPI_DRIVER_STATE {
 
 /** \brief CPI Device Resource Structure */
 typedef struct _CPI_RESOURCES {
-    ARM_CPI_SignalEvent_t cb_event;     /**< CPI Application Event Callback                     */
-    CPI_Type             *regs;         /**< CPI Register Base Address                          */
-    CPI_INSTANCE          drv_instance; /**< CPI driver instances                               */
-    CPI_DRIVER_STATE      status;       /**< CPI Status                                         */
-    uint8_t               irq_priority; /**< CPI Interrupt Priority                             */
-    IRQn_Type             irq_num;      /**< CPI Interrupt Vector Number                        */
-    CPI_ROW_ROUNDUP       row_roundup;  /**< CPI row roundup                                    */
-    CPI_MODE_SELECT       capture_mode; /**< CPI capture mode                                   */
-    CPI_CONFIG           *cnfg;         /**< CPI Configurations                                 */
+    ARM_CPI_SignalEvent_t cb_event;           /**< CPI Application Event Callback                 */
+    CPI_Type              *regs;              /**< CPI Register Base Address                      */
+    CPI_INSTANCE          drv_instance;       /**< CPI driver instances                           */
+    CPI_DRIVER_STATE      status;             /**< CPI Status                                     */
+    uint8_t               irq_priority;       /**< CPI Interrupt Priority                         */
+    IRQn_Type             irq_num;            /**< CPI Interrupt Vector Number                    */
+    CPI_ROW_ROUNDUP       row_roundup;        /**< CPI row roundup                                */
+    CPI_MODE_SELECT       capture_mode;       /**< CPI capture mode                               */
+    CPI_CONFIG            *cnfg;              /**< CPI Configurations                             */
+#if SOC_FEAT_CPI_HAS_STREAM_ENABLE
+    uint32_t              num_framebuffers;   /**< CPI number of active frame buffers             */
+    bool                  stream_mode_enable; /**< Streaming mode configuration                   */
+    bool                  stream_mode_active; /**< Streaming mode currently active                */
+#endif
 } CPI_RESOURCES;
 
 #define DEFAULT_WRITE_WMARK 0x18

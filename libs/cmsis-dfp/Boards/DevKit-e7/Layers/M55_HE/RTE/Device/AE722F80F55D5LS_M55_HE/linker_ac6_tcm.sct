@@ -61,6 +61,11 @@ LR_ROM __ROM_BASE __ROM_SIZE  {    ; load region size_region
     * (usb_dma_buf)
     * (sd_dma_buf)
     * (.driver.usbd0)
+    * (.rodata.usbd0_device_descriptor)
+    * (.rodata.usbd0_device_qualifier_hs)
+    * (.rodata.usbd0_config_descriptor_hs)
+    * (.rodata.usbd0_other_speed_config_descriptor_hs)
+    * (.rodata.usbd0_string_descriptor)
 #if __HAS_BULK_SRAM == 0
     * (.bss.lcd_frame_buf)
 #endif

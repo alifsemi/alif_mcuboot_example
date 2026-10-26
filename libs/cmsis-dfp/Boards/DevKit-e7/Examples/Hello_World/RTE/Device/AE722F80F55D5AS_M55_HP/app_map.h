@@ -16,13 +16,13 @@
 /* Max size of applications for each core;
  * User shall adjust this based on app need.
  */
-#define _APP_MAX_SIZE_HE     0x200000
-#define _APP_MAX_SIZE_HP     0x200000
+#define _APP_MAX_SIZE_HE                 0x200000
+#define _APP_MAX_SIZE_HP                 0x200000
 
 /* Define the below flag as 1 to support booting from
  * OSPI flash.
  */
-#define BOOT_FROM_OSPI_FLASH 0
+#define BOOT_FROM_OSPI_FLASH             0
 
 /*
  * Default XIP addresses for cores:
@@ -32,11 +32,11 @@
  */
 
 #if BOOT_FROM_OSPI_FLASH
-#define _APP_ADDRESS_HE (OSPI1_XIP_BASE)
+#define _APP_ADDRESS_HE                  (OSPI1_XIP_BASE)
 #else
-#define _APP_ADDRESS_HE (MRAM_BASE)
+#define _APP_ADDRESS_HE                  (MRAM_BASE)
 #endif
 
-#define _APP_ADDRESS_HP (_APP_ADDRESS_HE + _APP_MAX_SIZE_HE)
+#define _APP_ADDRESS_HP                  (_APP_ADDRESS_HE + _APP_MAX_SIZE_HE)
 
 #endif

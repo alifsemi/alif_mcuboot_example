@@ -40,6 +40,9 @@ void rtc_demo_Thread_entry();
 #define CB_EVENT_SET   1
 #define CB_EVENT_CLEAR 0
 
+/* RTC prescaler value for 1Hz tick from 32.768 kHz input clock */
+#define RTC_PRESCALER_FOR_1HZ  0x8000
+
 volatile uint32_t cb_status = 0;
 
 /**
@@ -97,6 +100,13 @@ void rtc_demo_Thread_entry()
     if (ret != ARM_DRIVER_OK) {
         printf("\r\n Error: RTC Power up failed\n");
         goto error_uninitialize;
+    }
+
+    /* Set the prescaler value for RTC */
+    ret = RTCdrv->Control(ARM_RTC_SET_PRESCALER, RTC_PRESCALER_FOR_1HZ);
+    if (ret != ARM_DRIVER_OK) {
+        printf("\r\n Error: RTC Unable to set prescaler, error = %" PRIi32 "\r\n", ret);
+        goto error_poweroff;
     }
 
     while (iter <= 5) {

@@ -87,7 +87,7 @@ static uint32_t test_services_pll_xtal(char *p_test_name, uint32_t services_hand
 static uint32_t test_services_cpu_boot_sequence(char *p_test_name, uint32_t services_handle);
 static uint32_t test_services_dcdc_voltage(char *p_test_name, uint32_t services_handle);
 static uint32_t test_services_ldo_voltage(char *p_test_name, uint32_t services_handle);
-static uint32_t test_services_bor_en(char *p_test_name, uint32_t services_handle);
+static uint32_t test_services_power_setting(char *p_test_name, uint32_t services_handle);
 
 static uint32_t test_services_get_bus_frequencies(char *p_test_name, uint32_t services_handle);
 
@@ -222,7 +222,7 @@ typedef enum {
     TEST_CPU_BOOT_SEQUENCE,
     TEST_DCDC_VOLTAGE,
     TEST_LDO_VOLTAGE,
-    TEST_BOR_EN,
+    TEST_POWER_SETTING,
     TEST_GET_BUS_FREQUENCIES,
     TEST_GET_EUI,
     TEST_GET_DEVICE_ID,
@@ -294,7 +294,7 @@ static services_test_t s_tests[TEST_COUNT] = {
     {test_services_cpu_boot_sequence, "Test CPU boot sequence ", false},        /*50*/
     {test_services_dcdc_voltage, "DCDC voltage control   ", false},             /*51*/
     {test_services_ldo_voltage, "LDO voltage control    ", false},              /*52*/
-    {test_services_bor_en, "BOR_EN control", false},                            /*53*/
+    {test_services_power_setting, "Power Settings", false},                     /*53*/
     {test_services_get_bus_frequencies, "Get BUS frequencies    ", false},      /*54*/
     {test_services_get_eui, "Get EUI-48/EUI-64 extensions", false},             /*55*/
     {test_services_get_device_id, "Get 64-bit unique Device ID ", false},       /*56*/
@@ -2033,47 +2033,67 @@ static uint32_t test_services_ldo_voltage(char *p_test_name, uint32_t services_h
     return error_code;
 }
 
-/**
- * @brief Test the BOR_EN coontrol
- */
-static uint32_t test_services_bor_en(char *p_test_name, uint32_t services_handle)
+static void test_single_power_setting(char *p_test_name, uint32_t services_handle,
+		                              char *p_setting_name, power_setting_t setting)
 {
     uint32_t error_code = SERVICES_REQ_SUCCESS;
     uint32_t service_error_code;
 
-    uint32_t bor_en = 0;
+    // Get current setting
+    uint32_t orig_val = 0;
     error_code      = SERVICES_power_setting_get(services_handle,
-                                            POWER_SETTING_BOR_EN,
-                                            &bor_en,
+                                            setting,
+                                            &orig_val,
                                             &service_error_code);
     PRINT_TEST_RESULT;
+    TEST_print(services_handle, "Current %s: %d\n", p_setting_name, orig_val);
 
-    TEST_print(services_handle, "Current BOR_EN: %d\n", bor_en);
-    bor_en     = !bor_en;
+    // Set new value
+    uint32_t test_val = !orig_val;
     error_code = SERVICES_power_setting_configure(services_handle,
-                                                  POWER_SETTING_BOR_EN,
-                                                  bor_en,
+                                                  setting,
+                                                  test_val,
                                                   &service_error_code);
     PRINT_TEST_RESULT;
+    TEST_print(services_handle, "Set %s to %d\n", p_setting_name, test_val);
+
+    // Get new value
+    error_code = SERVICES_power_setting_get(services_handle,
+                                            setting,
+                                            &test_val,
+                                            &service_error_code);
+
+    PRINT_TEST_RESULT;
+    TEST_print(services_handle, "Get new %s: %d\n", p_setting_name, test_val);
+
+    // Restore the original setting
+    error_code = SERVICES_power_setting_configure(services_handle,
+                                                  setting,
+                                                  orig_val,
+                                                  &service_error_code);
+    PRINT_TEST_RESULT;
+ TEST_print(services_handle, "Restore original %s\n", p_setting_name);
 
     error_code = SERVICES_power_setting_get(services_handle,
-                                            POWER_SETTING_BOR_EN,
-                                            &bor_en,
+                                            setting,
+                                            &orig_val,
                                             &service_error_code);
 
     PRINT_TEST_RESULT;
-    TEST_print(services_handle, "New BOR_EN: %d\n", bor_en);
+  TEST_print(services_handle, "Get restored %s: %d\n", p_setting_name, orig_val);
+}
+/**
+ * @brief Test the Power Setting services
+ */
+static uint32_t test_services_power_setting(char *p_test_name, uint32_t services_handle)
+{
+  test_single_power_setting(p_test_name, services_handle,
+                            "BOR_EN", POWER_SETTING_BOR_EN);
 
-    // restore the original BOR_EN
-    TEST_print(services_handle, "Restore original BOR_EN\n");
-    bor_en     = !bor_en;
-    error_code = SERVICES_power_setting_configure(services_handle,
-                                                  POWER_SETTING_BOR_EN,
-                                                  bor_en,
-                                                  &service_error_code);
-    PRINT_TEST_RESULT;
+  test_single_power_setting(p_test_name, services_handle,
+                            "ANA_PERIPH_EN", POWER_SETTING_ANA_PERIPH_EN);
 
-    return error_code;
+  return 0;
 }
 
 static uint32_t test_services_get_bus_frequencies(char *p_test_name, uint32_t services_handle)
@@ -2378,3 +2398,4 @@ void SERVICES_test(uint32_t services_handle)
     SERVICES_test_guts(services_handle);
     test_crypto(services_handle);
 }
+
