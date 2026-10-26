@@ -130,6 +130,14 @@ void uart_send_blocking(UART_Type *uart, UART_TRANSFER *transfer)
             transfer->tx_curr_cnt++; /* increment the tx current count */
         }
     }
+
+    /* Wait for transmitter to be completely empty
+     * (TX FIFO drained AND shift register empty).
+     * All data is fully on the wire after this.
+     */
+    while (!(uart->UART_LSR & UART_LSR_TRANSMITTER_EMPTY)) {
+        ; /* Wait for TX FIFO and shift register to empty */
+    }
 }
 
 /**
@@ -403,6 +411,31 @@ void uart_irq_handler(UART_Type *uart, UART_TRANSFER *transfer)
         break;
 
     case UART_IIR_TRANSMIT_HOLDING_REG_EMPTY: /* transmit holding register empty */
+        /* Check whether all bytes were already written to FIFO
+         * in the previous interrupt?
+         */
+        if (transfer->tx_curr_cnt >= transfer->tx_total_num) {
+            /* All bytes written to FIFO.
+             * Wait for FIFO to fully drain (last byte is still in shift register!)
+             *  before marking send complete.
+             * - PTIME=0: THRE fires only when FIFO is empty,
+             *            so this condition is always true here.
+             * - PTIME=1: THRE fires at threshold level,
+             *            FIFO may still have data. Wait for it to drain.
+             */
+            if (uart_get_tx_fifo_available_count(uart) == UART_FIFO_DEPTH) {
+                /* FIFO is empty, disable the transmitter interrupt */
+                uart_disable_tx_irq(uart);
+
+                /* mark status as Send Complete */
+                transfer->status = UART_TRANSFER_STATUS_SEND_COMPLETE;
+            }
+            /* else: FIFO not fully drained yet.
+             * Keep TX IRQ enabled; next THRE will re-enter here.
+             */
+            break;
+        }
+
         do {
             /* Query how many characters are available in TX fifo. */
             tx_fifo_available_cnt = uart_get_tx_fifo_available_count(uart);
@@ -423,14 +456,6 @@ void uart_irq_handler(UART_Type *uart, UART_TRANSFER *transfer)
              * still there is some user data which needs to be send. */
         } while (uart_tx_ready(uart) && (transfer->tx_curr_cnt < transfer->tx_total_num));
 
-        /* check whether it transmitted all the bytes? */
-        if (transfer->tx_curr_cnt >= transfer->tx_total_num) {
-            /* yes then disable the transmitter interrupt */
-            uart_disable_tx_irq(uart);
-
-            /* mark status as Send Complete */
-            transfer->status = UART_TRANSFER_STATUS_SEND_COMPLETE;
-        }
         break;
 
     case UART_IIR_CHARACTER_TIMEOUT:       /* character timeout */

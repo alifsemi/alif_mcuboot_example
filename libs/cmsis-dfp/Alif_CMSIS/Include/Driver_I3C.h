@@ -16,7 +16,7 @@ extern "C" {
 
 #include "Driver_Common.h"
 
-#define ARM_I3C_API_VERSION     ARM_DRIVER_VERSION_MAJOR_MINOR(7, 2) /* API version */
+#define ARM_I3C_API_VERSION     ARM_DRIVER_VERSION_MAJOR_MINOR(8, 1) /* API version */
 
 /****** I3C Control Codes *****/
 
@@ -92,6 +92,8 @@ extern "C" {
     (1UL << 10)  ///< Bus reset is done(Available only for Master mode)
 #define ARM_I3C_EVENT_READ_REQUEST_RCVD                                                            \
     (1UL << 11)  ///< Read request received from master when the slave is not in Tx mode
+#define ARM_I3C_EVENT_TX_DONE  (1UL << 12)  ///< Transmit transfer done
+#define ARM_I3C_EVENT_RX_DONE  (1UL << 13)  ///< Receive transfer done
 
 /****** I3C Error Status codes *****/
 #define ARM_I3C_LEC_NO_ERROR        (0U)  ///< Last error code: No error
@@ -174,12 +176,13 @@ typedef struct _ARM_I3C_CMD {
 \brief I3C Status
 */
 typedef struct _ARM_I3C_STATUS {
-    uint32_t busy           : 1;  ///< Busy flag
+    uint32_t rx_busy        : 1;  ///< Rx busy flag
+    uint32_t tx_busy        : 1;  ///< Tx busy flag
     uint32_t mode           : 1;  ///< Mode: 0=Slave, 1=Master
     uint32_t ibi_slv_addr   : 8;  ///< Address of last IBI slave
     uint32_t last_error_code: 4;  ///< Last occurred error
     uint32_t defslv_cnt: 8;  ///< Slave count from last DEFSLVS (Applicable for Sec masters only)
-    uint32_t reserved  : 10;
+    uint32_t reserved       : 9;
 } ARM_I3C_STATUS;
 
 /**
@@ -374,6 +377,8 @@ typedef struct _ARM_DRIVER_I3C {
     (void);  ///< Pointer to \ref GetCapabilities   : Get I3C driver capabilities.
     ARM_I3C_STATUS (*GetStatus)
     (void);  ///< Pointer to \ref GetStatus         : Get I3C driver status.
+    int32_t (*GetTxCount) (void);  ///< Pointer to \ref GetTxCount : Get transferred tx data count.
+    int32_t (*GetRxCount) (void);  ///< Pointer to \ref GetRxCount : Get transferred rx data count.
     ARM_I3C_DEVICE_INFO (*GetDeviceInfo)
     (void);  ///< Pointer to \ref GetDeviceInfo     : Get I3C device information.
     int32_t (*Initialize)(ARM_I3C_SignalEvent_t cb_event);  ///< Pointer to \ref Initialize        :

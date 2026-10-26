@@ -29,61 +29,54 @@
 
 #ifdef __cplusplus
 #if __cplusplus
-extern "C" {
+extern "C"{
 #endif
 #endif
 
 #include <stdio.h>
 #include <stdlib.h>
 
-#define LOG_COLOR_RED           "\033[1;30;31m"
-#define LOG_COLOR_YELLOW        "\033[1;30;33m"
-#define LOG_COLOR_GREEN         "\033[1;30;32m"
-#define LOG_COLOR_WHITE         "\033[1;30;37m"
-#define LOG_COLOR_RESET         "\033[0m"
+#define LOG_COLOR_RED    "\033[1;30;31m"
+#define LOG_COLOR_YELLOW "\033[1;30;33m"
+#define LOG_COLOR_GREEN  "\033[1;30;32m"
+#define LOG_COLOR_WHITE  "\033[1;30;37m"
+#define LOG_COLOR_RESET  "\033[0m"
 
-#define __ALOG_INT(format, ...) "[%s] " format LOG_COLOR_RESET "%s", LOGTAG, __VA_ARGS__
+#define __ALOG_INT(format, ...)                                     \
+            "[%s] " format LOG_COLOR_RESET "%s", LOGTAG, __VA_ARGS__
 
 typedef enum VsiLogLevel_e {
-    VSI_LOG_LEVEL_NONE = 0,  // No debug information is output.
-    VSI_LOG_LEVEL_ERR,       // Logs all fatal errors.
-    VSI_LOG_LEVEL_WARN,      // Logs all warnings.
-    VSI_LOG_LEVEL_INFO,      // Logs all informational messages.
-    VSI_LOG_LEVEL_DEBUG,     // Logs all debug messages.
+    VSI_LOG_LEVEL_NONE = 0, //No debug information is output.
+    VSI_LOG_LEVEL_ERR ,     //Logs all fatal errors.
+    VSI_LOG_LEVEL_WARN,     //Logs all warnings.
+    VSI_LOG_LEVEL_INFO,     //Logs all informational messages.
+    VSI_LOG_LEVEL_DEBUG,    //Logs all debug messages.
     VSI_LOG_LEVEL_VERBOSE,
 } VsiLogLevel_t;
 
 #define VSI_PRINT printf
 
-#define VSI_ALOGE(...)                                                                             \
-    do {                                                                                           \
-        if (VsiLogLevel() >= VSI_LOG_LEVEL_ERR) {                                                  \
-            printf(LOG_COLOR_RED "ERROR:" __ALOG_INT(__VA_ARGS__, "\n"))                           \
-        }                                                                                          \
-    } while (0)
 
-#define VSI_ALOGW(...)                                                                             \
-    do {                                                                                           \
-        if (VsiLogLevel() >= VSI_LOG_LEVEL_WARN) {                                                 \
-            printf(LOG_COLOR_YELLOW "WARN:" __ALOG_INT(__VA_ARGS__, "\n"))                         \
-        }                                                                                          \
-    } while (0)
+#define VSI_ALOGE(...)                                             \
+    if (VsiLogLevel() >= VSI_LOG_LEVEL_ERR && VsiLogPrint)                        \
+        VsiLogPrint(LOG_COLOR_RED "ERROR:" __ALOG_INT(__VA_ARGS__, ""))
 
-#define VSI_ALOGI(...)                                                                             \
-    do {                                                                                           \
-        if (VsiLogLevel() >= VSI_LOG_LEVEL_INFO)  {                                                \
-                printf(LOG_COLOR_GREEN "INFO:" __ALOG_INT(__VA_ARGS__, "\n"))                      \
-        }                                                                                          \
-    } while (0)
+#define VSI_ALOGW(...)                                             \
+    if (VsiLogLevel() >= VSI_LOG_LEVEL_WARN && VsiLogPrint)                       \
+        VsiLogPrint(LOG_COLOR_YELLOW "WARN:" __ALOG_INT(__VA_ARGS__, ""))
 
-#define VSI_ALOGD(...)                                                                             \
-    do {                                                                                           \
-        if (VsiLogLevel() >= VSI_LOG_LEVEL_DEBUG) {                                                \
-            printf(LOG_COLOR_WHITE "DEBUG:" __ALOG_INT(__VA_ARGS__, "\n"))                         \
-        }                                                                                          \
-    } while (0)
+#define VSI_ALOGI(...)                                             \
+    if (VsiLogLevel() >= VSI_LOG_LEVEL_INFO && VsiLogPrint)                       \
+        VsiLogPrint(LOG_COLOR_GREEN "INFO:" __ALOG_INT(__VA_ARGS__, ""))
 
-int VsiLogLevel(void);
+#define VSI_ALOGD(...)                                             \
+    if (VsiLogLevel() >= VSI_LOG_LEVEL_DEBUG && VsiLogPrint)                      \
+        VsiLogPrint(LOG_COLOR_WHITE "DEBUG:" __ALOG_INT(__VA_ARGS__, ""))
+
+
+extern int (*VsiLogLevel)(void);
+extern int (*VsiLogPrint)(const char *fmt, ...);
+void VsiLogLevelSet(int (*pfnLogLevel)(void), int (*pfnLogPrint)(const char *fmt, ...));
 
 #ifdef __cplusplus
 #if __cplusplus

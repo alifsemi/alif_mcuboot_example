@@ -65,7 +65,7 @@
    1111: 1.9 V
    Step: 20 mV Default (0xA)
 */
-#define ANA_PERIPH_LDO_CONT  (0xAU << 6)
+#define ANA_PERIPH_LDO_CONT  (0x8U << 6)
 
 /* Calibration for analog peripherals precision bandgap:
    0000: 1.140 V
@@ -74,6 +74,6 @@
    1111: 1.233 V
    Step: 6 mV Default (0xA)
 */
-#define ANA_PERIPH_BG_CONT   (0xAU << 1)
+#define ANA_PERIPH_BG_CONT   (0x8U << 1)
 
 #endif /* ANALOG_CONFIG_H_ */

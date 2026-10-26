@@ -34,6 +34,9 @@ extern "C" {
 #define CCR_LPRTC_MASK     (1U << 1U) /* Mask interrupts   */
 #define CCR_LPRTC_IEN      (1U << 0U) /* Enable interrupts */
 
+/* CPSR register fields */
+#define CPSR_LPRTC_MASK    (0xFFFFU)  /* Counter Prescaler value. */
+
 /**
   \fn           static inline void lprtc_counter_enable (LPRTC_Type *lprtc)
   \brief        Enable lprtc counter
@@ -68,6 +71,17 @@ static inline void lprtc_prescaler_enable(LPRTC_Type *lprtc)
 }
 
 /**
+ *  \fn           static inline bool lprtc_is_prescaler_enable(LPRTC_Type *lprtc)
+ *  \brief        Check if lprtc prescaler is enabled.
+ *  \param[in]    lprtc  : Pointer to lprtc register block
+ *  \return       true if prescaler is enabled, false otherwise
+ */
+static inline bool lprtc_is_prescaler_enable(LPRTC_Type *lprtc)
+{
+    return ((lprtc->LPRTC_CCR & CCR_LPRTC_PSCLR_EN) != 0U);
+}
+
+/**
   \fn           static inline void lprtc_prescaler_disable (LPRTC_Type *lprtc)
   \brief        Disable lprtc prescaler counter
   \param[in]    lprtc  : Pointer to lprtc register block
@@ -76,6 +90,33 @@ static inline void lprtc_prescaler_enable(LPRTC_Type *lprtc)
 static inline void lprtc_prescaler_disable(LPRTC_Type *lprtc)
 {
     lprtc->LPRTC_CCR &= ~(CCR_LPRTC_PSCLR_EN);
+}
+
+/**
+ *  \fn           static inline void lprtc_counter_prescaler_enable(LPRTC_Type *lprtc)
+ *  \brief        Enable lprtc counter and prescaler.
+ *                Both LPRTC_EN and LPRTC_PSCLR_EN bits are set in a single write
+ *                to ensure counter and prescaler are in synchronization.
+ *  \param[in]    lprtc  : Pointer to lprtc register block
+ *  \return       none
+ */
+static inline void lprtc_counter_prescaler_enable(LPRTC_Type *lprtc)
+{
+    lprtc->LPRTC_CCR |= (CCR_LPRTC_EN | CCR_LPRTC_PSCLR_EN);
+}
+
+/**
+ *  \fn           static inline void lprtc_counter_prescaler_disable(LPRTC_Type *lprtc)
+ *  \brief        Disable lprtc counter and prescaler.
+ *                Both LPRTC_EN and LPRTC_PSCLR_EN bits are cleared in a single write.
+ *                Disabling the prescaler resets it to zero, which helps in aligning
+ *                with the counter when re-enabled.
+ *  \param[in]    lprtc  : Pointer to lprtc register block
+ *  \return       none
+ */
+static inline void lprtc_counter_prescaler_disable(LPRTC_Type *lprtc)
+{
+    lprtc->LPRTC_CCR &= ~(CCR_LPRTC_EN | CCR_LPRTC_PSCLR_EN);
 }
 
 /**
@@ -157,15 +198,26 @@ static inline void lprtc_interrupt_ack(LPRTC_Type *lprtc)
 }
 
 /**
-  \fn           static inline void lprtc_load_prescaler (LPRTC_Type *lprtc, uint32_t value)
-  \brief        Load lprtc prescaler value
+  \fn           static inline void lprtc_load_prescaler (LPRTC_Type *lprtc, uint16_t value)
+  \brief        Load 16-bit lprtc prescaler value
   \param[in]    value        : lprtc prescaler value
   \param[in]    lplprtc      : Pointer to lprtc register block
   \return       none
 */
-static inline void lprtc_load_prescaler(LPRTC_Type *lprtc, uint32_t value)
+static inline void lprtc_load_prescaler(LPRTC_Type *lprtc, uint16_t value)
 {
     lprtc->LPRTC_CPSR = value;
+}
+
+/**
+ *  \fn           static inline uint16_t lprtc_get_prescaler(LPRTC_Type *lprtc)
+ *  \brief        Get the current 16-bit lprtc prescaler value from LPRTC_CPSR register.
+ *  \param[in]    lprtc  : Pointer to lprtc register block
+ *  \return       16-bit prescaler value
+ */
+static inline uint16_t lprtc_get_prescaler(LPRTC_Type *lprtc)
+{
+    return (uint16_t)(lprtc->LPRTC_CPSR & CPSR_LPRTC_MASK);
 }
 
 /**

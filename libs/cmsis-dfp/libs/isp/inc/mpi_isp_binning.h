@@ -28,7 +28,7 @@
 
 #ifdef __cplusplus
 #if __cplusplus
-extern "C" {
+extern "C"{
 #endif
 #endif
 
@@ -40,29 +40,34 @@ extern "C" {
  *
  */
 
-/** @brief   BINNING attribute. */
+
+/** \brief   BINNING attribute. */
 typedef struct vsiISP_BINNING_ATTR_S {
-    vsi_bool_t enable; /* @brief Whether to enable BINNING. 0: Disable BINNING. 1: Enable BINNING.*/
-    vsi_u8_t binHStep; /* @brief Binning horizontal step size. */
-    vsi_u8_t binVStep; /* @brief Binning vertical step size.   */
+    vsi_bool_t     enable;         /**< \brief Whether to enable BINNING. \n 0: Disable BINNING. \n 1: Enable BINNING. */
+    vsi_u8_t       binHStep;      /**< \brief Binning horizontal step size. */
+    vsi_u8_t       binVStep;      /**< \brief Binning vertical step size. */
 } ISP_BINNING_ATTR_S;
 
-/*****************************************************************************
+
+/*****************************************************************************/
+/**
  * @brief   Gets BINNING attribute.
  *
- * @param   IspPort           Port ID
- * @param   pBinningAttr      Pointer to the BINNING attribute
+ * \param   IspPort             Port ID
+ * \param   pBinningAttr      Pointer to the BINNING attribute
  *
- * @retval  VSI_SUCCESS       Operation succeeded
+ * \retval  VSI_SUCCESS         Operation succeeded
  *
  *****************************************************************************/
 int VSI_MPI_ISP_GetBinningAttr(ISP_PORT IspPort, ISP_BINNING_ATTR_S *pBinningAttr);
 
-/******************************************************************************
+/*****************************************************************************/
+/**
  * @brief   Sets BINNING attribute.
  *
- * @param   IspPort           Port ID
+ * @param   IspPort             Port ID
  * @param   pBinningAttr      Pointer to the BINNING attribute
+
  *
  * @retval  VSI_SUCCESS              Operation succeeded
  * @retval  VSI_ERR_ILLEGAL_PARAM    Invalid parameter
@@ -70,8 +75,11 @@ int VSI_MPI_ISP_GetBinningAttr(ISP_PORT IspPort, ISP_BINNING_ATTR_S *pBinningAtt
  *****************************************************************************/
 int VSI_MPI_ISP_SetBinningAttr(ISP_PORT IspPort, ISP_BINNING_ATTR_S *pBinningAttr);
 
+
+
 /* @} mpi_isp_binning */
 /* @endcond */
+
 
 #ifdef __cplusplus
 #if __cplusplus

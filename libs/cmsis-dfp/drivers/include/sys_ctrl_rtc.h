@@ -30,6 +30,15 @@ extern "C" {
 #define RTC_CLK_ENABLE (1U << 0U) /* Enable RTC clock */
 
 /**
+ * enum LPRTC_INSTANCE.
+ * LPRTC instances.
+ */
+typedef enum _LPRTC_INSTANCE {
+    LPRTC0_INSTANCE,
+    LPRTC1_INSTANCE
+} LPRTC_INSTANCE;
+
+/**
   \fn           static inline void enable_lprtc_clk (LPRTC_INSTANCE inst)
   \brief        VBAT clock enable for LPRTC
   \param        inst LPRTC instance number

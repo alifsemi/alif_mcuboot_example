@@ -41,6 +41,15 @@ extern "C" {
 #define CPI_CAMERA_SENSOR_AE_TARGET_LUMA                                                           \
     (0x07UL)  ///< CAMERA SENSOR AE Tagret LUMA; arg: Value for target luminance
 
+/* ISP AE: set sensor exposure (integration lines) */
+#define CPI_ISP_CAMERA_SENSOR_EXPOSURE  (0x08UL)
+
+/* ISP AE: set sensor gain; arg is Q16.16 total gain (0x10000 = 1.0x),
+ * computed as (aGain_q10 * dGain_q10) / 16.
+ */
+#define CPI_ISP_CAMERA_SENSOR_GAIN     (0x09UL)
+
+
 /****** CPI Events *****/
 #define ARM_CPI_EVENT_CAMERA_CAPTURE_STOPPED (1UL << 0)  ///< Camera Capture Stopped
 #define ARM_CPI_EVENT_CAMERA_FRAME_HSYNC_DETECTED                                                  \
@@ -51,6 +60,7 @@ extern "C" {
 #define ARM_CPI_EVENT_ERR_CAMERA_OUTPUT_FIFO_OVERRUN (1UL << 4)  ///< Camera FIFO under run Error
 #define ARM_CPI_EVENT_ERR_HARDWARE                   (1UL << 5)  ///< Hardware Bus Error
 #define ARM_CPI_EVENT_MIPI_CSI2_ERROR                (1UL << 6)  ///< MIPI CSI2 Error
+#define ARM_CPI_VSYNC_BUF_IDX_Pos                    16U ///< Position of the completed-buffer index
 
 // Function documentation
 /**

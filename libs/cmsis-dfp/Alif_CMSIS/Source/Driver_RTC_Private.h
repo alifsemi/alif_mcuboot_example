@@ -30,15 +30,7 @@ extern "C" {
 
 #include "Driver_RTC.h"
 #include "rtc.h"
-
-/**
- * enum LPRTC_INSTANCE.
- * LPRTC instances.
- */
-typedef enum _LPRTC_INSTANCE {
-    LPRTC0_INSTANCE,
-    LPRTC1_INSTANCE
-} LPRTC_INSTANCE;
+#include "sys_ctrl_rtc.h"
 
 /** \brief LPRTC Driver states. */
 typedef volatile struct _LPRTC_DRIVER_STATE {

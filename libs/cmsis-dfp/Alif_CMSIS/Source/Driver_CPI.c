@@ -52,7 +52,7 @@ extern ARM_DRIVER_MIPI_CSI2 Driver_MIPI_CSI2;
 void ARM_MIPI_CSI2_Event_Callback(uint32_t int_event);
 #endif
 
-#if (RTE_ISP)
+#if defined(RTE_Drivers_ISP) && defined(RTE_ISP) && (RTE_ISP == 1)
 #include "Driver_ISP.h"
 extern ARM_DRIVER_ISP Driver_ISP;
 
@@ -68,7 +68,7 @@ void ARM_ISP_Event_Callback(uint32_t int_event);
 #define ARM_CPI_DRV_VERSION ARM_DRIVER_VERSION_MAJOR_MINOR(1, 0) /* driver version */
 
 /* Driver Version */
-static const ARM_DRIVER_VERSION DriverVersion        = {ARM_CPI_API_VERSION, ARM_CPI_DRV_VERSION};
+static const ARM_DRIVER_VERSION DriverVersion = {ARM_CPI_API_VERSION, ARM_CPI_DRV_VERSION};
 
 /* Driver Capabilities */
 static const ARM_CPI_CAPABILITIES DriverCapabilities = {
@@ -108,7 +108,7 @@ static ARM_CPI_CAPABILITIES CPI_GetCapabilities(void)
  *                 - set the user callback event
  *                 - if MIPI CSI is enabled, call CSI initialize
  * \param[in] CPI_RES       Pointer to CPI resources structure
- * \param[in] cb_event       Pointer to Camera Event \ref ARM_CAMERA_CONTROLLER_SignalEvent_t
+ * \param[in] cb_event      Pointer to Camera Event \ref ARM_CAMERA_CONTROLLER_SignalEvent_t
  * \return    \ref execution_status
  */
 static int32_t CPIx_Initialize(CPI_RESOURCES *CPI_RES, ARM_CPI_SignalEvent_t cb_event)
@@ -137,7 +137,7 @@ static int32_t CPIx_Initialize(CPI_RESOURCES *CPI_RES, ARM_CPI_SignalEvent_t cb_
     }
 #endif
 
-#if (RTE_ISP)
+#if defined(RTE_Drivers_ISP) && defined(RTE_ISP) && (RTE_ISP == 1)
     ret = Driver_ISP.Initialize(ARM_ISP_Event_Callback);
     if (ret != ARM_DRIVER_OK) {
         return ret;
@@ -179,7 +179,7 @@ static int32_t CPIx_Uninitialize(CPI_RESOURCES *CPI_RES)
     }
 #endif
 
-#if (RTE_ISP)
+#if defined(RTE_Drivers_ISP) && defined(RTE_ISP) && (RTE_ISP == 1)
     /*Uninitializing MIPI CSI2 if the sensor is MIPI CSI2 sensor*/
     ret = Driver_ISP.Uninitialize();
     if (ret != ARM_DRIVER_OK) {
@@ -194,14 +194,16 @@ static int32_t CPIx_Uninitialize(CPI_RESOURCES *CPI_RES)
 }
 
 /**
-  \fn        int32_t CPIx_PowerControl(CPI_RESOURCES *CPI_RES, CAMERA_SENSOR_DEVICE *cam_sensor,
+  \fn        int32_t CPIx_PowerControl(CPI_RESOURCES *CPI_RES,
+                                       CAMERA_SENSOR_DEVICE *cam_sensor,
                                        ARM_POWER_STATE state)
   \brief     Camera power control.
   \param[in] CPI_RES   Pointer to CPI resources structure
-  \param[in] state      Power state
+  \param[in] state     Power state
   \return    \ref execution_status
 */
-static int32_t CPIx_PowerControl(CPI_RESOURCES *CPI_RES, CAMERA_SENSOR_DEVICE *cam_sensor,
+static int32_t CPIx_PowerControl(CPI_RESOURCES *CPI_RES,
+		                         CAMERA_SENSOR_DEVICE *cam_sensor,
                                  ARM_POWER_STATE state)
 {
     int32_t ret = ARM_DRIVER_OK;
@@ -246,7 +248,7 @@ static int32_t CPIx_PowerControl(CPI_RESOURCES *CPI_RES, CAMERA_SENSOR_DEVICE *c
             }
 #endif
 
-#if (RTE_ISP)
+#if defined(RTE_Drivers_ISP) && defined(RTE_ISP) && (RTE_ISP == 1)
             /*Disable ISP */
             ret = Driver_ISP.PowerControl(ARM_POWER_OFF);
             if (ret != ARM_DRIVER_OK) {
@@ -256,6 +258,7 @@ static int32_t CPIx_PowerControl(CPI_RESOURCES *CPI_RES, CAMERA_SENSOR_DEVICE *c
 
             /* Reset the power status of Camera. */
             CPI_RES->status.powered = 0;
+            CPI_RES->status.sensor_configured = 0;
             break;
         }
 
@@ -297,7 +300,7 @@ static int32_t CPIx_PowerControl(CPI_RESOURCES *CPI_RES, CAMERA_SENSOR_DEVICE *c
             }
 #endif
 
-#if (RTE_ISP)
+#if defined(RTE_Drivers_ISP) && defined(RTE_ISP) && (RTE_ISP == 1)
             /*Enable ISP */
             ret = Driver_ISP.PowerControl(ARM_POWER_FULL);
             if (ret != ARM_DRIVER_OK) {
@@ -370,6 +373,25 @@ static int32_t CPI_StartCapture(CPI_RESOURCES *CPI_RES)
     /* Set Frame Buffer Start Address Register */
     cpi_set_framebuff_start_addr(CPI_RES->regs, CPI_RES->cnfg->framebuff_saddr);
 
+#if SOC_FEAT_CPI_HAS_STREAM_ENABLE
+    if (CPI_RES->stream_mode_active == true) {
+        /* Set Sequential Frame Buffer Start Address Register */
+        cpi_set_framebuff_start_addrb(CPI_RES->regs, CPI_RES->cnfg->framebuff_saddrB);
+
+        /* Set Sequential Frame Buffer Start Address Register */
+        cpi_set_framebuff_start_addrc(CPI_RES->regs, CPI_RES->cnfg->framebuff_saddrC);
+
+        /* Set Sequential Frame Buffer Start Address Register */
+        cpi_set_framebuff_start_addrd(CPI_RES->regs, CPI_RES->cnfg->framebuff_saddrD);
+
+        /* Set streaming bit in Frame Buffer Start Address Register */
+        cpi_enable_streaming(CPI_RES->regs);
+    } else {
+        /* Legacy single framebuffer mode */
+        cpi_disable_streaming(CPI_RES->regs);
+    }
+#endif
+
     /* Start Camera Capture in Snapshot mode/continuous capture mode */
     cpi_start_capture(CPI_RES->regs, CPI_RES->capture_mode);
 
@@ -393,16 +415,32 @@ static int32_t CPI_StopCapture(CPI_RESOURCES *CPI_RES)
                               CAM_INTR_INFIFO_OVERRUN | CAM_INTR_OUTFIFO_OVERRUN |
                               CAM_INTR_BRESP_ERR);
 
+#if SOC_FEAT_CPI_HAS_STREAM_ENABLE
+    if (CPI_RES->stream_mode_active == true) {
+        /* Clear streaming bit in Frame Buffer Start Address Register */
+        cpi_disable_streaming(CPI_RES->regs);
+    }
+#endif
+
     /* Stop Clear CPI control */
     cpi_stop_capture(CPI_RES->regs);
+
+    /*
+     * Issue a software reset to return the controller to a clean idle state
+     * after stopping capture.
+     */
+    CPI_RES->regs->CAM_CTRL = 0;
+    CPI_RES->regs->CAM_CTRL |= CAM_CTRL_SW_RESET;
+    CPI_RES->regs->CAM_CTRL = 0;
 
     return ARM_DRIVER_OK;
 }
 
 /*
- * \fn         int32_t CPIx_Capture(CPI_RESOURCES *CPI_RES, CAMERA_SENSOR_DEVICE *camera_sensor,
- *                                                      void *framebuffer_startaddr,
- *                                                      CPI_MODE_SELECT mode
+ * \fn         int32_t CPIx_Capture(CPI_RESOURCES *CPI_RES,
+ *                                  CAMERA_SENSOR_DEVICE *camera_sensor,
+ *                                  void *framebuffer_startaddr,
+ *                                  CPI_MODE_SELECT mode
  * \brief      Start Camera Sensor and CPI (in Snapshot mode or video mode).
  *             In Snapshot mode, CPI will capture one frame then it gets stop.
  *             In Video mode, CPI will capture video data continuously.
@@ -411,7 +449,7 @@ static int32_t CPI_StopCapture(CPI_RESOURCES *CPI_RES)
  *                 - set frame buffer start address in CPI
  *                 - set CPI Capture mode as Snapshot mode or video mode.
  *                 - start capturing
- * \param[in] CPI_RES              Pointer to CPI resources structure
+ * \param[in] CPI_RES               Pointer to CPI resources structure
  * \param[in] cam_sensor            Pointer to Camera Sensor Device resources structure
  * \param[in] framebuffer_startaddr Pointer to frame buffer start address,
  *                                  where camera captured image will be stored.
@@ -419,8 +457,10 @@ static int32_t CPI_StopCapture(CPI_RESOURCES *CPI_RES)
  *                                  1: Capture one frame and stop
  * \return    \ref execution_status
  */
-static int32_t CPIx_Capture(CPI_RESOURCES *CPI_RES, CAMERA_SENSOR_DEVICE *camera_sensor,
-                            void *framebuffer_startaddr, CPI_MODE_SELECT mode)
+static int32_t CPIx_Capture(CPI_RESOURCES *CPI_RES,
+                            CAMERA_SENSOR_DEVICE *camera_sensor,
+                            void *framebuffer_startaddr,
+                            CPI_MODE_SELECT mode)
 {
     int32_t ret = ARM_DRIVER_OK;
 
@@ -444,7 +484,7 @@ static int32_t CPIx_Capture(CPI_RESOURCES *CPI_RES, CAMERA_SENSOR_DEVICE *camera
     }
 #endif
 
-#if (RTE_ISP)
+#if defined(RTE_Drivers_ISP) && defined(RTE_ISP) && (RTE_ISP == 1)
     ret = Driver_ISP.Start();
     if (ret != ARM_DRIVER_OK) {
         return ret;
@@ -468,8 +508,59 @@ static int32_t CPIx_Capture(CPI_RESOURCES *CPI_RES, CAMERA_SENSOR_DEVICE *camera
         goto Error_Stop_CSI;
     }
 
-    /* Update Frame Buffer Start Address */
-    CPI_RES->cnfg->framebuff_saddr = LocalToGlobal(framebuffer_startaddr);
+#if SOC_FEAT_CPI_HAS_STREAM_ENABLE
+    /*
+     * Backward compatible handling:
+     *
+     * num_framebuffers == 0
+     *  -> Treat framebuffer_startaddr as single framebuffer pointer.
+     *  -> Disable streaming.
+     *
+     * num_framebuffers >= 2
+     *  -> Treat framebuffer_startaddr as array of framebuffer pointers.
+     *  -> Enable streaming.
+     */
+    if ((CPI_RES->stream_mode_enable == false) ||
+        (CPI_RES->num_framebuffers == 0U)) {
+
+        /* Legacy single buffer mode */
+        CPI_RES->stream_mode_active = false;
+
+        CPI_RES->cnfg->framebuff_saddr =
+            LocalToGlobal(framebuffer_startaddr);
+    } else {
+        void **buffers = (void **)framebuffer_startaddr;
+        uint32_t num_framebuffers = CPI_RES->num_framebuffers;
+
+        if ((num_framebuffers < 2U) ||
+            (num_framebuffers > 4U)) {
+
+            ret = ARM_DRIVER_ERROR_PARAMETER;
+            goto Error_Stop_Camera_Sensor;
+        }
+
+        CPI_RES->stream_mode_active = true;
+
+        /* Update Frame Buffer Start Address */
+        CPI_RES->cnfg->framebuff_saddr  = LocalToGlobal(buffers[0]);
+        /* Update Sequential Frame Buffer Start Address */
+        CPI_RES->cnfg->framebuff_saddrB = LocalToGlobal(buffers[1]);
+
+        /*
+         * For using 2-buffers only: alias C→A and D→B so the hardware
+         * always has valid addresses in all four registers.
+         * For 4-buffer: use all four independently.
+         */
+        /* Update Sequential Frame Buffer Start Address */
+        CPI_RES->cnfg->framebuff_saddrC = LocalToGlobal((num_framebuffers >= 3U)
+                                                        ? buffers[2] : buffers[0]);
+        /* Update Sequential Frame Buffer Start Address */
+        CPI_RES->cnfg->framebuff_saddrD = LocalToGlobal((num_framebuffers >= 4U)
+                                                        ? buffers[3] : buffers[1]);
+    }
+#else
+    CPI_RES->cnfg->framebuff_saddr  = LocalToGlobal(framebuffer_startaddr);
+#endif
 
     /* Set capture mode */
     CPI_RES->capture_mode          = mode;
@@ -498,7 +589,7 @@ Error_Stop_CSI:
     }
 #endif
 
-#if (RTE_ISP)
+#if defined(RTE_Drivers_ISP) && defined(RTE_ISP) && (RTE_ISP == 1)
     ret = Driver_ISP.Stop();
     if (ret != ARM_DRIVER_OK) {
         return ret;
@@ -511,7 +602,7 @@ Error_Stop_CSI:
 /*
  * \fn        int32_t CPIx_Stop(CPI_RESOURCES *CPI_RES, CAMERA_SENSOR_DEVICE *cam_sensor)
  * \brief     Stop Camera Sensor and CPI.
- * \param[in] CPI_RES   Pointer to CPI resources structure
+ * \param[in] CPI_RES    Pointer to CPI resources structure
  * \param[in] cam_sensor Pointer to Camera Sensor Device resources structure
  * \return    \ref execution_status
  */
@@ -533,7 +624,7 @@ static int32_t CPIx_Stop(CPI_RESOURCES *CPI_RES, CAMERA_SENSOR_DEVICE *camera_se
     }
 #endif
 
-#if (RTE_ISP)
+#if defined(RTE_Drivers_ISP) && defined(RTE_ISP) && (RTE_ISP == 1)
     ret = Driver_ISP.Stop();
     if (ret != ARM_DRIVER_OK) {
         return ret;
@@ -550,17 +641,21 @@ static int32_t CPIx_Stop(CPI_RESOURCES *CPI_RES, CAMERA_SENSOR_DEVICE *camera_se
 }
 
 /*
- * \fn         int32_t CPIx_Control(CPI_RESOURCES *CPI_RES,CAMERA_SENSOR_DEVICE *cam_sensor,
- *                                                     uint32_t control, uint32_t arg)
+ * \fn         int32_t CPIx_Control(CPI_RESOURCES *CPI_RES,
+ *                                  CAMERA_SENSOR_DEVICE *cam_sensor,
+ *                                  uint32_t control,
+ *                                  uint32_t arg)
  * \brief     Control CPI and Camera Sensor.
- * \param[in] CPI_RES   Pointer to CPI resources structure
+ * \param[in] CPI_RES    Pointer to CPI resources structure
  * \param[in] cam_sensor Pointer to Camera Sensor Device resources structure
  * \param[in] control    Operation
  * \param[in] arg        Argument of operation
  * \return    \ref execution_status
  */
-static int32_t CPIx_Control(CPI_RESOURCES *CPI_RES, CAMERA_SENSOR_DEVICE *camera_sensor,
-                            uint32_t control, uint32_t arg)
+static int32_t CPIx_Control(CPI_RESOURCES *CPI_RES,
+                            CAMERA_SENSOR_DEVICE *camera_sensor,
+                            uint32_t control,
+                            uint32_t arg)
 {
     int32_t  ret                = ARM_DRIVER_OK;
     uint32_t cam_sensor_control = 0;
@@ -653,6 +748,8 @@ static int32_t CPIx_Control(CPI_RESOURCES *CPI_RES, CAMERA_SENSOR_DEVICE *camera
     case CPI_CAMERA_SENSOR_GAIN:
     case CPI_CAMERA_SENSOR_AE:
     case CPI_CAMERA_SENSOR_AE_TARGET_LUMA:
+    case CPI_ISP_CAMERA_SENSOR_EXPOSURE:
+    case CPI_ISP_CAMERA_SENSOR_GAIN:
         {
             /*Camera sensor controls*/
             ret = camera_sensor->ops->Control(control, arg);
@@ -664,7 +761,7 @@ static int32_t CPIx_Control(CPI_RESOURCES *CPI_RES, CAMERA_SENSOR_DEVICE *camera
 
     default:
         {
-#if (RTE_ISP)
+#if defined(RTE_Drivers_ISP) && defined(RTE_ISP) && (RTE_ISP == 1)
             return Driver_ISP.Control(control, arg);
 #else
             return ARM_DRIVER_ERROR_UNSUPPORTED;
@@ -715,6 +812,9 @@ static void CPIx_IRQHandler(CPI_RESOURCES *CPI_RES)
     uint32_t irqs        = 0u;
     uint32_t event       = 0U;
     uint32_t intr_status = 0U;
+#if SOC_FEAT_CPI_HAS_STREAM_ENABLE
+    uint32_t completed;
+#endif
 
     intr_status          = cpi_get_interrupt_status(CPI_RES->regs);
 
@@ -734,6 +834,13 @@ static void CPIx_IRQHandler(CPI_RESOURCES *CPI_RES)
     if (intr_status & CAM_INTR_VSYNC) {
         irqs  |= CAM_INTR_VSYNC;
         event |= ARM_CPI_EVENT_CAMERA_FRAME_VSYNC_DETECTED;
+#if SOC_FEAT_CPI_HAS_STREAM_ENABLE
+        /* Read FCNT: which buffer did the hardware just finish? */
+        if (CPI_RES->stream_mode_active) {
+            completed = cpi_get_completed_buf_idx(CPI_RES->regs);
+            event |= (completed << ARM_CPI_VSYNC_BUF_IDX_Pos);
+        }
+#endif
     }
 
     /* received fifo over-run interrupt? */
@@ -806,12 +913,16 @@ static CPI_CONFIG config = {
 
 /* CPI Device Resource */
 static CPI_RESOURCES CPI_CTRL = {
-    .regs         = (CPI_Type *) CPI_BASE,
-    .irq_num      = CAM_IRQ_IRQn,
-    .irq_priority = RTE_CPI_IRQ_PRI,
-    .drv_instance = CPI_INSTANCE_CPI0,
-    .row_roundup  = RTE_CPI_ROW_ROUNDUP,
-    .cnfg         = &config,
+    .regs               = (CPI_Type *) CPI_BASE,
+    .irq_num            = CAM_IRQ_IRQn,
+    .irq_priority       = RTE_CPI_IRQ_PRI,
+    .drv_instance       = CPI_INSTANCE_CPI0,
+    .row_roundup        = RTE_CPI_ROW_ROUNDUP,
+    .cnfg               = &config,
+#if SOC_FEAT_CPI_HAS_STREAM_ENABLE
+    .num_framebuffers   = RTE_CPI_NUM_ACTIVE_FRAMEBUFFERS,
+    .stream_mode_enable = RTE_CPI_STREAMING_ENABLE,
+#endif
 };
 
 #if (RTE_MIPI_CSI2)
@@ -828,7 +939,7 @@ void ARM_MIPI_CSI2_Event_Callback(uint32_t int_event)
 }
 #endif
 
-#if (RTE_ISP)
+#if defined(RTE_Drivers_ISP) && defined(RTE_ISP) && (RTE_ISP == 1)
 /*
  * \fn        void ARM_ISP_Event_Callback (uint32_t int_event)
  * \brief     Signal ISP Events.
@@ -915,14 +1026,14 @@ static CPI_FIFO_CONFIG fifo_cnfg = {
 
 #if SOC_FEAT_CPI_HAS_CROPPING
 /* LPCPI Horizontal Configuration. */
-static CPI_HORIZONTAL_CONFIG hconfig = {
+static CPI_HORIZONTAL_CONFIG lp_hconfig = {
     .hbp = RTE_LPCPI_HBP,
     .hfp = RTE_LPCPI_HFP,
     .hfp_en = RTE_LPCPI_HFP_EN,
 };
 
 /* LPCPI Vertical Configuration. */
-static CPI_VERTICAL_CONFIG vconfig = {
+static CPI_VERTICAL_CONFIG lp_vconfig = {
     .vbp = RTE_LPCPI_VBP,
     .vfp = RTE_LPCPI_VFP,
     .vfp_en = RTE_LPCPI_VFP_EN,
@@ -937,8 +1048,8 @@ static CPI_CONFIG cnfg = {
 #endif
     .fifo           = &fifo_cnfg,
 #if SOC_FEAT_CPI_HAS_CROPPING
-    .horizontal_cfg = &hconfig,
-    .vertical_cfg   = &vconfig,
+    .horizontal_cfg = &lp_hconfig,
+    .vertical_cfg   = &lp_vconfig,
 #endif
 };
 

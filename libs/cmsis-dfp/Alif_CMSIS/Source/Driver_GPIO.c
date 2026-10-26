@@ -755,7 +755,7 @@ static int32_t GPIO_Setup(ARM_GPIO_Pin_t pin, ARM_GPIO_SignalEvent_t cb_event)
             gpio_res[gpio_num].cb_event[pin_num] = cb_event;
 
             /* Enable peripheral interrupt generation */
-            gpio_mask_interrupt(gpio, pin_num);
+            gpio_unmask_interrupt(gpio, pin_num);
 
             /* Enable NVIC interrupt generation */
             NVIC_EnableIRQ((IRQn_Type) (gpio_res[gpio_num].irqn + pin_num));

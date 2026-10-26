@@ -67,6 +67,9 @@
 /* Project Includes */
 #include "Driver_RTC.h"
 
+/* RTC prescaler value for 1Hz tick from 32.768 kHz input clock */
+#define RTC_PRESCALER_FOR_1HZ  0x8000
+
 /* RTC Driver instance 0 */
 extern ARM_DRIVER_RTC  Driver_RTC0;
 static ARM_DRIVER_RTC *RTCdrv = &Driver_RTC0;
@@ -182,6 +185,14 @@ static int rtc_init(void)
     if (ret != ARM_DRIVER_OK) {
         printf("\r\n Error: RTC Power up failed\n");
         rtc_error_uninitialize();
+        return ret;
+    }
+
+    /* Set the prescaler value for RTC */
+    ret = RTCdrv->Control(ARM_RTC_SET_PRESCALER, RTC_PRESCALER_FOR_1HZ);
+    if (ret != ARM_DRIVER_OK) {
+        printf("\r\n Error: RTC Unable to set prescaler\n");
+        rtc_error_power_off();
         return ret;
     }
 

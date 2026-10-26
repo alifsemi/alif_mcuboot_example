@@ -69,6 +69,10 @@
 #define MT9M114_AE_ENABLE                                      0x00FF
 #define MT9M114_AE_DISABLE                                     0x0000
 
+/* MT9M114 Camera Sensor ISP-AE exposure/gain registers (standard SMIA, same as ARX3A0) */
+#define MT9M114_COARSE_INTEGRATION_TIME_REGISTER               0x3012
+#define MT9M114_GLOBAL_GAIN_REGISTER                           0x305E
+
 /* MT9M114 Camera Sensor System Manager registers */
 #define MT9M114_SYSMGR_NEXT_STATE                              0xDC00
 #define MT9M114_PATCH_APPLY_STATUS                             0xE008
@@ -660,14 +664,14 @@ static const MT9M114_REG mt9m114_speedup_awb_ae[] = {
 #include "Driver_IO.h"
 #include "sys_ctrl_cpi.h"
 /* MT9M114 Camera reset GPIO port */
-extern ARM_DRIVER_GPIO  ARM_Driver_GPIO_(RTE_MT9M114_CAMERA_SENSOR_MIPI_RESET_GPIO_PORT);
+extern ARM_DRIVER_GPIO  ARM_Driver_GPIO_(BOARD_CAMERA_RESET_GPIO_PORT);
 static ARM_DRIVER_GPIO *GPIO_Driver_CAM_RST =
-    &ARM_Driver_GPIO_(RTE_MT9M114_CAMERA_SENSOR_MIPI_RESET_GPIO_PORT);
+    &ARM_Driver_GPIO_(BOARD_CAMERA_RESET_GPIO_PORT);
 
 /* MT9M114 Camera power GPIO port */
-extern ARM_DRIVER_GPIO  ARM_Driver_GPIO_(RTE_MT9M114_CAMERA_SENSOR_MIPI_POWER_GPIO_PORT);
+extern ARM_DRIVER_GPIO  ARM_Driver_GPIO_(BOARD_CAMERA_POWER_GPIO_PORT);
 static ARM_DRIVER_GPIO *GPIO_Driver_CAM_PWR =
-    &ARM_Driver_GPIO_(RTE_MT9M114_CAMERA_SENSOR_MIPI_POWER_GPIO_PORT);
+    &ARM_Driver_GPIO_(BOARD_CAMERA_POWER_GPIO_PORT);
 
 /**
   \fn           void MT9M114_Sensor_Enable_Clk_Src(void)
@@ -677,7 +681,7 @@ static ARM_DRIVER_GPIO *GPIO_Driver_CAM_PWR =
   */
 static void MT9M114_Sensor_Enable_Clk_Src(void)
 {
-    set_cpi_pixel_clk(CPI_PIX_CLKSEL_400MZ, RTE_MT9M114_CAMERA_SENSOR_MIPI_CSI_CLK_SCR_DIV);
+    set_cpi_pixel_clk(CPI_PIX_CLKSEL_AXI, RTE_MT9M114_CAMERA_SENSOR_MIPI_CSI_CLK_SCR_DIV);
 }
 
 /**
@@ -690,53 +694,53 @@ static int32_t mt9m114_power_on(void)
 {
     int32_t ret = 0;
 
-    ret = GPIO_Driver_CAM_PWR->Initialize(RTE_MT9M114_CAMERA_SENSOR_MIPI_POWER_PIN_NO, NULL);
+    ret = GPIO_Driver_CAM_PWR->Initialize(BOARD_CAMERA_POWER_GPIO_PIN, NULL);
     if (ret != ARM_DRIVER_OK) {
         return ret;
     }
 
-    ret = GPIO_Driver_CAM_PWR->PowerControl(RTE_MT9M114_CAMERA_SENSOR_MIPI_POWER_PIN_NO,
+    ret = GPIO_Driver_CAM_PWR->PowerControl(BOARD_CAMERA_POWER_GPIO_PIN,
                                             ARM_POWER_FULL);
     if (ret != ARM_DRIVER_OK) {
         return ret;
     }
 
-    ret = GPIO_Driver_CAM_PWR->SetDirection(RTE_MT9M114_CAMERA_SENSOR_MIPI_POWER_PIN_NO,
+    ret = GPIO_Driver_CAM_PWR->SetDirection(BOARD_CAMERA_POWER_GPIO_PIN,
                                             GPIO_PIN_DIRECTION_OUTPUT);
     if (ret != ARM_DRIVER_OK) {
         return ret;
     }
 
-    ret = GPIO_Driver_CAM_RST->Initialize(RTE_MT9M114_CAMERA_SENSOR_MIPI_RESET_PIN_NO, NULL);
+    ret = GPIO_Driver_CAM_RST->Initialize(BOARD_CAMERA_RESET_GPIO_PIN, NULL);
     if (ret != ARM_DRIVER_OK) {
         return ret;
     }
 
-    ret = GPIO_Driver_CAM_RST->PowerControl(RTE_MT9M114_CAMERA_SENSOR_MIPI_RESET_PIN_NO,
+    ret = GPIO_Driver_CAM_RST->PowerControl(BOARD_CAMERA_RESET_GPIO_PIN,
                                             ARM_POWER_FULL);
     if (ret != ARM_DRIVER_OK) {
         return ret;
     }
 
-    ret = GPIO_Driver_CAM_RST->SetDirection(RTE_MT9M114_CAMERA_SENSOR_MIPI_RESET_PIN_NO,
+    ret = GPIO_Driver_CAM_RST->SetDirection(BOARD_CAMERA_RESET_GPIO_PIN,
                                             GPIO_PIN_DIRECTION_OUTPUT);
     if (ret != ARM_DRIVER_OK) {
         return ret;
     }
 
-    ret = GPIO_Driver_CAM_PWR->SetValue(RTE_MT9M114_CAMERA_SENSOR_MIPI_POWER_PIN_NO,
+    ret = GPIO_Driver_CAM_PWR->SetValue(BOARD_CAMERA_POWER_GPIO_PIN,
                                         GPIO_PIN_OUTPUT_STATE_LOW);
     if (ret != ARM_DRIVER_OK) {
         return ret;
     }
 
-    ret = GPIO_Driver_CAM_RST->SetValue(RTE_MT9M114_CAMERA_SENSOR_MIPI_RESET_PIN_NO,
+    ret = GPIO_Driver_CAM_RST->SetValue(BOARD_CAMERA_RESET_GPIO_PIN,
                                         GPIO_PIN_OUTPUT_STATE_HIGH);
     if (ret != ARM_DRIVER_OK) {
         return ret;
     }
 
-    ret = GPIO_Driver_CAM_PWR->SetValue(RTE_MT9M114_CAMERA_SENSOR_MIPI_POWER_PIN_NO,
+    ret = GPIO_Driver_CAM_PWR->SetValue(BOARD_CAMERA_POWER_GPIO_PIN,
                                         GPIO_PIN_OUTPUT_STATE_HIGH);
     if (ret != ARM_DRIVER_OK) {
         return ret;
@@ -745,7 +749,7 @@ static int32_t mt9m114_power_on(void)
     /*Enable camera sensor clock source config*/
     MT9M114_Sensor_Enable_Clk_Src();
 
-    ret = GPIO_Driver_CAM_RST->SetValue(RTE_MT9M114_CAMERA_SENSOR_MIPI_RESET_PIN_NO,
+    ret = GPIO_Driver_CAM_RST->SetValue(BOARD_CAMERA_RESET_GPIO_PIN,
                                         GPIO_PIN_OUTPUT_STATE_LOW);
     if (ret != ARM_DRIVER_OK) {
         return ret;
@@ -753,7 +757,7 @@ static int32_t mt9m114_power_on(void)
 
     MT9M114_DELAY_mSEC(50);
 
-    ret = GPIO_Driver_CAM_RST->SetValue(RTE_MT9M114_CAMERA_SENSOR_MIPI_RESET_PIN_NO,
+    ret = GPIO_Driver_CAM_RST->SetValue(BOARD_CAMERA_RESET_GPIO_PIN,
                                         GPIO_PIN_OUTPUT_STATE_HIGH);
     if (ret != ARM_DRIVER_OK) {
         return ret;
@@ -772,36 +776,36 @@ static int32_t mt9m114_power_off(void)
 {
     int32_t ret = 0;
 
-    ret         = GPIO_Driver_CAM_RST->SetValue(RTE_MT9M114_CAMERA_SENSOR_MIPI_RESET_PIN_NO,
+    ret         = GPIO_Driver_CAM_RST->SetValue(BOARD_CAMERA_RESET_GPIO_PIN,
                                         GPIO_PIN_OUTPUT_STATE_LOW);
     if (ret != ARM_DRIVER_OK) {
         return ret;
     }
 
-    ret = GPIO_Driver_CAM_PWR->SetValue(RTE_MT9M114_CAMERA_SENSOR_MIPI_POWER_PIN_NO,
+    ret = GPIO_Driver_CAM_PWR->SetValue(BOARD_CAMERA_POWER_GPIO_PIN,
                                         GPIO_PIN_OUTPUT_STATE_LOW);
     if (ret != ARM_DRIVER_OK) {
         return ret;
     }
 
-    ret = GPIO_Driver_CAM_RST->PowerControl(RTE_MT9M114_CAMERA_SENSOR_MIPI_RESET_PIN_NO,
+    ret = GPIO_Driver_CAM_RST->PowerControl(BOARD_CAMERA_RESET_GPIO_PIN,
                                             ARM_POWER_OFF);
     if (ret != ARM_DRIVER_OK) {
         return ret;
     }
 
-    ret = GPIO_Driver_CAM_RST->Uninitialize(RTE_MT9M114_CAMERA_SENSOR_MIPI_RESET_PIN_NO);
+    ret = GPIO_Driver_CAM_RST->Uninitialize(BOARD_CAMERA_RESET_GPIO_PIN);
     if (ret != ARM_DRIVER_OK) {
         return ret;
     }
 
-    ret = GPIO_Driver_CAM_PWR->PowerControl(RTE_MT9M114_CAMERA_SENSOR_MIPI_POWER_PIN_NO,
+    ret = GPIO_Driver_CAM_PWR->PowerControl(BOARD_CAMERA_POWER_GPIO_PIN,
                                             ARM_POWER_OFF);
     if (ret != ARM_DRIVER_OK) {
         return ret;
     }
 
-    ret = GPIO_Driver_CAM_PWR->Uninitialize(RTE_MT9M114_CAMERA_SENSOR_MIPI_POWER_PIN_NO);
+    ret = GPIO_Driver_CAM_PWR->Uninitialize(BOARD_CAMERA_POWER_GPIO_PIN);
     if (ret != ARM_DRIVER_OK) {
         return ret;
     }
@@ -1471,6 +1475,48 @@ static int32_t MT9M114_Camera_AE(const uint32_t enable, CAMERA_SENSOR_SLAVE_I2C_
 #endif
 
 /**
+ * \brief Set MT9M114 global gain from ISP AE Q16.16 value.
+ * \param[in] gain_q16_16 : total gain in Q16.16 format (0x10000 = 1x).
+ * \param[in] i2c_cfg     : Pointer to Camera Sensor i2c configuration.
+ * \return execution_status
+ */
+static int32_t MT9M114_Camera_Gain_Set(uint32_t gain_q16_16,
+                                       CAMERA_SENSOR_SLAVE_I2C_CONFIG *i2c_cfg)
+{
+    /* Register 0x305E (GLOBAL_GAIN) bit-field layout:
+     *   Total Gain = (bits[3:0]/16 + 1) * 2^bits[6:4] * (bits[15:7]/64)
+     *   bits[15:7] = digital_gain — MUST be 64 (1x); 0 gives zero total gain
+     *                (black image); variable values cause brightness oscillation.
+     *   bits[6:4]  = coarse_gain  (0-3 → 1x, 2x, 4x, 8x)
+     *   bits[3:0]  = fine_gain    (0-15 → 1.0x..1.9375x in 1/16 steps)
+     */
+    uint32_t fine_gain = gain_q16_16;
+    uint32_t coarse_gain;
+
+    if (gain_q16_16 == 0) {
+        return ARM_DRIVER_ERROR_PARAMETER;
+    }
+
+    if (fine_gain < 0x10000) {
+        fine_gain = 0x10000;  /* Minimum gain is 1.0 */
+    } else if (fine_gain > 0x80000) {
+        fine_gain = 0x80000;  /* Maximum analogue gain is 8.0 */
+    }
+
+    coarse_gain = 0;
+    while (fine_gain >= 0x20000) {
+        coarse_gain++;
+        fine_gain /= 2;
+    }
+    fine_gain = (fine_gain - 0x10000) / 0x1000;
+
+    /* digital_gain fixed at 64 (= 1.0x); only coarse/fine analog gain varies */
+    uint32_t val = (64U << 7) | (coarse_gain << 4) | fine_gain;
+
+    return camera_sensor_i2c_write(i2c_cfg, MT9M114_GLOBAL_GAIN_REGISTER, val, 2);
+}
+
+/**
   \fn           int32_t mt9m114_Init(CAMERA_SENSOR_DEVICE *cpi_mt9m114_camera_sensor,
                                      CAMERA_SENSOR_SLAVE_I2C_CONFIG *i2c_cfg)
 
@@ -1534,6 +1580,16 @@ static int32_t mt9m114_Init(CAMERA_SENSOR_DEVICE           *cpi_mt9m114_camera_s
 #if (RTE_MT9M114_CAMERA_SENSOR_MIPI_ENABLE)
     if (cpi_mt9m114_camera_sensor->interface == CAMERA_SENSOR_INTERFACE_MIPI) {
         ret = mt9m114_mipi_camera_init(i2c_cfg);
+        if (ret != ARM_DRIVER_OK) {
+            return ARM_DRIVER_ERROR;
+        }
+    }
+#endif
+
+#if (RTE_MT9M114_CAMERA_SENSOR_MIPI_ENABLE) && (RTE_ISP)
+    if (cpi_mt9m114_camera_sensor->interface == CAMERA_SENSOR_INTERFACE_MIPI) {
+        /* Disable sensor's internal AE; ISP will drive exposure/gain. */
+        ret = MT9M114_Camera_AE(0, i2c_cfg);
         if (ret != ARM_DRIVER_OK) {
             return ARM_DRIVER_ERROR;
         }
@@ -1618,6 +1674,15 @@ static int32_t mt9m114_Control(CAMERA_SENSOR_DEVICE           *cpi_mt9m114_camer
             return ARM_DRIVER_ERROR_PARAMETER;
         }
 #endif
+
+    case CPI_ISP_CAMERA_SENSOR_EXPOSURE:
+        return camera_sensor_i2c_write(i2c_cfg,
+                   MT9M114_COARSE_INTEGRATION_TIME_REGISTER, arg & 0xFFFFU, 2);
+
+    case CPI_ISP_CAMERA_SENSOR_GAIN:
+        return MT9M114_Camera_Gain_Set(arg, i2c_cfg);
+
+
     default:
         return ARM_DRIVER_ERROR_PARAMETER;
     }

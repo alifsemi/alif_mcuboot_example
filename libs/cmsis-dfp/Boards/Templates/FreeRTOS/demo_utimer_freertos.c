@@ -157,29 +157,29 @@ static int32_t gpio_init(ARM_UTIMER_MODE mode)
 
     if (mode == ARM_UTIMER_MODE_TRIGGERING) {
 #if BOARD_TRIGGER_MODE_UTIMER_INSTANCE
-        ret = ptrTrig0GPO->Initialize(BOARD_UT_TRIGGER_MODE_GPIO0_GPIO_PIN, 0);
+        ret = ptrTrig0GPO->Initialize(BOARD_UT_TRIGGER_MODE_GPO0_GPIO_PIN, 0);
         if (ret != ARM_DRIVER_OK) {
-            printf("ERROR: Failed to initialize BOARD_UT_TRIGGER_MODE_GPIO0_GPIO_PIN as GPIO\n");
+            printf("ERROR: Failed to initialize BOARD_UT_TRIGGER_MODE_GPO0_GPIO_PIN as GPIO\n");
             return -1;
         }
 
-        ret = ptrTrig0GPO->PowerControl(BOARD_UT_TRIGGER_MODE_GPIO0_GPIO_PIN, ARM_POWER_FULL);
+        ret = ptrTrig0GPO->PowerControl(BOARD_UT_TRIGGER_MODE_GPO0_GPIO_PIN, ARM_POWER_FULL);
         if (ret != ARM_DRIVER_OK) {
-            printf("ERROR: Failed to Power up BOARD_UT_TRIGGER_MODE_GPIO0_GPIO_PIN\n");
+            printf("ERROR: Failed to Power up BOARD_UT_TRIGGER_MODE_GPO0_GPIO_PIN\n");
             return -1;
         }
 
-        ret = ptrTrig0GPO->SetDirection(BOARD_UT_TRIGGER_MODE_GPIO0_GPIO_PIN,
+        ret = ptrTrig0GPO->SetDirection(BOARD_UT_TRIGGER_MODE_GPO0_GPIO_PIN,
                                         GPIO_PIN_DIRECTION_OUTPUT);
         if (ret != ARM_DRIVER_OK) {
-            printf("ERROR: Failed to set direction for BOARD_UT_TRIGGER_MODE_GPIO0_GPIO_PIN\n");
+            printf("ERROR: Failed to set direction for BOARD_UT_TRIGGER_MODE_GPO0_GPIO_PIN\n");
             return -1;
         }
 
         ret =
-            ptrTrig0GPO->SetValue(BOARD_UT_TRIGGER_MODE_GPIO0_GPIO_PIN, GPIO_PIN_OUTPUT_STATE_LOW);
+            ptrTrig0GPO->SetValue(BOARD_UT_TRIGGER_MODE_GPO0_GPIO_PIN, GPIO_PIN_OUTPUT_STATE_LOW);
         if (ret != ARM_DRIVER_OK) {
-            printf("ERROR: Failed to set value for BOARD_UT_TRIGGER_MODE_GPIO0_GPIO_PIN\n");
+            printf("ERROR: Failed to set value for BOARD_UT_TRIGGER_MODE_GPO0_GPIO_PIN\n");
             return -1;
         }
 
@@ -302,7 +302,7 @@ static int32_t board_utimer_pins_config(void)
     }
     /* GPIO init for Trigger mode */
     ret = pinconf_set(PORT_(BOARD_UT_TRIGGER_MODE_GPO0_GPIO_PORT),
-                      BOARD_UT_TRIGGER_MODE_GPIO0_GPIO_PIN,
+                      BOARD_UT_TRIGGER_MODE_GPO0_GPIO_PIN,
                       PINMUX_ALTERNATE_FUNCTION_0,
                       0);
     if (ret != ARM_DRIVER_OK) {
@@ -792,7 +792,7 @@ static void utimer_trigger_mode_app(void *pvParameters)
     value = ptrUTIMER->GetCount(channel, ARM_UTIMER_CNTR);
     printf("counter value before triggering : %" PRIu32 "\n", value);
 
-    ret = ptrTrig0GPO->SetValue(BOARD_UT_TRIGGER_MODE_GPIO0_GPIO_PIN, GPIO_PIN_OUTPUT_STATE_HIGH);
+    ret = ptrTrig0GPO->SetValue(BOARD_UT_TRIGGER_MODE_GPO0_GPIO_PIN, GPIO_PIN_OUTPUT_STATE_HIGH);
     if ((ret != ARM_DRIVER_OK)) {
         printf("ERROR: Failed to configure\n");
     }

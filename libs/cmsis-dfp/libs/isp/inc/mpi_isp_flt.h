@@ -29,7 +29,7 @@
 
 #ifdef __cplusplus
 #if __cplusplus
-extern "C" {
+extern "C"{
 #endif
 #endif
 
@@ -41,34 +41,35 @@ extern "C" {
  *
  */
 
-/* @brief The minimum value of De-nosing level and Sharpen level. */
-#define VSI_ISP_FLT_LEVEL_MIN           0
+#define VSI_ISP_FLT_LEVEL_MIN    0    /**< \brief The minimum value of De-nosing level and Sharpen level. */
+#define VSI_ISP_FLT_LEVEL_MAX    10   /**< \brief The maximum value of De-nosing level and Sharpen level. */
 
-/* @brief The maximum value of De-nosing level and Sharpen level. */
-#define VSI_ISP_FLT_LEVEL_MAX           10
 
-/* @brief   Filter manual attribute. */
+
+/** \brief   Filter manual attribute. */
 typedef struct vsiISP_FLT_MANUAL_ATTR_S {
-    vsi_u8_t denoiseLevel; /* @brief De-nosing level configurations range [0 10]    */
-    vsi_u8_t sharpenLevel; /* @brief Sharpen level configurations range [0 10]      */
+    vsi_u8_t denoiseLevel;    /**< \brief De-nosing level configurations.
+                                    \n range [0 10]*/
+    vsi_u8_t sharpenLevel;    /**< \brief Sharpen level configurations.
+                                    \n range [0 10]*/
 } ISP_FLT_MANUAL_ATTR_S;
 
-/* @brief   Filter auto attribute. */
+/** \brief   Filter auto  attribute. */
 typedef struct vsiISP_FLT_AUTO_ATTR_S {
-    /* @brief De-nosing level configuration range [0 10] */
-    vsi_u8_t denoiseLevel[ISP_AUTO_STRENGTH_NUN];
-
-    /* @brief Sharpen level configurations range [0 10]   */
-    vsi_u8_t sharpenLevel[ISP_AUTO_STRENGTH_NUN];
+    vsi_u8_t denoiseLevel[ISP_AUTO_STRENGTH_NUN];    /**< \brief De-nosing level configurations.
+                                                            \n range [0 10]*/
+    vsi_u8_t sharpenLevel[ISP_AUTO_STRENGTH_NUN];    /**< \brief Sharpen level configurations.
+                                                            \n range [0 10]*/
 } ISP_FLT_AUTO_ATTR_S;
 
-/* @brief   Filter attribute. */
+/** \brief   Filter attribute. */
 typedef struct vsiISP_FLT_ATTR_S {
-    vsi_bool_t enable; /* @brief Whether to enable filter 0: Disable filter. 1: Enable filter. */
-    ISP_OP_TYPE_E         opType;     /* @brief FLT mode attribute      */
-    ISP_FLT_MANUAL_ATTR_S manualAttr; /* @brief FLT manual attribute    */
-    ISP_FLT_AUTO_ATTR_S   autoAttr;   /* @brief FLT auto attribute      */
+    vsi_bool_t            enable;         /**< \brief Whether to enable filter. \n 0: Disable filter. \n 1: Enable filter. */
+    ISP_OP_TYPE_E         opType;         /**< \brief FLT mode attribute */
+    ISP_FLT_MANUAL_ATTR_S manualAttr;     /**< \brief FLT manual attribute */
+    ISP_FLT_AUTO_ATTR_S   autoAttr;       /**< \brief FLT auto attribute */
 } ISP_FLT_ATTR_S;
+
 
 /*****************************************************************************/
 /**
@@ -88,6 +89,7 @@ int VSI_MPI_ISP_GetFltAttr(ISP_PORT IspPort, ISP_FLT_ATTR_S *pFltAttr);
  *
  * @param   IspPort             Port ID
  * @param   pFltAttr            Pointer to the Flt attribute
+
  *
  * @retval  VSI_SUCCESS         Operation succeeded
  *

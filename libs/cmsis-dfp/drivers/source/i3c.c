@@ -84,24 +84,20 @@ static void i3c_read_rx_fifo(I3C_Type *i3c, uint8_t *bytes, uint32_t nbytes)
 */
 static void i3c_set_tx_buf_thld(I3C_Type *i3c, const uint16_t len)
 {
-    uint16_t loc_len = (len / 4);
-    uint8_t  rem     = (len % 4);
+    uint8_t thld;
+
     uint32_t temp =
         (i3c->I3C_DATA_BUFFER_THLD_CTRL & (~I3C_DATA_BUFFER_THLD_CTRL_TX_EMPTY_BUF_THLD_Msk));
 
-    /* If data length is more than 4 bytes then perform the following,
-     * else set 0*/
-    if (len > 4) {
-        if (rem) {
-            /* Set 1 extra location */
-            temp |= (((loc_len + 1) << I3C_DATA_BUFFER_THLD_CTRL_TX_EMPTY_BUF_THLD_Pos) &
-                     I3C_DATA_BUFFER_THLD_CTRL_TX_EMPTY_BUF_THLD_Msk);
-        } else {
-            /* Set actual number of locations */
-            temp |= ((loc_len << I3C_DATA_BUFFER_THLD_CTRL_TX_EMPTY_BUF_THLD_Pos) &
-                     I3C_DATA_BUFFER_THLD_CTRL_TX_EMPTY_BUF_THLD_Msk);
-        }
+    if (len) {
+        thld = i3c_get_buflen_to_threshold(len);
+    } else {
+        thld = 0;
     }
+
+    /* Set the calculated threshold */
+    temp |= ((thld << I3C_DATA_BUFFER_THLD_CTRL_TX_EMPTY_BUF_THLD_Pos) &
+                      I3C_DATA_BUFFER_THLD_CTRL_TX_EMPTY_BUF_THLD_Msk);
 
     i3c->I3C_DATA_BUFFER_THLD_CTRL = temp;
 }
@@ -116,21 +112,19 @@ static void i3c_set_tx_buf_thld(I3C_Type *i3c, const uint16_t len)
 */
 static void i3c_set_rx_buf_thld(I3C_Type *i3c, const uint16_t len)
 {
-    uint16_t loc_len = (len / 4);
-    uint8_t  rem     = (len % 4);
+    uint8_t thld;
+
     uint32_t temp = (i3c->I3C_DATA_BUFFER_THLD_CTRL & (~I3C_DATA_BUFFER_THLD_CTRL_RX_BUF_THLD_Msk));
 
-    /* If data length is more than 4 bytes then perform the following,
-     * else set 0*/
-    if (len > 4) {
-        if (rem) {
-            temp |= (((loc_len + 1) << I3C_DATA_BUFFER_THLD_CTRL_RX_BUF_THLD_Pos) &
-                     I3C_DATA_BUFFER_THLD_CTRL_RX_BUF_THLD_Msk);
-        } else {
-            temp |= ((loc_len << I3C_DATA_BUFFER_THLD_CTRL_RX_BUF_THLD_Pos) &
-                     I3C_DATA_BUFFER_THLD_CTRL_RX_BUF_THLD_Msk);
-        }
+    if (len) {
+        thld  = i3c_get_buflen_to_threshold(len);
+    } else {
+        thld = 0;
     }
+
+    /* Set the calculated threshold */
+    temp |= ((thld << I3C_DATA_BUFFER_THLD_CTRL_RX_BUF_THLD_Pos) &
+                      I3C_DATA_BUFFER_THLD_CTRL_RX_BUF_THLD_Msk);
 
     i3c->I3C_DATA_BUFFER_THLD_CTRL = temp;
 }
@@ -180,7 +174,8 @@ static void i3c_set_port(I3C_Type *i3c, i3c_xfer_t *xfer)
     bool is_master = true;
 
     switch (xfer->xfer_cmd.cmd_type) {
-    case I3C_XFER_TYPE_DATA:
+    case I3C_XFER_TYPE_TX_DATA:
+    case I3C_XFER_TYPE_RX_DATA:
         xfer->xfer_cmd.cmd_id = 0U;
 
         /* Checks about instance mastership */
@@ -190,13 +185,13 @@ static void i3c_set_port(I3C_Type *i3c, i3c_xfer_t *xfer)
         }
 
         if (is_master) {
-            if (xfer->rx_len) {
+            if (xfer->xfer_cmd.cmd_type == I3C_XFER_TYPE_RX_DATA) {
                 xfer->xfer_cmd.port_id = I3C_MST_RX_TID;
             } else {
                 xfer->xfer_cmd.port_id = I3C_MST_TX_TID;
             }
         } else {
-            if (xfer->rx_len) {
+            if (xfer->xfer_cmd.cmd_type == I3C_XFER_TYPE_RX_DATA) {
                 xfer->xfer_cmd.port_id = I3C_SLV_RX_TID;
             } else {
                 xfer->xfer_cmd.port_id = I3C_SLV_TX_TID;
@@ -1305,6 +1300,8 @@ void i3c_slave_init(I3C_Type *i3c, const uint8_t slv_addr, const uint32_t core_c
 
     /* As per mipi_i3c_user Section 5 */
 
+    /* Clear stale dynamic address so slave responds to SETDASA */
+    i3c->I3C_DEVICE_ADDR &= ~I3C_DEVICE_ADDR_DYNAMIC_ADDR_VALID;
     /* DEVICE_ADDR to set static addr with its valid bit */
     i3c->I3C_DEVICE_ADDR |= (I3C_DEVICE_ADDR_STATIC_ADDR_VALID | slv_addr);
 
@@ -1424,10 +1421,8 @@ void i3c_setup_tx(I3C_Type *i3c, i3c_xfer_t *xfer, const uint16_t len)
 
     xfer->xfer_cmd.cmd_type = I3C_XFER_TYPE_NONE;
 
-    if (i3c_is_dma_enable(i3c)) {
-        /* Don't enable command queue ready and Tx data threshold interrupts */
         temp = 0;
-    } else {
+    if (!i3c_is_dma_enable(i3c)) {
         /* write data to tx port (if any) */
         if ((xfer->tx_buf) && (xfer->tx_cur_cnt < xfer->tx_len)) {
             resp = i3c_get_empty_tx_buf_len(i3c);
@@ -1468,8 +1463,7 @@ void i3c_setup_rx(I3C_Type *i3c, const uint16_t len)
     i3c_set_rx_buf_thld(i3c, len);
 
     if (i3c_is_dma_enable(i3c)) {
-        /* Enable only command queue ready status interrupt if
-         * DMA is enabled */
+        /* Enable only command queue ready status interrupt if DMA is enabled */
         temp = I3C_INTR_STATUS_EN_CMD_QUEUE_READY_STS_EN;
     } else {
         if (i3c_is_master(i3c)) {
@@ -1566,12 +1560,19 @@ void i3c_master_irq_handler(I3C_Type *i3c, i3c_xfer_t *xfer)
         i3c_ibi_handler(i3c, xfer);
     }
 
-    if (xfer->error) {
+    if (xfer->error || (status & I3C_INTR_STATUS_TRANSFER_ABORT_STS)) {
         /* Fetches error type */
         i3c_fetch_error_type(xfer);
 
         /* Invokes error handler */
         i3c_error_handler(i3c, xfer, status, resp);
+
+        /* Disable other than default master interrupts and
+         * clear all interrupts
+         */
+        i3c_disable_intr(i3c, ~I3C_MASTER_DFLT_INTR_EN_MASK);
+        i3c_clear_intr(i3c, I3C_INTR_STATUS_ALL);
+
     } else {
         switch (tid) {
         case I3C_MST_TX_TID:
@@ -1591,7 +1592,18 @@ void i3c_master_irq_handler(I3C_Type *i3c, i3c_xfer_t *xfer)
         case I3C_MST_RX_TID:
         case I3C_CCC_GET_TID:
             if (xfer->rx_len) {
-                i3c_receive(i3c, xfer, rx_len);
+                i3c_receive(i3c, xfer, (xfer->rx_len - xfer->rx_cur_cnt));
+
+                if (tid == I3C_MST_RX_TID && rx_len < xfer->rx_len) {
+                    /* Slave asserted T=0 before delivering all requested bytes.
+                     * Hardware reports no error; report as early termination so
+                     * the caller can distinguish it via GetError().
+                     */
+                    i3c_disable_intr(i3c, I3C_INTR_STATUS_RX_THLD_STS);
+                    xfer->error  = I3C_COMM_ERROR_PEC_OR_EARLY_TERM;
+                    xfer->status = I3C_XFER_STATUS_ERROR | I3C_XFER_STATUS_ERROR_RX;
+                    break;
+                }
 
                 if (xfer->rx_cur_cnt >= xfer->rx_len) {
                     i3c_disable_intr(i3c, I3C_INTR_STATUS_RX_THLD_STS);
@@ -1740,6 +1752,13 @@ void i3c_slave_irq_handler(I3C_Type *i3c, i3c_xfer_t *xfer)
 
         /* Invokes error handler */
         i3c_error_handler(i3c, xfer, status, resp);
+
+        /* Disable other than default slave interrupts and
+         * clear all interrupts
+         */
+        i3c_disable_intr(i3c, ~I3C_SLAVE_DFLT_INTR_EN_MASK);
+        i3c_clear_intr(i3c, I3C_INTR_STATUS_ALL);
+
     } else {
         tid = I3C_RESPONSE_QUEUE_PORT_TID(resp);
 
@@ -1751,10 +1770,28 @@ void i3c_slave_irq_handler(I3C_Type *i3c, i3c_xfer_t *xfer)
 
         case I3C_SLV_RX_TID:
             if (xfer->rx_len) {
-                i3c_receive(i3c, xfer, rx_len);
+                if (i3c_is_dma_enable(i3c)) {
+                    if (xfer->slv_rx_resp_pending) {
+                        /* Trailing RESP for a slave-RX xfer whose DMA
+                         * cb already delivered success. Drop it — the
+                         * response word has already been read from
+                         * I3C_RESPONSE_QUEUE_PORT above
+                         */
+                        xfer->slv_rx_resp_pending = 0;
+                        break;
+                    }
+                    /* No pending flag: this RESP is the abort of the
+                     * currently-armed xfer (DMA cb never fires on
+                     * abort). Record actual byte count so
+                     * HandleSuccess can detect the short read
+                     */
+                    xfer->rx_cur_cnt = rx_len;
+                } else {
+                    i3c_receive(i3c, xfer, (xfer->rx_len - xfer->rx_cur_cnt));
 
-                if (xfer->rx_cur_cnt >= xfer->rx_len) {
-                    i3c_disable_intr(i3c, I3C_INTR_STATUS_RX_THLD_STS);
+                    if (xfer->rx_cur_cnt >= xfer->rx_len) {
+                        i3c_disable_intr(i3c, I3C_INTR_STATUS_RX_THLD_STS);
+                    }
                 }
 
                 /* mark all success event also as Transfer DONE */

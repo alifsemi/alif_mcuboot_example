@@ -269,11 +269,8 @@ const struct pinconf board_pinconf[] = {
 
     /* P4_0 on pin F18. Functions: [0]: >>>GPIO4_0<<<, [1]: Reserved, [2]: Reserved, [3]: I2S1_WS_A,
        [4]: SPI1_SS2_A, [5]: QEC2_Z_A, [6]: CDC_VSYNC_B, [7]: CAM_D12_A */
-    /* Selected: GPIO4_0 for "TOUCH_RESET" */
-    {PORT_4,
-     PIN_0,
-     PINMUX_ALTERNATE_FUNCTION_0,
-     PADCTRL_DRIVER_DISABLED_PULL_UP | PADCTRL_OUTPUT_DRIVE_STRENGTH_4MA},
+    /* Selected: GPIO4_0 */
+    {PORT_4, PIN_0, PINMUX_ALTERNATE_FUNCTION_0, PADCTRL_OUTPUT_DRIVE_STRENGTH_4MA},
 
     /* P4_1 on pin B19. Functions: [0]: >>>GPIO4_1<<<, [1]: Reserved, [2]: I2S0_SDI_B, [3]:
        SPI1_SS3_A, [4]: QEC3_X_A, [5]: SD_CLK_D, [6]: CDC_HSYNC_B, [7]: CAM_D13_A */

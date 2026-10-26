@@ -93,7 +93,7 @@ void clock_init(void)
     }
 
     /* Enable USB_CLK */
-    rval = SERVICES_clocks_enable_clock(se_services_s_handle, CLKEN_USB, true, &error_code);
+    rval = SERVICES_clocks_enable_clock(se_services_s_handle, CLKEN_CLK_20M, true, &error_code);
     if ((rval != 0) || (error_code != 0)) {
         return;
     }
@@ -112,15 +112,6 @@ void clock_init(void)
     if (rval != 0) {
         return;
     }
-}
-
-static void CpuCacheEnable(void)
-{
-    /* Enable I-Cache */
-    SCB_EnableICache();
-
-    /* Enable D-Cache */
-    SCB_EnableDCache();
 }
 
 int main(void)
@@ -145,9 +136,6 @@ int main(void)
 #ifdef CMSIS_shield_header
     shield_setup();
 #endif
-
-    /* Enable the CPU Cache */
-    CpuCacheEnable();
 
     return app_main();
 }

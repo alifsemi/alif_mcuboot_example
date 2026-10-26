@@ -181,14 +181,6 @@ static void spi0_spi1_transfer(void)
     uint32_t spi1_tx_buff, spi0_rx_buff = 0;
 #endif
 
-    /*
-     * H/W connections on devkit:
-     * short SPI0 MISO (P5_0 -> J12-13 pin) and SPI1 MISO (P8_3 -> J14-15 pin).
-     * short SPI0 MOSI (P5_1 -> J12-15 pin) and SPI1 MOSI (P8_4 -> J14-17 pin).
-     * short SPI0 SCLK (P5_3 -> J14-5 pin) and SPI1 SCLK (P8_5 -> J14-19 pin).
-     * short SPI0 SS (P5_2 -> J12-17 pin) and SPI1 SS (P6_4 -> J12-22 pin).
-     * */
-
     printf("*** Demo app using SPI0 & SPI1 is starting ***\n");
 
 #if USE_CONDUCTOR_TOOL_PINS_CONFIG

@@ -7,8 +7,8 @@ solution:
   select-compiler:
     - compiler: AC6
     - compiler: GCC
-    - compiler: IAR
     - compiler: CLANG
+
   # Miscellaneous toolchain controls directly passed to the tools
   misc:
     - for-compiler: AC6      # change to -gdwarf-4 for debugging using uVision
@@ -50,4 +50,3 @@ solution:
   # List related projects.
   projects:
     - project: ./project_template.cproject.yml
-  compiler: AC6

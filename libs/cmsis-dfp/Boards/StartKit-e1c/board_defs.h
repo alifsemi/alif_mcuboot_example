@@ -54,26 +54,26 @@
 #define BOARD_CMPD_CMP_INSTANCE                         3
 
 // <e> CSI module enabled flag
-#define BOARD_CSI_ENABLED                               1
+#define BOARD_CSI_ENABLED                               0
 // <e> "ARX3A0" on CSI presence flag
-#define BOARD_CSI_ARX3A0_PRESENT                        1
+#define BOARD_CSI_ARX3A0_PRESENT                        0
 // </e>
 // <e> "AR0144" on CSI presence flag
-#define BOARD_CSI_AR0144_PRESENT                        1
+#define BOARD_CSI_AR0144_PRESENT                        0
 // </e>
 // </e>
 
 // <e> DSI module enabled flag
-#define BOARD_DSI_ENABLED                               1
+#define BOARD_DSI_ENABLED                               0
 // <e> "ILI9806" on DSI presence flag
-#define BOARD_DSI_ILI9806_PRESENT                       1
+#define BOARD_DSI_ILI9806_PRESENT                       0
 // </e>
 // </e>
 
 // <e> ETH module enabled flag
-#define BOARD_ETH_ENABLED                               1
+#define BOARD_ETH_ENABLED                               0
 // <e> "RTL8201" on ETH presence flag
-#define BOARD_ETH_RTL8201_PRESENT                       1
+#define BOARD_ETH_RTL8201_PRESENT                       0
 // </e>
 // </e>
 
@@ -83,8 +83,8 @@
 // <o> "Slave" I2C instance number <0-3>
 #define BOARD_SLAVE_I2C_INSTANCE                        0
 
-// <o> "Camera" I2C instance number <0-3>
-#define BOARD_CAMERA_I2C_INSTANCE                       0
+// <o> "LPCAM" I2C instance number <0-3>
+#define BOARD_LPCAM_I2C_INSTANCE                        1
 
 // <o> "GT911 Touchscreen" I2C instance number <0-3>
 #define BOARD_GT911_TOUCHSCREEN_I2C_INSTANCE            1
@@ -117,7 +117,7 @@
 #define BOARD_I3C_FLEXIO_PRESENT                        0
 
 // <e> "ICM42670 IMU" on I3C presence flag
-#define BOARD_I3C_ICM42670_IMU_PRESENT                  1
+#define BOARD_I3C_ICM42670_IMU_PRESENT                  0
 // </e>
 // <e> "BMI323 IMU" on I3C presence flag
 #define BOARD_I3C_BMI323_IMU_PRESENT                    1
@@ -257,7 +257,7 @@
 
 // <o> Onboard Push-buttons
 // <i> Sets the #define BOARD_BUTTON_COUNT in the board_def.h file exported from the Conductor tool.
-#define BOARD_BUTTON_COUNT                              5
+#define BOARD_BUTTON_COUNT                              1
 
 // <o> Onboard Config Switches or Jumpers
 // <i> Sets the #define BOARD_CONFIG_JUMPER_COUNT in the board_def.h file exported from the
@@ -600,20 +600,6 @@
 // PIN6 <7=> PIN7
 #define BOARD_SD_D7_A_GPIO_PIN                          7
 
-// <o> "I2C1_SDA_C" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4 <5=>
-// GPIO5 <6=> GPIO6 <7=> GPIO7 <8=> GPIO8 <9=> GPIO9 <15=> LPGPIO
-#define BOARD_I2C1_SDA_C_GPIO_PORT                      7
-// <o> "I2C1_SDA_C" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4 <5=> PIN5 <6=>
-// PIN6 <7=> PIN7
-#define BOARD_I2C1_SDA_C_GPIO_PIN                       2
-
-// <o> "I2C1_SCL_C" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4 <5=>
-// GPIO5 <6=> GPIO6 <7=> GPIO7 <8=> GPIO8 <9=> GPIO9 <15=> LPGPIO
-#define BOARD_I2C1_SCL_C_GPIO_PORT                      7
-// <o> "I2C1_SCL_C" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4 <5=> PIN5 <6=>
-// PIN6 <7=> PIN7
-#define BOARD_I2C1_SCL_C_GPIO_PIN                       3
-
 // <o> "LPPDM_TEST" LPPDM data/clock pair number <0=> D0/C0 <1=> D1/C1 <2=> D2/C2 <3=> D3/C3
 #define BOARD_LPPDM_TEST_LPPDM_INPUT                    1
 
@@ -689,62 +675,6 @@
 // <o> "LPPDM_C3" GPIO pin alternate function <0-7>
 #define BOARD_LPPDM_C3_ALTERNATE_FUNCTION               3
 
-// <o> "PDM_D0_A" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4 <5=> GPIO5
-// <6=> GPIO6 <7=> GPIO7 <8=> GPIO8 <9=> GPIO9 <15=> LPGPIO
-#define BOARD_PDM_D0_A_GPIO_PORT                        0
-// <o> "PDM_D0_A" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4 <5=> PIN5 <6=>
-// PIN6 <7=> PIN7
-#define BOARD_PDM_D0_A_GPIO_PIN                         4
-
-// <o> "PDM_D1_C" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4 <5=> GPIO5
-// <6=> GPIO6 <7=> GPIO7 <8=> GPIO8 <9=> GPIO9 <15=> LPGPIO
-#define BOARD_PDM_D1_C_GPIO_PORT                        6
-// <o> "PDM_D1_C" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4 <5=> PIN5 <6=>
-// PIN6 <7=> PIN7
-#define BOARD_PDM_D1_C_GPIO_PIN                         2
-
-// <o> "PDM_D2_B" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4 <5=> GPIO5
-// <6=> GPIO6 <7=> GPIO7 <8=> GPIO8 <9=> GPIO9 <15=> LPGPIO
-#define BOARD_PDM_D2_B_GPIO_PORT                        5
-// <o> "PDM_D2_B" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4 <5=> PIN5 <6=>
-// PIN6 <7=> PIN7
-#define BOARD_PDM_D2_B_GPIO_PIN                         4
-
-// <o> "PDM_D3_A" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4 <5=> GPIO5
-// <6=> GPIO6 <7=> GPIO7 <8=> GPIO8 <9=> GPIO9 <15=> LPGPIO
-#define BOARD_PDM_D3_A_GPIO_PORT                        5
-// <o> "PDM_D3_A" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4 <5=> PIN5 <6=>
-// PIN6 <7=> PIN7
-#define BOARD_PDM_D3_A_GPIO_PIN                         1
-
-// <o> "PDM_C0_A" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4 <5=> GPIO5
-// <6=> GPIO6 <7=> GPIO7 <8=> GPIO8 <9=> GPIO9 <15=> LPGPIO
-#define BOARD_PDM_C0_A_GPIO_PORT                        0
-// <o> "PDM_C0_A" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4 <5=> PIN5 <6=>
-// PIN6 <7=> PIN7
-#define BOARD_PDM_C0_A_GPIO_PIN                         5
-
-// <o> "PDM_C1_C" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4 <5=> GPIO5
-// <6=> GPIO6 <7=> GPIO7 <8=> GPIO8 <9=> GPIO9 <15=> LPGPIO
-#define BOARD_PDM_C1_C_GPIO_PORT                        6
-// <o> "PDM_C1_C" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4 <5=> PIN5 <6=>
-// PIN6 <7=> PIN7
-#define BOARD_PDM_C1_C_GPIO_PIN                         3
-
-// <o> "PDM_C2_A" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4 <5=> GPIO5
-// <6=> GPIO6 <7=> GPIO7 <8=> GPIO8 <9=> GPIO9 <15=> LPGPIO
-#define BOARD_PDM_C2_A_GPIO_PORT                        6
-// <o> "PDM_C2_A" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4 <5=> PIN5 <6=>
-// PIN6 <7=> PIN7
-#define BOARD_PDM_C2_A_GPIO_PIN                         7
-
-// <o> "PDM_C3_A" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4 <5=> GPIO5
-// <6=> GPIO6 <7=> GPIO7 <8=> GPIO8 <9=> GPIO9 <15=> LPGPIO
-#define BOARD_PDM_C3_A_GPIO_PORT                        5
-// <o> "PDM_C3_A" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4 <5=> PIN5 <6=>
-// PIN6 <7=> PIN7
-#define BOARD_PDM_C3_A_GPIO_PIN                         2
-
 // <o> "TOUCH_RESET" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4 <5=>
 // GPIO5 <6=> GPIO6 <7=> GPIO7 <8=> GPIO8 <9=> GPIO9 <15=> LPGPIO
 #define BOARD_TOUCH_RESET_GPIO_PORT                     15
@@ -757,7 +687,7 @@
 #define BOARD_UT_TRIGGER_MODE_GPO0_GPIO_PORT            0
 // <o> "UT_TRIGGER_MODE_GPO0" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4 <5=>
 // PIN5 <6=> PIN6 <7=> PIN7
-#define BOARD_UT_TRIGGER_MODE_GPIO0_GPIO_PIN            0
+#define BOARD_UT_TRIGGER_MODE_GPO0_GPIO_PIN             0
 
 // <o> "UTIMER_GPO1" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4 <5=>
 // GPIO5 <6=> GPIO6 <7=> GPIO7 <8=> GPIO8 <9=> GPIO9 <15=> LPGPIO
@@ -922,174 +852,192 @@
 // <o> "CAN_STBY" GPIO pin alternate function <0-7>
 #define BOARD_CAN_STBY_ALTERNATE_FUNCTION               6
 
-// <o> "CAM_XVCLK_C" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4 <5=>
+// <o> "LPCAM_ENBUF" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4 <5=>
 // GPIO5 <6=> GPIO6 <7=> GPIO7 <8=> GPIO8 <9=> GPIO9 <15=> LPGPIO
-#define BOARD_CAM_XVCLK_C_GPIO_PORT                     8
-// <o> "CAM_XVCLK_C" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4 <5=> PIN5
+#define BOARD_LPCAM_ENBUF_GPIO_PORT                     3
+// <o> "LPCAM_ENBUF" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4 <5=> PIN5
 // <6=> PIN6 <7=> PIN7
-#define BOARD_CAM_XVCLK_C_GPIO_PIN                      7
+#define BOARD_LPCAM_ENBUF_GPIO_PIN                      2
 
-// <o> "CAMERA_POWER" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4 <5=>
+// <o> "LPCAM_RESET" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4 <5=>
 // GPIO5 <6=> GPIO6 <7=> GPIO7 <8=> GPIO8 <9=> GPIO9 <15=> LPGPIO
-#define BOARD_CAMERA_POWER_GPIO_PORT                    7
-// <o> "CAMERA_POWER" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4 <5=> PIN5
+#define BOARD_LPCAM_RESET_GPIO_PORT                     15
+// <o> "LPCAM_RESET" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4 <5=> PIN5
 // <6=> PIN6 <7=> PIN7
-#define BOARD_CAMERA_POWER_GPIO_PIN                     5
+#define BOARD_LPCAM_RESET_GPIO_PIN                      1
 
-// <o> "I2C1_SDA_C" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4 <5=>
+// <o> "LPCAM_POWER" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4 <5=>
+// GPIO5 <6=> GPIO6 <7=> GPIO7 <8=> GPIO8 <9=> GPIO9 <15=> LPGPIO
+#define BOARD_LPCAM_POWER_GPIO_PORT                     1
+// <o> "LPCAM_POWER" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4 <5=> PIN5
+// <6=> PIN6 <7=> PIN7
+#define BOARD_LPCAM_POWER_GPIO_PIN                      3
+
+// <o> "I2C1_SDA_B" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4 <5=>
 // GPIO5 <6=> GPIO6 <7=> GPIO7 <8=> GPIO8 <9=> GPIO9 <10=> GPIO10 <11=> GPIO11 <12=> GPIO12 <13=>
 // GPIO13 <14=> GPIO14 <15=> LPGPIO
-#define BOARD_CAMERA_I2C_SDA_GPIO_PORT                  7
-// <o> "I2C1_SDA_C" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4 <5=> PIN5 <6=>
+#define BOARD_LPCAM_I2C_SDA_GPIO_PORT                   2
+// <o> "I2C1_SDA_B" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4 <5=> PIN5 <6=>
 // PIN6 <7=> PIN7
-#define BOARD_CAMERA_I2C_SDA_GPIO_PIN                   2
-// <o> "I2C1_SDA_C" GPIO pin alternate function <0-7>
-#define BOARD_CAMERA_I2C_SDA_ALTERNATE_FUNCTION         4
+#define BOARD_LPCAM_I2C_SDA_GPIO_PIN                    6
+// <o> "I2C1_SDA_B" GPIO pin alternate function <0-7>
+#define BOARD_LPCAM_I2C_SDA_ALTERNATE_FUNCTION          3
 
-// <o> "I2C1_SCL_C" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4 <5=>
+// <o> "I2C1_SCL_B" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4 <5=>
 // GPIO5 <6=> GPIO6 <7=> GPIO7 <8=> GPIO8 <9=> GPIO9 <10=> GPIO10 <11=> GPIO11 <12=> GPIO12 <13=>
 // GPIO13 <14=> GPIO14 <15=> LPGPIO
-#define BOARD_CAMERA_I2C_SCL_GPIO_PORT                  7
-// <o> "I2C1_SCL_C" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4 <5=> PIN5 <6=>
+#define BOARD_LPCAM_I2C_SCL_GPIO_PORT                   2
+// <o> "I2C1_SCL_B" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4 <5=> PIN5 <6=>
 // PIN6 <7=> PIN7
-#define BOARD_CAMERA_I2C_SCL_GPIO_PIN                   3
-// <o> "I2C1_SCL_C" GPIO pin alternate function <0-7>
-#define BOARD_CAMERA_I2C_SCL_ALTERNATE_FUNCTION         4
+#define BOARD_LPCAM_I2C_SCL_GPIO_PIN                    7
+// <o> "I2C1_SCL_B" GPIO pin alternate function <0-7>
+#define BOARD_LPCAM_I2C_SCL_ALTERNATE_FUNCTION          3
 
-// <o> "LPCAM_HSYNC_C" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4 <5=>
+// <o> "LPCAM_HSYNC_B" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4 <5=>
 // GPIO5 <6=> GPIO6 <7=> GPIO7 <8=> GPIO8 <9=> GPIO9 <15=> LPGPIO
-#define BOARD_LPCAM_HSYNC_GPIO_PORT                     8
-// <o> "LPCAM_HSYNC_C" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4 <5=> PIN5
+#define BOARD_LPCAM_HSYNC_GPIO_PORT                     2
+// <o> "LPCAM_HSYNC_B" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4 <5=> PIN5
 // <6=> PIN6 <7=> PIN7
-#define BOARD_LPCAM_HSYNC_GPIO_PIN                      5
-// <o> "LPCAM_HSYNC_C" GPIO pin alternate function <0-7>
+#define BOARD_LPCAM_HSYNC_GPIO_PIN                      0
+// <o> "LPCAM_HSYNC_B" GPIO pin alternate function <0-7>
 #define BOARD_LPCAM_HSYNC_ALTERNATE_FUNCTION            5
 
-// <o> "LPCAM_VSYNC_C" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4 <5=>
+// <o> "LPCAM_VSYNC_B" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4 <5=>
 // GPIO5 <6=> GPIO6 <7=> GPIO7 <8=> GPIO8 <9=> GPIO9 <15=> LPGPIO
-#define BOARD_LPCAM_VSYNC_GPIO_PORT                     8
-// <o> "LPCAM_VSYNC_C" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4 <5=> PIN5
+#define BOARD_LPCAM_VSYNC_GPIO_PORT                     0
+// <o> "LPCAM_VSYNC_B" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4 <5=> PIN5
 // <6=> PIN6 <7=> PIN7
-#define BOARD_LPCAM_VSYNC_GPIO_PIN                      4
-// <o> "LPCAM_VSYNC_C" GPIO pin alternate function <0-7>
-#define BOARD_LPCAM_VSYNC_ALTERNATE_FUNCTION            5
+#define BOARD_LPCAM_VSYNC_GPIO_PIN                      6
+// <o> "LPCAM_VSYNC_B" GPIO pin alternate function <0-7>
+#define BOARD_LPCAM_VSYNC_ALTERNATE_FUNCTION            4
 
-// <o> "LPCAM_PCLK_C" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4 <5=>
+// <o> "LPCAM_PCLK_B" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4 <5=>
 // GPIO5 <6=> GPIO6 <7=> GPIO7 <8=> GPIO8 <9=> GPIO9 <15=> LPGPIO
-#define BOARD_LPCAM_PCLK_GPIO_PORT                      8
-// <o> "LPCAM_PCLK_C" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4 <5=> PIN5
+#define BOARD_LPCAM_PCLK_GPIO_PORT                      2
+// <o> "LPCAM_PCLK_B" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4 <5=> PIN5
 // <6=> PIN6 <7=> PIN7
-#define BOARD_LPCAM_PCLK_GPIO_PIN                       6
-// <o> "LPCAM_PCLK_C" GPIO pin alternate function <0-7>
+#define BOARD_LPCAM_PCLK_GPIO_PIN                       1
+// <o> "LPCAM_PCLK_B" GPIO pin alternate function <0-7>
 #define BOARD_LPCAM_PCLK_ALTERNATE_FUNCTION             5
 
-// <o> "LPCAM_D0_C" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4 <5=>
+// <o> "LPCAM_XVCLK_B" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4 <5=>
 // GPIO5 <6=> GPIO6 <7=> GPIO7 <8=> GPIO8 <9=> GPIO9 <15=> LPGPIO
-#define BOARD_LPCAM_D0_GPIO_PORT                        9
-// <o> "LPCAM_D0_C" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4 <5=> PIN5 <6=>
-// PIN6 <7=> PIN7
+#define BOARD_LPCAM_XVCLK_GPIO_PORT                     2
+// <o> "LPCAM_XVCLK_B" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4 <5=> PIN5
+// <6=> PIN6 <7=> PIN7
+#define BOARD_LPCAM_XVCLK_GPIO_PIN                      3
+// <o> "LPCAM_XVCLK_B" GPIO pin alternate function <0-7>
+#define BOARD_LPCAM_XVCLK_ALTERNATE_FUNCTION            5
+
+// <o> "LPCAM_D0_A" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4 <5=>
+// GPIO5 <6=> GPIO6 <7=> GPIO7 <8=> GPIO8 <9=> GPIO9 <15=> LPGPIO
+#define BOARD_LPCAM_D0_GPIO_PORT                        4
+// <o> "LPCAM_D0_A" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4 <5=> PIN5
+// <6=> PIN6 <7=> PIN7
 #define BOARD_LPCAM_D0_GPIO_PIN                         0
-// <o> "LPCAM_D0_C" GPIO pin alternate function <0-7>
+// <o> "LPCAM_D0_A" GPIO pin alternate function <0-7>
 #define BOARD_LPCAM_D0_ALTERNATE_FUNCTION               5
 
-// <o> "LPCAM_D1_C" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4 <5=>
+// <o> "LPCAM_D1_A" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4 <5=>
 // GPIO5 <6=> GPIO6 <7=> GPIO7 <8=> GPIO8 <9=> GPIO9 <15=> LPGPIO
-#define BOARD_LPCAM_D1_GPIO_PORT                        9
-// <o> "LPCAM_D1_C" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4 <5=> PIN5 <6=>
-// PIN6 <7=> PIN7
+#define BOARD_LPCAM_D1_GPIO_PORT                        4
+// <o> "LPCAM_D1_A" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4 <5=> PIN5
+// <6=> PIN6 <7=> PIN7
 #define BOARD_LPCAM_D1_GPIO_PIN                         1
-// <o> "LPCAM_D1_C" GPIO pin alternate function <0-7>
+// <o> "LPCAM_D1_A" GPIO pin alternate function <0-7>
 #define BOARD_LPCAM_D1_ALTERNATE_FUNCTION               5
 
-// <o> "LPCAM_D2_B" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4 <5=>
+// <o> "LPCAM_D2_A" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4 <5=>
 // GPIO5 <6=> GPIO6 <7=> GPIO7 <8=> GPIO8 <9=> GPIO9 <15=> LPGPIO
-#define BOARD_LPCAM_D2_GPIO_PORT                        7
-// <o> "LPCAM_D2_B" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4 <5=> PIN5 <6=>
-// PIN6 <7=> PIN7
+#define BOARD_LPCAM_D2_GPIO_PORT                        4
+// <o> "LPCAM_D2_A" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4 <5=> PIN5
+// <6=> PIN6 <7=> PIN7
 #define BOARD_LPCAM_D2_GPIO_PIN                         2
-// <o> "LPCAM_D2_B" GPIO pin alternate function <0-7>
+// <o> "LPCAM_D2_A" GPIO pin alternate function <0-7>
 #define BOARD_LPCAM_D2_ALTERNATE_FUNCTION               5
 
-// <o> "LPCAM_D3_B" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4 <5=>
+// <o> "LPCAM_D3_A" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4 <5=>
 // GPIO5 <6=> GPIO6 <7=> GPIO7 <8=> GPIO8 <9=> GPIO9 <15=> LPGPIO
-#define BOARD_LPCAM_D3_GPIO_PORT                        7
-// <o> "LPCAM_D3_B" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4 <5=> PIN5 <6=>
-// PIN6 <7=> PIN7
+#define BOARD_LPCAM_D3_GPIO_PORT                        4
+// <o> "LPCAM_D3_A" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4 <5=> PIN5
+// <6=> PIN6 <7=> PIN7
 #define BOARD_LPCAM_D3_GPIO_PIN                         3
-// <o> "LPCAM_D3_B" GPIO pin alternate function <0-7>
-#define BOARD_LPCAM_D3_ALTERNATE_FUNCTION               5
+// <o> "LPCAM_D3_A" GPIO pin alternate function <0-7>
+#define BOARD_LPCAM_D3_ALTERNATE_FUNCTION               4
 
-// <o> "LPCAM_D4_B" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4 <5=>
+// <o> "LPCAM_D4_A" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4 <5=>
 // GPIO5 <6=> GPIO6 <7=> GPIO7 <8=> GPIO8 <9=> GPIO9 <15=> LPGPIO
-#define BOARD_LPCAM_D4_GPIO_PORT                        7
-// <o> "LPCAM_D4_B" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4 <5=> PIN5 <6=>
-// PIN6 <7=> PIN7
+#define BOARD_LPCAM_D4_GPIO_PORT                        4
+// <o> "LPCAM_D4_A" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4 <5=> PIN5
+// <6=> PIN6 <7=> PIN7
 #define BOARD_LPCAM_D4_GPIO_PIN                         4
-// <o> "LPCAM_D4_B" GPIO pin alternate function <0-7>
+// <o> "LPCAM_D4_A" GPIO pin alternate function <0-7>
 #define BOARD_LPCAM_D4_ALTERNATE_FUNCTION               5
 
-// <o> "LPCAM_D5_B" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4 <5=>
+// <o> "LPCAM_D5_A" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4 <5=>
 // GPIO5 <6=> GPIO6 <7=> GPIO7 <8=> GPIO8 <9=> GPIO9 <15=> LPGPIO
-#define BOARD_LPCAM_D5_GPIO_PORT                        7
-// <o> "LPCAM_D5_B" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4 <5=> PIN5 <6=>
-// PIN6 <7=> PIN7
+#define BOARD_LPCAM_D5_GPIO_PORT                        4
+// <o> "LPCAM_D5_A" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4 <5=> PIN5
+// <6=> PIN6 <7=> PIN7
 #define BOARD_LPCAM_D5_GPIO_PIN                         5
-// <o> "LPCAM_D5_B" GPIO pin alternate function <0-7>
+// <o> "LPCAM_D5_A" GPIO pin alternate function <0-7>
 #define BOARD_LPCAM_D5_ALTERNATE_FUNCTION               5
 
-// <o> "LPCAM_D6_B" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4 <5=>
+// <o> "LPCAM_D6_A" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4 <5=>
 // GPIO5 <6=> GPIO6 <7=> GPIO7 <8=> GPIO8 <9=> GPIO9 <15=> LPGPIO
-#define BOARD_LPCAM_D6_GPIO_PORT                        7
-// <o> "LPCAM_D6_B" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4 <5=> PIN5 <6=>
-// PIN6 <7=> PIN7
+#define BOARD_LPCAM_D6_GPIO_PORT                        4
+// <o> "LPCAM_D6_A" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4 <5=> PIN5
+// <6=> PIN6 <7=> PIN7
 #define BOARD_LPCAM_D6_GPIO_PIN                         6
-// <o> "LPCAM_D6_B" GPIO pin alternate function <0-7>
+// <o> "LPCAM_D6_A" GPIO pin alternate function <0-7>
 #define BOARD_LPCAM_D6_ALTERNATE_FUNCTION               5
 
-// <o> "LPCAM_D7_B" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4 <5=>
+// <o> "LPCAM_D7_A" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4 <5=>
 // GPIO5 <6=> GPIO6 <7=> GPIO7 <8=> GPIO8 <9=> GPIO9 <15=> LPGPIO
-#define BOARD_LPCAM_D7_GPIO_PORT                        7
-// <o> "LPCAM_D7_B" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4 <5=> PIN5 <6=>
-// PIN6 <7=> PIN7
+#define BOARD_LPCAM_D7_GPIO_PORT                        4
+// <o> "LPCAM_D7_A" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4 <5=> PIN5
+// <6=> PIN6 <7=> PIN7
 #define BOARD_LPCAM_D7_GPIO_PIN                         7
-// <o> "LPCAM_D7_B" GPIO pin alternate function <0-7>
-#define BOARD_LPCAM_D7_ALTERNATE_FUNCTION               5
+// <o> "LPCAM_D7_A" GPIO pin alternate function <0-7>
+#define BOARD_LPCAM_D7_ALTERNATE_FUNCTION               4
 
 // <o> "LPI2C0_SDA_A" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4 <5=>
 // GPIO5 <6=> GPIO6 <7=> GPIO7 <8=> GPIO8 <9=> GPIO9 <15=> LPGPIO
-#define BOARD_LPI2C0_SDA_GPIO_PORT                      0
+#define BOARD_LPI2C0_SDA_GPIO_PORT                      2
 // <o> "LPI2C0_SDA_A" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4 <5=> PIN5
 // <6=> PIN6 <7=> PIN7
-#define BOARD_LPI2C0_SDA_GPIO_PIN                       1
+#define BOARD_LPI2C0_SDA_GPIO_PIN                       3
 // <o> "LPI2C0_SDA_A" GPIO pin alternate function <0-7>
-#define BOARD_LPI2C0_SDA_ALTERNATE_FUNCTION             5
+#define BOARD_LPI2C0_SDA_ALTERNATE_FUNCTION             4
 
 // <o> "LPI2C0_SCL_A" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4 <5=>
 // GPIO5 <6=> GPIO6 <7=> GPIO7 <8=> GPIO8 <9=> GPIO9 <15=> LPGPIO
-#define BOARD_LPI2C0_SCL_GPIO_PORT                      0
+#define BOARD_LPI2C0_SCL_GPIO_PORT                      2
 // <o> "LPI2C0_SCL_A" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4 <5=> PIN5
 // <6=> PIN6 <7=> PIN7
-#define BOARD_LPI2C0_SCL_GPIO_PIN                       0
+#define BOARD_LPI2C0_SCL_GPIO_PIN                       1
 // <o> "LPI2C0_SCL_A" GPIO pin alternate function <0-7>
-#define BOARD_LPI2C0_SCL_ALTERNATE_FUNCTION             5
+#define BOARD_LPI2C0_SCL_ALTERNATE_FUNCTION             4
 
-// <o> "I2C0_SDA_C" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4 <5=>
-// GPIO5 <6=> GPIO6 <7=> GPIO7 <8=> GPIO8 <9=> GPIO9 <15=> LPGPIO
-#define BOARD_I2C0_SDA_GPIO_PORT                        7
-// <o> "I2C0_SDA_C" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4 <5=> PIN5 <6=>
+// <o> "MASTER_I2C_SDA_B" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4 <5=>
+// GPIO5 <6=> GPIO6 <7=> GPIO7 <8=> GPIO8 <9=> GPIO9 <10=> GPIO10 <11=> GPIO11 <12=> GPIO12 <13=>
+// GPIO13 <14=> GPIO14 <15=> LPGPIO
+#define BOARD_MASTER_I2C_SDA_GPIO_PORT                        2
+// <o> "MASTER_I2C_SDA_B" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4 <5=> PIN5 <6=>
 // PIN6 <7=> PIN7
-#define BOARD_I2C0_SDA_GPIO_PIN                         0
-// <o> "I2C0_SDA_C" GPIO pin alternate function <0-7>
-#define BOARD_I2C0_SDA_ALTERNATE_FUNCTION               4
+#define BOARD_MASTER_I2C_SDA_GPIO_PIN                         5
+// <o> "MASTER_I2C_SDA_B" GPIO pin alternate function <0-7>
+#define BOARD_MASTER_I2C_SDA_ALTERNATE_FUNCTION               3
 
-// <o> "I2C0_SCL_C" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4 <5=>
-// GPIO5 <6=> GPIO6 <7=> GPIO7 <8=> GPIO8 <9=> GPIO9 <15=> LPGPIO
-#define BOARD_I2C0_SCL_GPIO_PORT                        7
-// <o> "I2C0_SCL_C" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4 <5=> PIN5 <6=>
+// <o> "MASTER_I2C_SCL_B" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4 <5=>
+// GPIO5 <6=> GPIO6 <7=> GPIO7 <8=> GPIO8 <9=> GPIO9 <10=> GPIO10 <11=> GPIO11 <12=> GPIO12 <13=>
+// GPIO13 <14=> GPIO14 <15=> LPGPIO
+#define BOARD_MASTER_I2C_SCL_GPIO_PORT                        2
+// <o> "MASTER_I2C_SCL_B" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4 <5=> PIN5 <6=>
 // PIN6 <7=> PIN7
-#define BOARD_I2C0_SCL_GPIO_PIN                         1
-// <o> "I2C0_SCL_C" GPIO pin alternate function <0-7>
-#define BOARD_I2C0_SCL_ALTERNATE_FUNCTION               4
+#define BOARD_MASTER_I2C_SCL_GPIO_PIN                         4
+// <o> "MASTER_I2C_SCL_B" GPIO pin alternate function <0-7>
+#define BOARD_MASTER_I2C_SCL_ALTERNATE_FUNCTION               3
 
 // <o> "Master" MW SPI instance number <0-3>
 #define BOARD_MW_SPI_MASTER_INSTANCE                    1
@@ -1282,7 +1230,7 @@
 
 // <o> "LPUART_RX_A" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4 <5=>
 // GPIO5 <6=> GPIO6 <7=> GPIO7 <8=> GPIO8 <9=> GPIO9 <15=> LPGPIO
-#define BOARD_LPUART_RX_GPIO_PORT                       2
+#define BOARD_LPUART_RX_GPIO_PORT                       7
 // <o> "LPUART_RX_A" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4 <5=> PIN5
 // <6=> PIN6 <7=> PIN7
 #define BOARD_LPUART_RX_GPIO_PIN                        0
@@ -1564,40 +1512,19 @@
 // <6=> PIN6 <7=> PIN7
 #define BOARD_CLICKBOARD_RST_GPIO_PIN                   3
 
-// <o> "ICM_IMU_IRQ" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4 <5=>
-// GPIO5 <6=> GPIO6 <7=> GPIO7 <8=> GPIO8 <9=> GPIO9 <15=> LPGPIO
-#define BOARD_ICM_IMU_IRQ_GPIO_PORT                     8
-// <o> "ICM_IMU_IRQ" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4 <5=> PIN5
-// <6=> PIN6 <7=> PIN7
-#define BOARD_ICM_IMU_IRQ_GPIO_PIN                      4
+// <o> "ICM42670_IMU_IRQ" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4
+// <5=> GPIO5 <6=> GPIO6 <7=> GPIO7 <8=> GPIO8 <9=> GPIO9 <15=> LPGPIO
+#define BOARD_ICM42670_IMU_IRQ_GPIO_PORT                5
+// <o> "ICM42670_IMU_IRQ" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4
+// <5=> PIN5 <6=> PIN6 <7=> PIN7
+#define BOARD_ICM42670_IMU_IRQ_GPIO_PIN                 1
 
-// <o> "BMI_IMU_IRQ" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4 <5=>
+// <o> "BMI323_IMU_IRQ" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4 <5=>
 // GPIO5 <6=> GPIO6 <7=> GPIO7 <8=> GPIO8 <9=> GPIO9 <15=> LPGPIO
-#define BOARD_BMI_IMU_IRQ_GPIO_PORT                     8
-// <o> "BMI_IMU_IRQ" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4 <5=> PIN5
+#define BOARD_BMI323_IMU_IRQ_GPIO_PORT                  6
+// <o> "BMI323_IMU_IRQ" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4 <5=> PIN5
 // <6=> PIN6 <7=> PIN7
-#define BOARD_BMI_IMU_IRQ_GPIO_PIN                      5
-
-// <o> "CAMERA_RESET" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4 <5=>
-// GPIO5 <6=> GPIO6 <7=> GPIO7 <8=> GPIO8 <9=> GPIO9 <15=> LPGPIO
-#define BOARD_CAMERA_RESET_GPIO_PORT                    9
-// <o> "CAMERA_RESET" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4 <5=> PIN5
-// <6=> PIN6 <7=> PIN7
-#define BOARD_CAMERA_RESET_GPIO_PIN                     1
-
-// <o> "CAMERA_FLASH" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4 <5=>
-// GPIO5 <6=> GPIO6 <7=> GPIO7 <8=> GPIO8 <9=> GPIO9 <15=> LPGPIO
-#define BOARD_CAMERA_FLASH_GPIO_PORT                    9
-// <o> "CAMERA_FLASH" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4 <5=> PIN5
-// <6=> PIN6 <7=> PIN7
-#define BOARD_CAMERA_FLASH_GPIO_PIN                     2
-
-// <o> "CAMERA_TRIGGER" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4 <5=>
-// GPIO5 <6=> GPIO6 <7=> GPIO7 <8=> GPIO8 <9=> GPIO9 <15=> LPGPIO
-#define BOARD_CAMERA_TRIGGER_GPIO_PORT                  9
-// <o> "CAMERA_TRIGGER" GPIO pin number <0=> PIN0 <1=> PIN1 <2=> PIN2 <3=> PIN3 <4=> PIN4 <5=> PIN5
-// <6=> PIN6 <7=> PIN7
-#define BOARD_CAMERA_TRIGGER_GPIO_PIN                   3
+#define BOARD_BMI323_IMU_IRQ_GPIO_PIN                   6
 
 // <o> "TOUCH_INT" GPIO port number <0=> GPIO0 <1=> GPIO1 <2=> GPIO2 <3=> GPIO3 <4=> GPIO4 <5=>
 // GPIO5 <6=> GPIO6 <7=> GPIO7 <8=> GPIO8 <9=> GPIO9 <15=> LPGPIO

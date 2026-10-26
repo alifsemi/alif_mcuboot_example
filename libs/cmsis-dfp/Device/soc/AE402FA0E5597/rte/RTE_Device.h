@@ -16,9 +16,6 @@
 // <e> MRAM (NVM (Non-Volatile Memory)) [Driver_MRAM]
 // <i> Configuration settings for Driver_MRAM in component ::Drivers:MRAM
 #define RTE_MRAM 1
-#if RTE_MRAM
-#define RTE_MRAM_SIZE 0x00580000
-#endif
 // </e> MRAM (NVM (Non-Volatile Memory)) [Driver_MRAM]
 
 // <e> CPI (Camera) [Driver_CPI]
@@ -43,14 +40,14 @@
 //     <1=> enable
 // <i> Defines CPI AXI port
 // <i> Default: AXI port enable
-#define RTE_CPI_AXI_PORT                                      1
+#define RTE_CPI_AXI_PORT                                      0
 
 // <o> Select CPI ISP port
 //     <0=> disable
 //     <1=> enable
 // <i> Defines CPI ISP port
 // <i> Default: ISP port disable
-#define RTE_CPI_ISP_PORT                                      0
+#define RTE_CPI_ISP_PORT                                      1
 
 // <o> CPI Row roundup
 //     <0=> disable
@@ -102,6 +99,17 @@
 // <i> Defines CPI vertical cropping
 // <i> Default: 0x1
 #define RTE_CPI_VFP_EN                                        0
+
+// <o> CPI number of active framebuffers
+// <i> Defines CPI number of active framebuffers
+// <i> Default: 2
+#define RTE_CPI_NUM_ACTIVE_FRAMEBUFFERS                       2
+
+// <o> Enable CPI streaming
+// <0=> Disable
+// <1=> Enable
+// <i> Default: 1
+#define RTE_CPI_STREAMING_ENABLE                              1
 
 // <e> MT9M114 [Driver_MT9M114]
 // <o> Enable/Disable MT9M114 camera sensor
@@ -356,16 +364,93 @@
 #endif
 // </e> LPCPI (Camera) [Driver_LPCPI]
 
+// <e> ISP (ISP) [Driver_ISP]
+// <i> Configuration settings for Driver_ISP in component ::Drivers:ISP
+#define RTE_ISP 1
+#if RTE_ISP
+
+// <o> ISP IRQ priority <0-255>
+// <i> Defines Interrupt priority for ISP.
+// <i> Default: 0
+#define RTE_ISP_IRQ_PRIORITY                    0
+
+// <o> ISP Binning Enable
+//     <0=> disable
+//     <1=> enable
+// <i> Enable binning processing in ISP
+// <i> default: false
+#define RTE_ISP_BINNING_ENABLE 0
+
+// <o> ISP Binning Horizontal Step <0-255>
+// <i> Horizontal binning step size
+// <i> default: 0
+#define RTE_ISP_BINNING_HSTEP 0
+
+// <o> ISP Binning Vertical Step <0-255>
+// <i> Vertical binning step size
+// <i> default: 0
+#define RTE_ISP_BINNING_VSTEP 0
+
+// <o> ISP log level
+//    <0=> NONE
+//    <1 => Logs all fatal errors.
+//    <2=> Logs all warnings.
+//    <3=> Logs all informational messages.
+//    <4=> Logs all debug messages.
+//    <5=> Log level verbose
+// <i> Defines ISP logging level
+#define RTE_ISP_LOG_LEVEL 5
+
+// <o> ISP Buffer Count <2-8>
+// <i> Number of video buffers for ISP
+#define RTE_ISP_BUFFER_COUNT 1
+
+// <o> ISP Output Format
+//    <20=> RAW8 (8-bit raw)
+//    <21=> RAW10 (10-bit raw)
+//    <22=> RAW12 (12-bit raw)
+//    <23=> NV12 (YUV420 semi-planar)
+//    <25=> NV16 (YUV422 semi-planar)
+//    <30=> YUV422P (YUV422 planar)
+//    <31=> YUV420P (YUV420 planar)
+//    <32=> YUYV (YUV422 packed)
+//    <37=> YUV400 (Grayscale)
+//    <38=> RGB888 (RGB interleaved)
+//    <39=> RGB888P (RGB planar)
+//    <40=> RAW420SP (RAW420 semi-planar)
+//    <41=> RAW422SP (RAW422 semi-planar)
+// <i> Defines ISP output pixel format for memory dump
+// <i> Default: RGB888
+#define RTE_ISP_OUTPUT_FORMAT 32
+
+// <o> ISP Scaler Output Width
+// <i> Width in pixels of the ISP scaler output (after scaling from sensor dimensions).
+#define RTE_ISP_OUTPUT_WIDTH        480
+
+// <o> ISP Scaler Output Height
+// <i> Height in pixels of the ISP scaler output (after scaling from sensor dimensions).
+#define RTE_ISP_OUTPUT_HEIGHT       480
+
+#endif
+// </e> ISP (ISP) [Driver_ISP]
+
 // <e> MIPI_CSI2 (mipi csi2) [Driver_MIPI_CSI2]
 // <i> Configuration settings for Driver_MIPI_CSI2 in component ::Drivers:MIPI_CSI2
 #define RTE_MIPI_CSI2 1
 #if RTE_MIPI_CSI2
 
+// <o> Select CSI2 DPHY backend
+//     <0=> CSI2 RX DPHY
+//     <1=> DSI TX DPHY used as RX
+// <i> Selects which DPHY hardware is used by Driver_MIPI_CSI2.
+// <i> Default: CSI2 RX DPHY
+#define RTE_MIPI_CSI2_DPHY_BACKEND          0
+
 // <o> CSI pixel clock select
-//     <0=>  400 MHz clock source (PLL_CLK1/2)
-//     <1=>  480 MHz clock source (PLL_CLK3)
+//     <0=>  Select AXI clock source
+//     <1=>  Select PLL clock source
 // <i> Defines CSI pixel clock select
-// <i> Default: 400 MHz clock source (PLL_CLK1/2)
+// <i> Default: Select AXI clock source
 #define RTE_CSI2_PIX_CLK_SEL                0
 
 // <o> select IPI mode
@@ -578,26 +663,6 @@
 // <i> Default: 20
 #define RTE_ARX3A0_CAMERA_SENSOR_CSI_CLK_SCR_DIV         20
 
-// <o> Select camera sensor ARX3A0 reset pin number
-// <i> Defines camera sensor ARX3A0 reset pin number
-// <i> Default: 1
-#define RTE_ARX3A0_CAMERA_SENSOR_RESET_PIN_NO            1
-
-// <o> Select camera sensor ARX3A0 reset GPIO port
-// <i> Defines camera sensor ARX3A0 reset GPIO port
-// <i> Default: 9
-#define RTE_ARX3A0_CAMERA_SENSOR_RESET_GPIO_PORT         9
-
-// <o> Select camera sensor ARX3A0 power pin number
-// <i> Defines camera sensor ARX3A0 power pin number
-// <i> Default: 5
-#define RTE_ARX3A0_CAMERA_SENSOR_POWER_PIN_NO            5
-
-// <o> Select camera sensor ARX3A0 power GPIO port
-// <i> Defines camera sensor ARX3A0 power GPIO port
-// <i> Default: 7
-#define RTE_ARX3A0_CAMERA_SENSOR_POWER_GPIO_PORT         7
-
 // <o> RTE_ARX3A0_CAMERA_SENSOR_I2C_INSTANCE
 // <i> Defines camera sensor ARX3A0 i2c instance
 //     <0=>   I2C0
@@ -666,26 +731,6 @@
 // <i> Default: 20
 #define RTE_AR0144_CAMERA_SENSOR_CSI_CLK_SCR_DIV         20
 
-// <o> Select camera sensor AR0144 reset pin number
-// <i> Defines camera sensor AR0144 reset pin number
-// <i> Default: 5
-#define RTE_AR0144_CAMERA_SENSOR_RESET_PIN_NO            1
-
-// <o> Select camera sensor AR0144 reset GPIO port
-// <i> Defines camera sensor AR0144 reset GPIO port
-// <i> Default: 4
-#define RTE_AR0144_CAMERA_SENSOR_RESET_GPIO_PORT         9
-
-// <o> Select camera sensor AR0144 power pin number
-// <i> Defines camera sensor AR0144 power pin number
-// <i> Default: 5
-#define RTE_AR0144_CAMERA_SENSOR_POWER_PIN_NO            5
-
-// <o> Select camera sensor AR0144 power GPIO port
-// <i> Defines camera sensor AR0144 power GPIO port
-// <i> Default: 7
-#define RTE_AR0144_CAMERA_SENSOR_POWER_GPIO_PORT         7
-
 // <o> RTE_AR0144_CAMERA_SENSOR_I2C_INSTANCE
 // <i> Defines camera sensor AR0144 i2c instance
 //     <0=>   I2C0
@@ -752,26 +797,6 @@
 // <i> Defines camera sensor AR0145 CSI clock source division
 // <i> Default: 16
 #define RTE_AR0145_CAMERA_SENSOR_CSI_CLK_SCR_DIV         16
-
-// <o> Select camera sensor AR0145 reset pin number
-// <i> Defines camera sensor AR0145 reset pin number
-// <i> Default: 1
-#define RTE_AR0145_CAMERA_SENSOR_RESET_PIN_NO            1
-
-// <o> Select camera sensor AR0145 reset GPIO port
-// <i> Defines camera sensor AR0145 reset GPIO port
-// <i> Default: 9
-#define RTE_AR0145_CAMERA_SENSOR_RESET_GPIO_PORT         9
-
-// <o> Select camera sensor AR0145 power pin number
-// <i> Defines camera sensor AR0145 power pin number
-// <i> Default: 5
-#define RTE_AR0145_CAMERA_SENSOR_POWER_PIN_NO            5
-
-// <o> Select camera sensor AR0145 power GPIO port
-// <i> Defines camera sensor AR0145 power GPIO port
-// <i> Default: 7
-#define RTE_AR0145_CAMERA_SENSOR_POWER_GPIO_PORT         7
 
 // <o> RTE_AR0145_CAMERA_SENSOR_I2C_INSTANCE
 // <i> Defines camera sensor AR0145 i2c instance
@@ -841,26 +866,6 @@
 // <i> Default: 15
 #define RTE_AR0246_CAMERA_SENSOR_CSI_CLK_SCR_DIV         15
 
-// <o> Select camera sensor AR0246 reset pin number
-// <i> Defines camera sensor AR0246 reset pin number
-// <i> Default: 1
-#define RTE_AR0246_CAMERA_SENSOR_RESET_PIN_NO            1
-
-// <o> Select camera sensor AR0246 reset GPIO port
-// <i> Defines camera sensor AR0246 reset GPIO port
-// <i> Default: 9
-#define RTE_AR0246_CAMERA_SENSOR_RESET_GPIO_PORT         9
-
-// <o> Select camera sensor AR0246 power pin number
-// <i> Defines camera sensor AR0246 power pin number
-// <i> Default: 5
-#define RTE_AR0246_CAMERA_SENSOR_POWER_PIN_NO            5
-
-// <o> Select camera sensor AR0246 power GPIO port
-// <i> Defines camera sensor AR0246 power GPIO port
-// <i> Default: 7
-#define RTE_AR0246_CAMERA_SENSOR_POWER_GPIO_PORT         7
-
 // <o> RTE_AR0246_CAMERA_SENSOR_I2C_INSTANCE
 // <i> Defines camera sensor AR0246 i2c instance
 //     <0=>   I2C0
@@ -900,6 +905,27 @@
 // <i> Default: 0
 #define RTE_MT9M114_CAMERA_SENSOR_MIPI_IMAGE_CONFIG            2
 
+// <i> MT9M114 MIPI frame width and height(derived from IMAGE_CONFIG)
+// <i> defines MT9M114 MIPI frame  width & height
+// <i> default: 1280x720
+#if (RTE_MT9M114_CAMERA_SENSOR_MIPI_IMAGE_CONFIG == 0)
+#define RTE_MT9M114_CAMERA_SENSOR_MIPI_FRAME_WIDTH              1288
+#define RTE_MT9M114_CAMERA_SENSOR_MIPI_FRAME_HEIGHT            728
+#elif (RTE_MT9M114_CAMERA_SENSOR_MIPI_IMAGE_CONFIG == 1) || \
+      (RTE_MT9M114_CAMERA_SENSOR_MIPI_IMAGE_CONFIG == 2)
+#define RTE_MT9M114_CAMERA_SENSOR_MIPI_FRAME_WIDTH              1280
+#define RTE_MT9M114_CAMERA_SENSOR_MIPI_FRAME_HEIGHT             720
+#elif (RTE_MT9M114_CAMERA_SENSOR_MIPI_IMAGE_CONFIG == 3)
+#define RTE_MT9M114_CAMERA_SENSOR_MIPI_FRAME_WIDTH              640
+#define RTE_MT9M114_CAMERA_SENSOR_MIPI_FRAME_HEIGHT             480
+#elif (RTE_MT9M114_CAMERA_SENSOR_MIPI_IMAGE_CONFIG == 4)
+#define RTE_MT9M114_CAMERA_SENSOR_MIPI_FRAME_WIDTH              320
+#define RTE_MT9M114_CAMERA_SENSOR_MIPI_FRAME_HEIGHT             240
+#elif (RTE_MT9M114_CAMERA_SENSOR_MIPI_IMAGE_CONFIG == 5)
+#define RTE_MT9M114_CAMERA_SENSOR_MIPI_FRAME_WIDTH              320
+#define RTE_MT9M114_CAMERA_SENSOR_MIPI_FRAME_HEIGHT             320
+#endif
+
 // <o> select MT9M114 MIPI number of lanes in DPHY
 // <i> defines select MT9M114 MIPI number of lanes in DPHY.
 // <i> default: 1 one lane
@@ -925,26 +951,6 @@
 // <i> Default: 20
 #define RTE_MT9M114_CAMERA_SENSOR_MIPI_CSI_CLK_SCR_DIV         20
 
-// <o> Select camera sensor MT9M114 MIPI reset pin number
-// <i> Defines camera sensor MT9M114 MIPI reset pin number
-// <i> Default: 1
-#define RTE_MT9M114_CAMERA_SENSOR_MIPI_RESET_PIN_NO            1
-
-// <o> Select camera sensor MT9M114 MIPI reset GPIO port
-// <i> Defines camera sensor MT9M114 MIPI reset GPIO port
-// <i> Default: 9
-#define RTE_MT9M114_CAMERA_SENSOR_MIPI_RESET_GPIO_PORT         9
-
-// <o> Select camera sensor MT9M114 MIPI power pin number
-// <i> Defines camera sensor MT9M114 MIPI power pin number
-// <i> Default: 5
-#define RTE_MT9M114_CAMERA_SENSOR_MIPI_POWER_PIN_NO            5
-
-// <o> Select camera sensor MT9M114 MIPI power GPIO port
-// <i> Defines camera sensor MT9M114 MIPI power GPIO port
-// <i> Default: 7
-#define RTE_MT9M114_CAMERA_SENSOR_MIPI_POWER_GPIO_PORT         7
-
 // <o> RTE_MT9M114_CAMERA_SENSOR_MIPI_I2C_INSTANCE
 // <i> Defines camera sensor MT9M114 MIPI i2c instance
 //     <0=>   I2C0
@@ -954,6 +960,14 @@
 //     <4=>   I2C OVER I3C
 // <i> Default: 1
 #define RTE_MT9M114_CAMERA_SENSOR_MIPI_I2C_INSTANCE            1
+
+// <o> MT9M114 sensor frame width for ISP / CSI2 pipeline
+// <i> Width in pixels of the MT9M114 MIPI sensor frame
+#define RTE_MT9M114_CAMERA_SENSOR_FRAME_WIDTH  1280
+
+// <o> MT9M114 sensor frame height for ISP / CSI2 pipeline
+// <i> Height in pixels of the MT9M114 MIPI sensor frame
+#define RTE_MT9M114_CAMERA_SENSOR_FRAME_HEIGHT 720
 
 #endif
 // </e> MT9M114_MIPI [Driver_MT9M114_MIPI]
@@ -1034,36 +1048,6 @@
 #define RTE_HM0360_CAMERA_SENSOR_FRAME_WIDTH  320
 #endif
 
-// <o> Select camera sensor HM0360 reset pin number
-// <i> Defines camera sensor HM0360 reset pin number
-// <i> Default: 1
-#define RTE_HM0360_CAMERA_SENSOR_RESET_PIN_NO     1
-
-// <o> Select camera sensor HM0360 reset GPIO port
-// <i> Defines camera sensor HM0360 reset GPIO port
-// <i> Default: 9
-#define RTE_HM0360_CAMERA_SENSOR_RESET_GPIO_PORT  9
-
-// <o> Select camera sensor HM0360 power pin number
-// <i> Defines camera sensor HM0360 power pin number
-// <i> Default: 5
-#define RTE_HM0360_CAMERA_SENSOR_POWER_PIN_NO     5
-
-// <o> Select camera sensor HM0360 power GPIO port
-// <i> Defines camera sensor HM0360 power GPIO port
-// <i> Default: 7
-#define RTE_HM0360_CAMERA_SENSOR_POWER_GPIO_PORT  7
-
-// <o> Select camera sensor HM0360 xsleep pin number
-// <i> Defines camera sensor HM0360 xsleep pin number
-// <i> Default: 3
-#define RTE_HM0360_CAMERA_SENSOR_XSLEEP_PIN_NO    3
-
-// <o> Select camera sensor HM0360 xsleep GPIO port
-// <i> Defines camera sensor HM0360 xsleep GPIO port
-// <i> Default: 6
-#define RTE_HM0360_CAMERA_SENSOR_XSLEEP_GPIO_PORT 6
-
 // <o> RTE_HM0360_CAMERA_SENSOR_I2C_INSTANCE
 // <i> Defines camera sensor HM0360 i2c instance
 //     <0=>   I2C0
@@ -1127,16 +1111,6 @@
 // <i> default: 640
 #define RTE_OV5647_CAMERA_SENSOR_FRAME_WIDTH             640
 
-// <o> Select camera sensor OV5647 reset pin number
-// <i> Defines camera sensor OV5647 reset pin number
-// <i> Default: 1
-#define RTE_OV5647_CAMERA_SENSOR_RESET_PIN_NO            1
-
-// <o> Select camera sensor OV5647 reset GPIO port
-// <i> Defines camera sensor OV5647 reset GPIO port
-// <i> Default: 9
-#define RTE_OV5647_CAMERA_SENSOR_RESET_GPIO_PORT         9
-
 // <o RTE_OV5647_CAMERA_SENSOR_I2C_INSTANCE> Select camera sensor OV5647 i2c instance
 // <i> Defines camera sensor OV5647 i2c instance
 //     <0=>   I2C0
@@ -1190,35 +1164,39 @@
 // <i> default: 2  (IPI-16 RAW 8)
 #define RTE_OV5675_CAMERA_SENSOR_CPI_COLOR_MODE          2
 
-// <o> select OV5675 frame height
-// <i> defines select OV5675 frame height.
+// <o> Select OV5675 image configuration
+//     <0=>   1296x972_RAW10
+//     <1=>   1920x1080_RAW10
+//     <2=>   1280x720_RAW10
+//     <3=>   640x480_RAW10
+// <i> Default: 0
+#define RTE_OV5675_CAMERA_SENSOR_IMAGE_CONFIG            0
+
+// <i> OV5675 frame height (derived from IMAGE_CONFIG)
+// <i> defines OV5675 frame height.
 // <i> default: 972
+#if   (RTE_OV5675_CAMERA_SENSOR_IMAGE_CONFIG == 1)
+#define RTE_OV5675_CAMERA_SENSOR_FRAME_HEIGHT            1080
+#elif (RTE_OV5675_CAMERA_SENSOR_IMAGE_CONFIG == 2)
+#define RTE_OV5675_CAMERA_SENSOR_FRAME_HEIGHT            720
+#elif (RTE_OV5675_CAMERA_SENSOR_IMAGE_CONFIG == 3)
+#define RTE_OV5675_CAMERA_SENSOR_FRAME_HEIGHT            480
+#else
 #define RTE_OV5675_CAMERA_SENSOR_FRAME_HEIGHT            972
+#endif
 
-// <o> select OV5675 frame width
-// <i> defines select OV5675 frame width.
+// <i> OV5675 frame width (derived from IMAGE_CONFIG)
+// <i> defines OV5675 frame width.
 // <i> default: 1296
+#if   (RTE_OV5675_CAMERA_SENSOR_IMAGE_CONFIG == 1)
+#define RTE_OV5675_CAMERA_SENSOR_FRAME_WIDTH             1920
+#elif (RTE_OV5675_CAMERA_SENSOR_IMAGE_CONFIG == 2)
+#define RTE_OV5675_CAMERA_SENSOR_FRAME_WIDTH             1280
+#elif (RTE_OV5675_CAMERA_SENSOR_IMAGE_CONFIG == 3)
+#define RTE_OV5675_CAMERA_SENSOR_FRAME_WIDTH             640
+#else
 #define RTE_OV5675_CAMERA_SENSOR_FRAME_WIDTH             1296
-
-// <o> Select camera sensor OV5675 reset pin number
-// <i> Defines camera sensor OV5675 reset pin number
-// <i> Default: 1
-#define RTE_OV5675_CAMERA_SENSOR_RESET_PIN_NO            1
-
-// <o> Select camera sensor OV5675 reset GPIO port
-// <i> Defines camera sensor OV5675 reset GPIO port
-// <i> Default: 9
-#define RTE_OV5675_CAMERA_SENSOR_RESET_GPIO_PORT         9
-
-// <o> Select camera sensor OV5675 power pin number
-// <i> Defines camera sensor OV5675 power pin number
-// <i> Default: 5
-#define RTE_OV5675_CAMERA_SENSOR_POWER_PIN_NO            5
-
-// <o> Select camera sensor OV5675 power GPIO port
-// <i> Defines camera sensor OV5675 power GPIO port
-// <i> Default: 7
-#define RTE_OV5675_CAMERA_SENSOR_POWER_GPIO_PORT         7
+#endif
 
 // <o RTE_OV5675_CAMERA_SENSOR_I2C_INSTANCE> Select camera sensor OV5675 i2c instance
 // <i> Defines camera sensor OV5675 i2c instance
@@ -1229,6 +1207,12 @@
 //     <I3C=> I2C OVER I3C
 // <i> Default: 1
 #define RTE_OV5675_CAMERA_SENSOR_I2C_INSTANCE            1
+
+
+// <o> Select camera sensor OV5675 CSI clock source division [Divisor] <2-511>
+// <i> Defines camera sensor OV5675 CSI clock source division
+// <i> Default: 20
+#define RTE_OV5675_CAMERA_SENSOR_MIPI_CSI_CLK_SCR_DIV    20
 
 #endif
 // </e> OV5675_MIPI [Driver_OV5675_MIPI]
@@ -1327,26 +1311,6 @@
 // <i> Defines Virtual Channel ID
 // <i> Default: 0
 #define RTE_ILI9806E_PANEL_DSI_VC_ID        0
-
-// <o> ILI9806 LCD panel reset pin number
-// <i> Defines ILI9806 LCD panel reset pin number.
-// <i> Default: 5
-#define RTE_ILI9806E_PANEL_RESET_PIN_NO     5
-
-// <o> ILI9806 LCD panel reset pin GPIO port number
-// <i> Defines ILI9806 LCD panel reset pin GPIO port number.
-// <i> Default: 15
-#define RTE_ILI9806E_PANEL_RESET_GPIO_PORT  15
-
-// <o> ILI9806 LCD panel back light pin number
-// <i> Defines ILI9806 LCD panel back light pin number.
-// <i> Default: 1
-#define RTE_ILI9806E_PANEL_BL_LED_PIN_NO    1
-
-// <o> ILI9806 LCD panel back light pin GPIO port number
-// <i> Defines ILI9806 LCD panel back light pin GPIO port number.
-// <i> Default: 6
-#define RTE_ILI9806E_PANEL_BL_LED_GPIO_PORT 6
 
 // <e> MIPI_DSI (ILI9806E_PANEL_E43RB_FW405 | ILI9806E_PANEL_E43GB_MW405) [Driver_ILI9806E_PANEL]
 #if (RTE_ILI9806E_PANEL_E43RB_FW405_EN || RTE_ILI9806E_PANEL_E43GB_MW405_EN)
@@ -1464,26 +1428,6 @@
 // <i> Default: 0
 #define RTE_ILI9488_PANEL_DSI_VC_ID        0
 
-// <o> ILI9488 LCD panel reset pin number
-// <i> Defines ILI9488 LCD panel reset pin number.
-// <i> Default: 5
-#define RTE_ILI9488_PANEL_RESET_PIN_NO     5
-
-// <o> ILI9488 LCD panel reset pin GPIO port number
-// <i> Defines ILI9488 LCD panel reset pin GPIO port number.
-// <i> Default: 15
-#define RTE_ILI9488_PANEL_RESET_GPIO_PORT  15
-
-// <o> ILI9488 LCD panel back light pin number
-// <i> Defines ILI9488 LCD panel back light pin number.
-// <i> Default: 1
-#define RTE_ILI9488_PANEL_BL_LED_PIN_NO    1
-
-// <o> ILI9488 LCD panel back light pin GPIO port number
-// <i> Defines ILI9488 LCD panel back light pin GPIO port number.
-// <i> Default: 6
-#define RTE_ILI9488_PANEL_BL_LED_GPIO_PORT 6
-
 // <o> Panel hsync time in pixels
 // <i> Defines ILI9488 LCD panel hsync time in pixels.
 // <i> Default: 10
@@ -1581,10 +1525,10 @@
 #define RTE_CDC200_IRQ_PRI        0
 
 // <o> CDC200 clock select
-//     <0=>  400 MHz clock source (PLL_CLK1/2)
-//     <1=>  480 MHz clock source (PLL_CLK3)
+//     <0=>  Select AXI clock source
+//     <1=>  Select PLL clock source
 // <i> Defines CDC200 clock select
-// <i> Default: 400 MHz clock source (PLL_CLK1/2)
+// <i> Default: Select AXI clock source
 #define RTE_CDC200_CLK_SEL        0
 
 // <o> CDC200 background color red <0-255>
@@ -1833,19 +1777,6 @@
 // <i> Default: DISABLE
 #define RTE_ICM42670_IBI_ENABLE 0
 
-#if !RTE_ICM42670_IBI_ENABLE
-
-// <o> ICM42670 IMU INT pin GPIO port number range <0-15>
-// <i> Defines ICM42670 IMU INT pin GPIO port number.
-// <i> Default: 8
-#define RTE_ICM42670_INT_IO_PORT 8
-
-// <o> ICM42670 IMU INT pin number range <0-7>
-// <i> Defines ICM42670 IMU INT pin number.
-// <i> Default: 5
-#define RTE_ICM42670_INT_PIN_NO  5
-#endif
-
 #endif
 //</e> ICM42670 (Initial Measurement Unit) [Driver_ICM42670]
 
@@ -1853,19 +1784,6 @@
 // <i> Configuration settings for Driver_BMI323 in component ::Drivers:IMU
 #define RTE_BMI323 1
 
-#if RTE_BMI323
-
-// <o> BMI323 IMU INT pin GPIO port number range <0-15>
-// <i> Defines BMI323 IMU INT pin GPIO port number.
-// <i> Default: 8
-#define RTE_BMI323_INT_IO_PORT 8
-
-// <o> BMI323 IMU INT pin number range <0-7>
-// <i> Defines BMI323 IMU INT pin number.
-// <i> Default: 4
-#define RTE_BMI323_INT_PIN_NO  4
-
-#endif
 //</e> BMI323 (Initial Measurement Unit) [Driver_BMI323]
 #endif
 // </e> IMU (Initial Measurement Unit) [Driver_IMU]
@@ -2564,7 +2482,7 @@
 //    <1=> Dual SPI FRF
 //    <2=> Quad SPI FRF
 //    <3=> Octal SPI FRF
-//    <3=> Dual Octal SPI FRF
+//    <4=> Dual Octal SPI FRF
 // <i> Defines OSPI0 Frame format
 // <i> Default: Octal SPI FRF
 #define RTE_OSPI0_SPI_FRAME_FORMAT                3
@@ -2673,7 +2591,7 @@
 //    <1=> Dual SPI FRF
 //    <2=> Quad SPI FRF
 //    <3=> Octal SPI FRF
-//    <3=> Dual Octal SPI FRF
+//    <4=> Dual Octal SPI FRF
 // <i> Defines OSPI0 Frame format
 // <i> Default: Octal SPI FRF
 #define RTE_OSPI1_SPI_FRAME_FORMAT                3
@@ -8213,6 +8131,29 @@
 // <i> Default: ENABLE
 #define RTE_ADC120_COMPARATOR_BIAS     2
 
+// <o> ADC120 DMA ENABLE
+//    <0=> DISABLE
+//    <1=> ENABLE
+// <i> Defines DMA feature for ADC120 (StartN buffered mode)
+// <i> Default: DISABLE
+#define RTE_ADC120_DMA_ENABLE          0
+
+// <o> ADC120 DMA Selection
+//    <0=> DMA2 (M55-HE)
+//    <1=> DMA0
+// <i> Default: DMA0
+#define RTE_ADC120_SELECT_DMA0         1
+
+// <o> ADC120 DMA IRQ priority <0-255>
+// <i> Defines ADC120 DMA interrupt priority
+// <i> Default: 0
+#define RTE_ADC120_DMA_IRQ_PRI         0
+
+// <o> ADC120 DMA mcode buffer size (bytes) <256-16384:64>
+// <i> Larger buffer -> fewer DMA interrupts at high sample rates.
+// <i> Default: 256
+#define RTE_ADC120_DMA_MCODE_SIZE      256
+
 #endif
 // </e> ADC120 (Analog to Digital Converter 0) [Driver_ADC120]
 
@@ -8314,6 +8255,29 @@
 // <i> Defines: "11":5MS/s; "10""2.5MS/s; "01":1MS/s;"00":0.5MS/s
 // <i> Default: ENABLE
 #define RTE_ADC121_COMPARATOR_BIAS     2
+
+// <o> ADC121 DMA ENABLE
+//    <0=> DISABLE
+//    <1=> ENABLE
+// <i> Defines DMA feature for ADC121 (StartN buffered mode)
+// <i> Default: DISABLE
+#define RTE_ADC121_DMA_ENABLE          0
+
+// <o> ADC121 DMA Selection
+//    <0=> DMA2 (M55-HE)
+//    <1=> DMA0
+// <i> Default: DMA0
+#define RTE_ADC121_SELECT_DMA0         1
+
+// <o> ADC121 DMA IRQ priority <0-255>
+// <i> Defines ADC121 DMA interrupt priority
+// <i> Default: 0
+#define RTE_ADC121_DMA_IRQ_PRI         0
+
+// <o> ADC121 DMA mcode buffer size (bytes) <256-16384:64>
+// <i> Larger buffer -> fewer DMA interrupts at high sample rates.
+// <i> Default: 256
+#define RTE_ADC121_DMA_MCODE_SIZE      256
 
 #endif
 // </e> ADC121 (Analog to Digital Converter 1) [Driver_ADC121]
@@ -8417,6 +8381,29 @@
 // <i> Default: ENABLE
 #define RTE_ADC122_COMPARATOR_BIAS     2
 
+// <o> ADC122 DMA ENABLE
+//    <0=> DISABLE
+//    <1=> ENABLE
+// <i> Defines DMA feature for ADC122 (StartN buffered mode)
+// <i> Default: DISABLE
+#define RTE_ADC122_DMA_ENABLE          0
+
+// <o> ADC122 DMA Selection
+//    <0=> DMA2 (M55-HE)
+//    <1=> DMA0
+// <i> Default: DMA0
+#define RTE_ADC122_SELECT_DMA0         1
+
+// <o> ADC122 DMA IRQ priority <0-255>
+// <i> Defines ADC122 DMA interrupt priority
+// <i> Default: 0
+#define RTE_ADC122_DMA_IRQ_PRI         0
+
+// <o> ADC122 DMA mcode buffer size (bytes) <256-16384:64>
+// <i> Larger buffer -> fewer DMA interrupts at high sample rates.
+// <i> Default: 256
+#define RTE_ADC122_DMA_MCODE_SIZE      256
+
 #endif
 // </e> ADC122 (Analog to Digital Converter 2) [Driver_ADC122]
 
@@ -8510,6 +8497,29 @@
 // <i> Defines Bias control
 // <i> Default: 3
 #define RTE_ADC24_BIAS                (3)
+
+// <o> ADC24 DMA ENABLE
+//    <0=> DISABLE
+//    <1=> ENABLE
+// <i> Defines DMA feature for ADC24 (StartN buffered mode)
+// <i> Default: DISABLE
+#define RTE_ADC24_DMA_ENABLE          0
+
+// <o> ADC24 DMA Selection
+//    <0=> DMA2 (M55-HE)
+//    <1=> DMA0
+// <i> Default: DMA0
+#define RTE_ADC24_SELECT_DMA0         1
+
+// <o> ADC24 DMA IRQ priority <0-255>
+// <i> Defines ADC24 DMA interrupt priority
+// <i> Default: 0
+#define RTE_ADC24_DMA_IRQ_PRI         0
+
+// <o> ADC24 DMA mcode buffer size (bytes) <256-16384:64>
+// <i> Larger buffer -> fewer DMA interrupts at high sample rates.
+// <i> Default: 256
+#define RTE_ADC24_DMA_MCODE_SIZE      256
 
 #endif
 // </e> ADC24 (Analog to Digital Converter 0) [Driver_ADC24]
@@ -9051,6 +9061,16 @@
 // <i> Default: 0
 #define RTE_I2C0_RX_FIFO_THRESHOLD 0
 
+// <o> I2C0 SCL Stuck at Low Timeout <0x00000000-0xFFFFFFFF>
+// <i> Defines SCL stuck-at-low timeout (in ic_clk cycles).
+// <i> Default: 10ms (Considered the input clock as 100MHz)
+#define RTE_I2C0_SCL_STUCK_LOW_TIMEOUT 1000000
+
+// <o> I2C0 SDA Stuck at Low Timeout <0x00000000-0xFFFFFFFF>
+// <i> Defines SDA stuck-at-low timeout (in ic_clk cycles).
+// <i> Default: 10ms (Considered the input clock as 100MHz)
+#define RTE_I2C0_SDA_STUCK_LOW_TIMEOUT 1000000
+
 // <o> I2C0 DMA ENABLE
 //    <0=> DISABLE
 //    <1=> ENABLE
@@ -9063,6 +9083,12 @@
 // <i> Defines I2C0 DMA Interrupt priority
 // <i> Default: 0
 #define RTE_I2C0_DMA_IRQ_PRI 0
+
+// <o> I2C0 DMA scratch buffer size (entries) <32-256:8>
+// <i> Per-instance 16-bit DMA scratch buffer; sized in DATA_CMD entries.
+// <i> Caps the per-chunk DMA transfer (max 256).
+// <i> Default: 256
+#define RTE_I2C0_DMA_SCRATCH_SIZE 256
 #endif
 
 #endif
@@ -9088,6 +9114,16 @@
 // <i> Default: 0
 #define RTE_I2C1_RX_FIFO_THRESHOLD 0
 
+// <o> I2C1 SCL Stuck at Low Timeout <0x00000000-0xFFFFFFFF>
+// <i> Defines SCL stuck-at-low timeout (in ic_clk cycles).
+// <i> Default: 10ms (Considered the input clock as 100MHz)
+#define RTE_I2C1_SCL_STUCK_LOW_TIMEOUT 1000000
+
+// <o> I2C1 SDA Stuck at Low Timeout <0x00000000-0xFFFFFFFF>
+// <i> Defines SDA stuck-at-low timeout (in ic_clk cycles).
+// <i> Default: 10ms (Considered the input clock as 100MHz)
+#define RTE_I2C1_SDA_STUCK_LOW_TIMEOUT 1000000
+
 // <o> I2C1 DMA ENABLE
 //    <0=> DISABLE
 //    <1=> ENABLE
@@ -9100,6 +9136,12 @@
 // <i> Defines I2C1 DMA Interrupt priority
 // <i> Default: 0
 #define RTE_I2C1_DMA_IRQ_PRI 0
+
+// <o> I2C1 DMA scratch buffer size (entries) <32-256:8>
+// <i> Per-instance 16-bit DMA scratch buffer; sized in DATA_CMD entries.
+// <i> Caps the per-chunk DMA transfer (max 256).
+// <i> Default: 256
+#define RTE_I2C1_DMA_SCRATCH_SIZE 256
 #endif
 
 #endif
@@ -9125,6 +9167,16 @@
 // <i> Default: 0
 #define RTE_I2C2_RX_FIFO_THRESHOLD 0
 
+// <o> I2C2 SCL Stuck at Low Timeout <0x00000000-0xFFFFFFFF>
+// <i> Defines SCL stuck-at-low timeout (in ic_clk cycles).
+// <i> Default: 10ms (Considered the input clock as 100MHz)
+#define RTE_I2C2_SCL_STUCK_LOW_TIMEOUT 1000000
+
+// <o> I2C2 SDA Stuck at Low Timeout <0x00000000-0xFFFFFFFF>
+// <i> Defines SDA stuck-at-low timeout (in ic_clk cycles).
+// <i> Default: 10ms (Considered the input clock as 100MHz)
+#define RTE_I2C2_SDA_STUCK_LOW_TIMEOUT 1000000
+
 // <o> I2C2 DMA ENABLE
 //    <0=> DISABLE
 //    <1=> ENABLE
@@ -9137,6 +9189,12 @@
 // <i> Defines I2C2 DMA Interrupt priority
 // <i> Default: 0
 #define RTE_I2C2_DMA_IRQ_PRI 0
+
+// <o> I2C2 DMA scratch buffer size (entries) <32-256:8>
+// <i> Per-instance 16-bit DMA scratch buffer; sized in DATA_CMD entries.
+// <i> Caps the per-chunk DMA transfer (max 256).
+// <i> Default: 256
+#define RTE_I2C2_DMA_SCRATCH_SIZE 256
 #endif
 
 #endif
@@ -9163,6 +9221,16 @@
 // <i> Default: 0
 #define RTE_I2C3_RX_FIFO_THRESHOLD 0
 
+// <o> I2C3 SCL Stuck at Low Timeout <0x00000000-0xFFFFFFFF>
+// <i> Defines SCL stuck-at-low timeout (in ic_clk cycles).
+// <i> Default: 10ms (Considered the input clock as 100MHz)
+#define RTE_I2C3_SCL_STUCK_LOW_TIMEOUT 1000000
+
+// <o> I2C3 SDA Stuck at Low Timeout <0x00000000-0xFFFFFFFF>
+// <i> Defines SDA stuck-at-low timeout (in ic_clk cycles).
+// <i> Default: 10ms (Considered the input clock as 100MHz)
+#define RTE_I2C3_SDA_STUCK_LOW_TIMEOUT 1000000
+
 // <o> I2C3 DMA ENABLE
 //    <0=> DISABLE
 //    <1=> ENABLE
@@ -9175,6 +9243,12 @@
 // <i> Defines I2C3 DMA Interrupt priority
 // <i> Default: 0
 #define RTE_I2C3_DMA_IRQ_PRI 0
+
+// <o> I2C3 DMA scratch buffer size (entries) <32-256:8>
+// <i> Per-instance 16-bit DMA scratch buffer; sized in DATA_CMD entries.
+// <i> Caps the per-chunk DMA transfer (max 256).
+// <i> Default: 256
+#define RTE_I2C3_DMA_SCRATCH_SIZE 256
 #endif
 
 #endif
@@ -9220,6 +9294,16 @@
 // <i> Default: 0
 #define RTE_LPI2C1_RX_FIFO_THRESHOLD 0
 
+// <o> LPI2C1 SCL Stuck at Low Timeout <0x00000000-0xFFFFFFFF>
+// <i> Defines SCL stuck-at-low timeout (in ic_clk cycles).
+// <i> Default: 10ms (Considered the input clock as 160MHz)
+#define RTE_LPI2C1_SCL_STUCK_LOW_TIMEOUT 1600000
+
+// <o> LPI2C1 SDA Stuck at Low Timeout <0x00000000-0xFFFFFFFF>
+// <i> Defines SDA stuck-at-low timeout (in ic_clk cycles).
+// <i> Default: 10ms (Considered the input clock as 160MHz)
+#define RTE_LPI2C1_SDA_STUCK_LOW_TIMEOUT 1600000
+
 // <o> LPI2C1 DMA ENABLE
 //    <0=> DISABLE
 //    <1=> ENABLE
@@ -9232,6 +9316,12 @@
 // <i> Defines LPI2C1 DMA Interrupt priority
 // <i> Default: 0
 #define RTE_LPI2C1_DMA_IRQ_PRI 0
+
+// <o> LPI2C1 DMA scratch buffer size (entries) <32-256:8>
+// <i> Per-instance 16-bit DMA scratch buffer; sized in DATA_CMD entries.
+// <i> Caps the per-chunk DMA transfer (max 256).
+// <i> Default: 256
+#define RTE_LPI2C1_DMA_SCRATCH_SIZE 256
 #endif
 
 #endif
@@ -10810,17 +10900,18 @@
 //    <o> SDC BUS WIDTH SELECT
 //    <0=> BUS_WIDTH_1BIT
 //    <1=> BUS_WIDTH_4BIT
+//    <2=> BUS_WIDTH_8BIT
 // <i> Defines SDC0 size of bus width
 // <i> Default: BUS_WIDTH_4BIT
 #define RTE_SDC_BUS_WIDTH       1
 
-//    <o> SDC CLOCK SELECT
-//    <0=> SDC_12_5MHz
-//    <1=> SDC_25MHz
-//    <2=> SDC_50MHz
-// <i> Defines SDC0 Clock select
+//    <o> SDC CLOCK SELECT (Hz)
+//    <12500000=> 12.5MHz
+//    <25000000=> 25MHz
+//    <50000000=> 50MHz
+// <i> Defines SDC0 Clock frequency in Hz
 // <i> Default: 25MHz
-#define RTE_SDC_CLOCK_SELECT    1
+#define RTE_SDC_CLOCK_SELECT    25000000
 
 //    <o> SDC DMA SELECT
 //    <0=> SDMA

@@ -185,14 +185,6 @@ void lpspi_spi0_transfer(void)
     uint32_t spi0_tx_buff, lpspi_rx_buff = 0;
 #endif
 
-    /*
-     * H/W connections on devkit:
-     * short LPSPI MISO (P7_4 -> J12-27 pin) and SPI0 MISO (P5_0 -> J12-13 pin).
-     * short LPSPI MOSI (P7_5 -> J15-9 pin) and SPI0 MOSI (P5_1 -> J12-15 pin).
-     * short LPSPI SCLK (P7_6 -> J15-8 pin) and SPI0 SCLK (P5_3 -> J14-5 pin).
-     * short LPSPI SS (P7_7 -> J15-10 pin) and SPI0 SS (P5_2 -> J12-17 pin).
-     * */
-
     printf("*** Demo app using SPI0 & LPSPI is starting ***\n");
 
 #if USE_CONDUCTOR_TOOL_PINS_CONFIG

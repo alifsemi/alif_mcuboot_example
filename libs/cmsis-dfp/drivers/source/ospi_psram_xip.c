@@ -79,6 +79,8 @@ static int ospi_set_speed(OSPI_Type *ospi, AES_Type *aes, const ospi_psram_xip_c
                from this function, the OSPI XIP region (for the OSPI instance specified
                in the ospi_psram_xip_config input parameter) will be active and can be
                used to directly read/write the memory area provided by the ram device.
+               Fills configuration parameters from RTE config if the config_mode is set to CONFIG_MODE_RTE,
+               otherwise uses the parameters as passed in the config structure.
   \param[in]   config    Pointer to ram configuration information
   \return      -1 on configuration error, 0 on success
 */
@@ -92,35 +94,44 @@ int ospi_psram_xip_init(ospi_psram_xip_config *config)
         return -1;
     }
 
+    if (config->config_mode != CONFIG_MODE_RTE &&
+        config->config_mode != CONFIG_MODE_USER_PARAMETERS) {
+        return -1;
+    }
+
     if (config->instance == OSPI_INSTANCE_0) {
         ospi = (OSPI_Type *) OSPI0_BASE;
         aes  = (AES_Type *) AES0_BASE;
 
-        config->spi_frf = RTE_OSPI0_SPI_FRAME_FORMAT;
-        config->bus_speed = RTE_OSPI0_BUS_SPEED;
-        config->ddr_drive_edge = RTE_OSPI0_DDR_DRIVE_EDGE;
-        config->rxds_delay = RTE_OSPI0_RXDS_DELAY;
+        if (config->config_mode == CONFIG_MODE_RTE) {
+            config->spi_frf = RTE_OSPI0_SPI_FRAME_FORMAT;
+            config->bus_speed = RTE_OSPI0_BUS_SPEED;
+            config->ddr_drive_edge = RTE_OSPI0_DDR_DRIVE_EDGE;
+            config->rxds_delay = RTE_OSPI0_RXDS_DELAY;
 #if SOC_FEAT_AES_OSPI_SIGNALS_DELAY
-        config->signal_delay = RTE_OSPI0_SIGNAL_DELAY;
+            config->signal_delay = RTE_OSPI0_SIGNAL_DELAY;
 #endif
-        config->dfs = RTE_OSPI0_DFS;
-        config->slave_select = RTE_OSPI0_CHIP_SELECTION_PIN;
-        config->wait_cycles = RTE_OSPI0_WAIT_CYCLES;
+            config->dfs = RTE_OSPI0_DFS;
+            config->slave_select = RTE_OSPI0_CHIP_SELECTION_PIN;
+            config->wait_cycles = RTE_OSPI0_WAIT_CYCLES;
+        }
 #ifdef RTE_OSPI1
     } else if (config->instance == OSPI_INSTANCE_1) {
         ospi = (OSPI_Type *) OSPI1_BASE;
         aes  = (AES_Type *) AES1_BASE;
 
-        config->spi_frf = RTE_OSPI1_SPI_FRAME_FORMAT;
-        config->bus_speed = RTE_OSPI1_BUS_SPEED;
-        config->ddr_drive_edge = RTE_OSPI1_DDR_DRIVE_EDGE;
-        config->rxds_delay = RTE_OSPI1_RXDS_DELAY;
+        if (config->config_mode == CONFIG_MODE_RTE) {
+            config->spi_frf = RTE_OSPI1_SPI_FRAME_FORMAT;
+            config->bus_speed = RTE_OSPI1_BUS_SPEED;
+            config->ddr_drive_edge = RTE_OSPI1_DDR_DRIVE_EDGE;
+            config->rxds_delay = RTE_OSPI1_RXDS_DELAY;
 #if SOC_FEAT_AES_OSPI_SIGNALS_DELAY
-        config->signal_delay = RTE_OSPI1_SIGNAL_DELAY;
+            config->signal_delay = RTE_OSPI1_SIGNAL_DELAY;
 #endif
-        config->dfs = RTE_OSPI1_DFS;
-        config->slave_select = RTE_OSPI1_CHIP_SELECTION_PIN;
-        config->wait_cycles = RTE_OSPI1_WAIT_CYCLES;
+            config->dfs = RTE_OSPI1_DFS;
+            config->slave_select = RTE_OSPI1_CHIP_SELECTION_PIN;
+            config->wait_cycles = RTE_OSPI1_WAIT_CYCLES;
+        }
 #endif
     } else {
         return -1;
@@ -158,6 +169,9 @@ int ospi_psram_xip_init(ospi_psram_xip_config *config)
         ospi_hyperbus_xip_init(ospi, config->wait_cycles, is_dual_octal);
     } else if (config->ram_type == RAM_TYPE_PSRAM) {
         /* Initialize OSPI psram xip configuration */
+        if (config->wait_cycles == 0) {
+            return -1;
+        }
         ospi_psram_xip_cfg(ospi, config->wait_cycles-1, is_dual_octal);
     } else {
         return -1;

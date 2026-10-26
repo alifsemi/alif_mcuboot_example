@@ -29,7 +29,7 @@
 
 #ifdef __cplusplus
 #if __cplusplus
-extern "C" {
+extern "C"{
 #endif
 #endif
 
@@ -41,55 +41,62 @@ extern "C" {
  *
  */
 
-#define VSI_ISP_CCM_MATRIX_SIZE 9     /* @brief The matrix size of Color correction . */
+#define VSI_ISP_CCM_MATRIX_SIZE        9           /**< \brief The matrix size of Color correction . */
 
-#define VSI_ISP_CCM_MATRIX_MIN  -1024 /* @brief The minimum value of color matrix coefficient. */
-#define VSI_ISP_CCM_MATRIX_MAX  1023  /* @brief The maximum value of color matrix coefficient. */
+#define VSI_ISP_CCM_MATRIX_MIN         -1024       /**< \brief The minimum value of color matrix coefficient. */
+#define VSI_ISP_CCM_MATRIX_MAX         1023        /**< \brief The maximum value of color matrix coefficient. */
 
-#define VSI_ISP_CCM_OFFSET_MIN  -2048 /* @brief The minimum value of color offset coefficient. */
-#define VSI_ISP_CCM_OFFSET_MAX  2047  /* @brief The maximum value of color offset coefficient. */
+#define VSI_ISP_CCM_OFFSET_MIN         -2048       /**< \brief The minimum value of color offset coefficient. */
+#define VSI_ISP_CCM_OFFSET_MAX         2047        /**< \brief The maximum value of color offset coefficient. */
 
-#define VSI_ISP_COLOR_TEMP_MIN  2000  /* @brief The minimum value of color temperature. */
-#define VSI_ISP_COLOR_TEMP_MAX  10000 /* @brief The maximum value of color temperature. */
+#define VSI_ISP_COLOR_TEMP_MIN         2000        /**< \brief The minimum value of color temperature. */
+#define VSI_ISP_COLOR_TEMP_MAX         10000       /**< \brief The maximum value of color temperature. */
 
 /** \brief   CCM manual attribute. */
 typedef struct vsiISP_CCM_MANUAL_ATTR_S {
-    vsi_s16_t colorMatrix[VSI_ISP_CCM_MATRIX_SIZE]; /* @brief Color correction matrix coefficient.
-                                                     * \n range [-1024 1023]
-                                                     * \n 7bit fractional part(-8 7.996)
-                                                     * \n (-1024 / 128) = -8
-                                                     * \n  (1023 / 128) = 7.996
-                                                     **/
-    vsi_s16_t rOffset;       /* @brief Red color offset coefficient range [-2048 2047]*/
-    vsi_s16_t gOffset;       /* @brief Green color offset coefficient range [-2048 2047]*/
-    vsi_s16_t bOffset;       /* @brief Blue color offset coefficient range [-2048 2047]*/
+    vsi_s16_t colorMatrix[VSI_ISP_CCM_MATRIX_SIZE]; /**< \brief Color correction matrix coefficient.
+                                                    \n range [-1024 1023]
+                                                    \n 7bit fractional part(-8 7.996)
+                                                    \n (-1024 / 128) = -8
+                                                    \n (1023 / 128) = 7.996*/
+    vsi_s16_t rOffset;   /**< \brief Red color offset coefficient.
+                                \n range [-2048 2047]*/
+    vsi_s16_t gOffset;   /**< \brief Green color offset coefficient.
+                                \n range [-2048 2047]*/
+    vsi_s16_t bOffset;   /**< \brief Blue color offset coefficient.
+                                \n range [-2048 2047]*/
 } ISP_CCM_MANUAL_ATTR_S;
 
 /** \brief   CCM illuminant attribute. */
-typedef struct vsiISP_ILLUMINANT_CCM_S {
-    vsi_s16_t colorMatrix[VSI_ISP_CCM_MATRIX_SIZE]; /* @brief Color correction matrix coefficient.
-                                                     * \n range [-1024 1023]
-                                                     * \n 7bit fractional part(-8 7.996)
-                                                     * \n (-1024 / 128) = -8
-                                                     * \n (1023 / 128) = 7.996
-                                                     **/
-    vsi_s16_t rOffset;        /* @brief Red color offset coefficient range [-2048 2047]*/
-    vsi_s16_t gOffset;        /* @brief Green color offset coefficient range [-2048 2047]*/
-    vsi_s16_t bOffset;        /* @brief Blue color offset coefficient range [-2048 2047]*/
-    vsi_u32_t colorTemp;      /* @brief Color temperature value range [2000 10000]*/
+typedef struct vsiISP_ILLUMINANT_CCM_S
+{
+    vsi_s16_t colorMatrix[VSI_ISP_CCM_MATRIX_SIZE]; /**< \brief Color correction matrix coefficient.
+                                                    \n range [-1024 1023]
+                                                    \n 7bit fractional part(-8 7.996)
+                                                    \n (-1024 / 128) = -8
+                                                    \n (1023 / 128) = 7.996*/
+    vsi_s16_t rOffset;   /**< \brief Red color offset coefficient.
+                                \n range [-2048 2047]*/
+    vsi_s16_t gOffset;   /**< \brief Green color offset coefficient.
+                                \n range [-2048 2047]*/
+    vsi_s16_t bOffset;   /**< \brief Blue color offset coefficient.
+                                \n range [-2048 2047]*/
+    vsi_u32_t colorTemp;   /**< \brief Color temperature value.
+                                \n range [2000 10000]*/
 } ISP_ILLUMINANT_CCM_S;
 
 /** \brief   CCM auto attribute. */
 typedef struct vsiISP_CCM_AUTO_ATTR_S {
-    ISP_ILLUMINANT_CCM_S illuminantCCM[ILLUMINANT_TYPE_CNT]; /* @brief CCM illuminant attribute */
+    ISP_ILLUMINANT_CCM_S illuminantCCM[ILLUMINANT_TYPE_CNT]; /**< \brief CCM illuminant attribute */
 } ISP_CCM_AUTO_ATTR_S;
 
 /** \brief   CCM attribute. */
 typedef struct vsiISP_CCM_ATTR_S {
-    ISP_OP_TYPE_E         opType;     /* @brief CCM mode attribute */
-    ISP_CCM_MANUAL_ATTR_S manualAttr; /* @brief CCM manual attribute */
-    ISP_CCM_AUTO_ATTR_S   autoAttr;   /* @brief CCM auto attribute */
+    ISP_OP_TYPE_E         opType; /**< \brief CCM mode attribute */
+    ISP_CCM_MANUAL_ATTR_S manualAttr; /**< \brief CCM manual attribute */
+    ISP_CCM_AUTO_ATTR_S   autoAttr;   /**< \brief CCM auto attribute */
 } ISP_CCM_ATTR_S;
+
 
 /*****************************************************************************/
 /**

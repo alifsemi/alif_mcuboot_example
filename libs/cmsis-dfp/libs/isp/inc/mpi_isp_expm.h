@@ -29,7 +29,7 @@
 
 #ifdef __cplusplus
 #if __cplusplus
-extern "C" {
+extern "C"{
 #endif
 #endif
 
@@ -41,30 +41,29 @@ extern "C" {
  *
  */
 
-#define VSI_ISP_EXPM_STATIC_BLOCK_NUM 25 /**< \brief The statistics block number. */
+#define VSI_ISP_EXPM_STATIC_BLOCK_NUM    25   /**< \brief The statistics block number. */
 
-#define VSI_ISP_EXPM_ALT_MODE_0                                                                    \
-    0 /**< \brief Luminance calculation according to Y=16+0.25R+0.5G+0.1094B. */
-#define VSI_ISP_EXPM_ALT_MODE_1                                                                    \
-    1 /**< \brief Luminance calculation according to Y=(R+G+B) x 0.332. */
+#define VSI_ISP_EXPM_ALT_MODE_0          0     /**< \brief Luminance calculation according to Y=16+0.25R+0.5G+0.1094B. */
+#define VSI_ISP_EXPM_ALT_MODE_1          1     /**< \brief Luminance calculation according to Y=(R+G+B) x 0.332. */
+
 
 /** \brief   EXPM structure. */
 typedef struct vsiISP_EXPM_STATISTICS_S {
-    vsi_u8_t meanLum[VSI_ISP_EXPM_STATIC_BLOCK_NUM]; /**< \brief Exp gr and gb mean value */
+    vsi_u8_t meanLum[VSI_ISP_EXPM_STATIC_BLOCK_NUM];   /**< \brief Exp gr and gb mean value */
 } ISP_EXPM_STATISTICS_S;
 
 /** \brief   EXPM window structure. */
 typedef struct vsiISP_EXPM_BLOCK_S {
-    vsi_u16_t hOffs; /**< \brief Exp horizontal Offset for First Block */
-    vsi_u16_t vOffs; /**< \brief Exp vertical Offset for First Block */
-    vsi_u16_t hSize; /**< \brief Exp horizontal Size of One Block */
-    vsi_u16_t vSize; /**< \brief Exp vertical Size of One Block */
+    vsi_u16_t hOffs;     /**< \brief Exp horizontal Offset for First Block */
+    vsi_u16_t vOffs;     /**< \brief Exp vertical Offset for First Block */
+    vsi_u16_t hSize;     /**< \brief Exp horizontal Size of One Block */
+    vsi_u16_t vSize;     /**< \brief Exp vertical Size of One Block */
 } ISP_EXPM_BLOCK_S;
 
 /** \brief   EXPM attribute. */
 typedef struct vsiISP_EXPM_ATTR_S {
-    vsi_bool_t enable; /**< \brief Whether to enable exp. \n 0: Disable exp. \n 1: Enable exp. */
-    vsi_u8_t   expAltMode;     /**< \brief Luminance calculation mode. */
+    vsi_bool_t enable;         /**< \brief Whether to enable exp. \n 0: Disable exp. \n 1: Enable exp. */
+    vsi_u8_t   expAltMode;    /**< \brief Luminance calculation mode. */
     ISP_EXPM_BLOCK_S blockWin; /**< \brief Measure the exp block window */
 } ISP_EXPM_ATTR_S;
 

@@ -45,10 +45,18 @@ extern "C" {
 #define ARM_I2C_WRITE_READ_MODE_DIS (0U << ARM_I2C_WRITE_READ_MODE_Pos)
 
 /****** I2C Extended Event *****/
-#define ARM_I2C_EVENT_HS_ACKDET                                                                    \
-    (1UL << 9)  ///< Received ack for High Speed code
-#define ARM_I2C_EVENT_HS_NO_RESTART                                                                \
-    (1UL << 10) ///< No Restart mode available for High Speed mode
+#define ARM_I2C_EVENT_GCALL_ERROR         (1UL << 16) ///< Error during General Call xfer; paired with BUS_ERROR
+#define ARM_I2C_EVENT_UNEXPECTED_ACK      (1UL << 17) ///< Unexpected ACK (HS-mode master code or Start byte); paired with BUS_ERROR
+#define ARM_I2C_EVENT_RESTART_DISABLED    (1UL << 18) ///< Xfer needs RESTART but RESTART_EN=0; paired with BUS_ERROR
+#define ARM_I2C_EVENT_MASTER_DISABLED     (1UL << 19) ///< Master op while master mode disabled
+#define ARM_I2C_EVENT_RX_IN_TX_MODE       (1UL << 20) ///< Read cmd issued while controller in Tx mode
+#define ARM_I2C_EVENT_USER_ABORT          (1UL << 21) ///< Xfer aborted via Control(ABORT_TRANSFER); paired with TRANSFER_DONE | TRANSFER_INCOMPLETE
+#define ARM_I2C_EVENT_SDA_STUCK_LOW       (1UL << 22) ///< SDA held low past IC_SDA_STUCK_AT_LOW_TIMEOUT; paired with BUS_ERROR
+#define ARM_I2C_EVENT_SCL_STUCK_LOW       (1UL << 23) ///< SCL held low past IC_SCL_STUCK_AT_LOW_TIMEOUT; paired with BUS_ERROR
+#define ARM_I2C_EVENT_DEV_ID_NACK         (1UL << 24) ///< No ACK during Device-ID transfer;
+#define ARM_I2C_EVENT_DEV_ID_TX_DATA      (1UL << 25) ///< Tx FIFO not empty during Device-ID xfer;
+#define ARM_I2C_EVENT_TX_FIFO_FLUSHED     (1UL << 26) ///< Stale Tx FIFO flushed (master switched to fresh read)
+#define ARM_I2C_EVENT_UNDEF_TX_ABORT      (1UL << 27) ///< Undefined Tx abort
 
 #ifdef __cplusplus
 }

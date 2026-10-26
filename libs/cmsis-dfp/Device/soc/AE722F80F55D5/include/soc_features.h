@@ -34,6 +34,7 @@
 #define SOC_FEAT_HFOSC_MAX_HZ                      (38400000)
 #define SOC_FEAT_PLL_CLK1_MAX_HZ                   (800000000)
 #define SOC_FEAT_PLL_CLK3_MAX_HZ                   (480000000)
+#define SOC_FEAT_PIX_CLKSEL_PLL_HZ                 (480000000)
 
 /* Memory Regions */
 #define SOC_FEAT_MRAM_SIZE                         (0x00580000)
@@ -121,6 +122,7 @@
 #define SOC_FEAT_CRC_RESULT_REFLECT_ENABLE         (1)
 
 #define SOC_FEAT_ADC_REG_ALIASING                  (0)
+#define SOC_FEAT_ADC_HAS_SAMPLE_INT_CLR_BIT        (0)
 
 #define SOC_FEAT_DAC_REG_ALIASING                  (0)
 
@@ -128,8 +130,10 @@
 
 #define SOC_FEAT_I2C_HAS_RESTART_CAP               (0)
 
-#define SOC_FEAT_CPI_HAS_CROPPING       (0)
-#define SOC_FEAT_HAS_ISP                (0)
+#define SOC_FEAT_CPI_HAS_CROPPING                  (0)
+#define SOC_FEAT_HAS_ISP                           (0)
+#define SOC_FEAT_HAS_CAM2                          (0)
+#define SOC_FEAT_CPI_HAS_STREAM_ENABLE             (0)
 
 #define SOC_FEAT_U55_M1_CAN_ACCESS_HIGHER_ADDRESS (0)
 

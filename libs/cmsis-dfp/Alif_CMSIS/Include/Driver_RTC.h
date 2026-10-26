@@ -32,6 +32,7 @@ extern "C" {
 /*----- RTC Control Codes -----*/
 #define ARM_RTC_SET_PRESCALER       (0x01UL)  ///< RTC Set Prescaler; arg = Prescaler Value
 #define ARM_RTC_SET_ALARM           (0x02UL)  ///< RTC Set Alarm;     arg = Alarm Value
+#define ARM_RTC_CONTROL_WRAP        (0x03UL)  ///< RTC Wrap Control;  arg: 0=disabled, 1=enabled
 
 /****** RTC Event *****/
 #define ARM_RTC_EVENT_ALARM_TRIGGER (1UL << 0)  ///< Alarm Triggered;
@@ -81,7 +82,8 @@ typedef void (*ARM_RTC_SignalEvent_t)(uint32_t event);  ///< Pointer to \ref RTC
 */
 typedef struct _ARM_RTC_CAPABILITIES {
     uint32_t alarm   : 1;   ///< supports RTC Alarm Event Callback
-    uint32_t reserved: 31;  ///< Reserved (must be zero)
+    uint32_t wrap    : 1;   ///< supports RTC Counter wrap mode
+    uint32_t reserved: 30;  ///< Reserved (must be zero)
 } ARM_RTC_CAPABILITIES;
 
 /**

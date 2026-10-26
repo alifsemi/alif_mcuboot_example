@@ -82,7 +82,7 @@ int32_t board_gpios_config(void)
             regsGPIO15->GPIO_INTTYPE_LEVEL = board_gpioconf[i].interrupt_edge;
             regsGPIO15->GPIO_INT_POLARITY  = board_gpioconf[i].interrupt_polarity_high_edge_rising;
             regsGPIO15->GPIO_INT_BOTHEDGE  = board_gpioconf[i].interrupt_both_edge;
-            regsGPIO15->GPIO_INTMASK       = board_gpioconf[i].interrupt_enable;
+            regsGPIO15->GPIO_INTMASK       = ~(board_gpioconf[i].interrupt_enable);
             regsGPIO15->GPIO_INTEN         = board_gpioconf[i].interrupt_enable;
             regsGPIO15->GPIO_PORTA_EOI     = 0xFF;
         } else {
@@ -94,7 +94,7 @@ int32_t board_gpios_config(void)
             regsGPIO->GPIO_INTTYPE_LEVEL = board_gpioconf[i].interrupt_edge;
             regsGPIO->GPIO_INT_POLARITY  = board_gpioconf[i].interrupt_polarity_high_edge_rising;
             regsGPIO->GPIO_INT_BOTHEDGE  = board_gpioconf[i].interrupt_both_edge;
-            regsGPIO->GPIO_INTMASK       = board_gpioconf[i].interrupt_enable;
+            regsGPIO->GPIO_INTMASK       = ~(board_gpioconf[i].interrupt_enable);
             regsGPIO->GPIO_INTEN         = board_gpioconf[i].interrupt_enable;
             regsGPIO->GPIO_PORTA_EOI     = 0xFF;
             /* enable GPIO de-bounce clock if required */

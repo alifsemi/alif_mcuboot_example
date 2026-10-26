@@ -4,7 +4,8 @@ set (DRIVERS_INC            "${ALIF_CMSIS_DRIVER_DIR}/Include;\
                              ${ALIF_ENSEMBLE_DRIVERS_DIR}/include;\
                              ${ALIF_CMSIS_DRIVER_DIR}/Include/config;\
                              ${ALIF_COMPONENTS_DIR}/Include;\
-                             ${ALIF_DEV_SRC_DIR}/libs/isp/inc")
+                             ${ALIF_DEV_SRC_DIR}/libs/isp/inc;\
+                             ${ALIF_DEV_SRC_DIR}/libs/isp")
 
 # Setting variables for OSPI drivers
 set (OSPI_XIP_DIR                       "${ALIF_DEV_SRC_DIR}/ospi_xip")
@@ -170,12 +171,14 @@ target_sources(${DRIVER_LIB} PRIVATE
 
     #Camera MT9M114 Driver
     $<$<BOOL:${ENABLE_MT9M114_CAMERA}>:${ALIF_COMPONENTS_SRC_DIR}/MT9M114_Camera_Sensor.c>
+    $<$<AND:$<BOOL:${ENABLE_MT9M114_CAMERA}>,$<BOOL:${ENABLE_ISP}>>:${ALIF_CMSIS_DRIVER_SRC_DIR}/mt9m114_isp_param.c>
 
     #Camera HM0360  Driver
     $<$<BOOL:${ENABLE_HM0360_CAMERA}>:${ALIF_COMPONENTS_SRC_DIR}/HM0360_camera_sensor.c>
 
     #Camera ARX3A0  Driver
     $<$<BOOL:${ENABLE_ARX3A0_CAMERA}>:${ALIF_COMPONENTS_SRC_DIR}/arx3A0_camera_sensor.c>
+    $<$<AND:$<BOOL:${ENABLE_ARX3A0_CAMERA}>,$<BOOL:${ENABLE_ISP}>>:${ALIF_CMSIS_DRIVER_SRC_DIR}/arx3a0_isp_param.c>
 
     #Camera AR0144  Driver
     $<$<BOOL:${ENABLE_AR0144_CAMERA}>:${ALIF_COMPONENTS_SRC_DIR}/ar0144_camera_sensor.c>
@@ -191,6 +194,7 @@ target_sources(${DRIVER_LIB} PRIVATE
 
     #Camera OV5675  Driver
     $<$<BOOL:${ENABLE_OV5675_CAMERA}>:${ALIF_COMPONENTS_SRC_DIR}/OV5675_camera_sensor.c>
+    $<$<AND:$<BOOL:${ENABLE_OV5675_CAMERA}>,$<BOOL:${ENABLE_ISP}>>:${ALIF_CMSIS_DRIVER_SRC_DIR}/ov5675_isp_param.c>
 
     #MIPI CSI2 Driver
     $<$<BOOL:${ENABLE_MIPI_CSI2}>:${ALIF_ENSEMBLE_DRIVERS_SRC_DIR}/csi.c>

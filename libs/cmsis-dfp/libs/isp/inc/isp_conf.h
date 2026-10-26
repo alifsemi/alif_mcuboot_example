@@ -24,9 +24,9 @@
 
 #include "isp_interface.h"
 
-#define ISP_DEV_CNT  1
+#define ISP_DEV_CNT 1
 #define ISP_PORT_CNT 1
-#define ISP_CHN_CNT  1
+#define ISP_CHN_CNT 1
 
 #ifdef ISP_ARY_CROP_V10
 #undef ISP_ARY_CROP_V10
@@ -36,8 +36,8 @@
 
 #if (RTE_ISP_SCALAR_MODULE)
 #define ISP_SCALE_V10 1
-// #define ISP_SCALE_V20 1
-#define ISP_MP_SCALE  1
+//#define ISP_SCALE_V20 1
+#define ISP_MP_SCALE 1
 #endif
 
 #ifdef ISP_ACQ_NR_NUMBERS
@@ -45,12 +45,12 @@
 #endif
 
 #if (RTE_ISP_AE_MODULE == 1)
-#define ISP_AE_V10      1
+#define ISP_AE_V10 1
 #define ISP_AE_ALGO_V10 1
 #endif
 
 #if (RTE_ISP_WB_MODULE == 1)
-#define ISP_WB_V10_1     1
+#define ISP_WB_V10_1 1
 #define ISP_AWB_ALGO_V10 1
 #endif
 

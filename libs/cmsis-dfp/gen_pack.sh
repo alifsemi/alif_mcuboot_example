@@ -9,7 +9,7 @@ set -o pipefail
 # Set version of gen pack library
 # For available versions see https://github.com/Open-CMSIS-Pack/gen-pack/tags.
 # Use the tag name without the prefix "v", e.g., 0.7.0
-REQUIRED_GEN_PACK_LIB="0.11.3"
+REQUIRED_GEN_PACK_LIB="0.14.0"
 
 # Set default command line arguments
 DEFAULT_ARGS=()
@@ -85,7 +85,7 @@ PACKCHK_DEPS="
 # - release   Tag annotations, or release descriptions (in order)
 # - tag       Tag annotations only
 #
-# PACK_CHANGELOG_MODE="<full|release|tag>"
+PACK_CHANGELOG_MODE="full"
 
 # Specify file patterns to be excluded from the checksum file
 # Default: <empty>

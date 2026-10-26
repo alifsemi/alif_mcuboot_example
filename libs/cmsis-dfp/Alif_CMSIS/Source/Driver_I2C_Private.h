@@ -29,6 +29,15 @@
 
 #if I2C_DMA_ENABLE
 #include <DMA_Common.h>
+#include "dma_opcode.h"
+#endif
+
+#if I2C_DMA_ENABLE
+/* Microcode buffer size for the per-instance TX and RX microcodes.
+ * Sized for a single DMALP chunk (max 256 iterations):
+ * 96 B fits the worst case.
+ */
+#define I2C_DMA_MCODE_SIZE 96
 #endif
 
 typedef volatile struct _I2C_DRIVER_STATE {
@@ -68,9 +77,18 @@ typedef struct _I2C_RESOURCES {
     const uint32_t        dma_irq_priority; /* DMA IRQ priority number                 */
     ARM_DMA_SignalEvent_t dma_cb;           /* I2S DMA Callback                        */
     I2C_DMA_HW_CONFIG    *dma_cfg;          /* DMA Controller configuration            */
+    uint16_t             *dma_tx_scratch;    /* 16-bit DATA_CMD scratch buf            */
+    uint32_t              dma_tx_scratch_sz; /* Scratch buf capacity                   */
+    const uint8_t        *dma_xfer_src;     /* Pointer into the user's 8-bit TX buffer */
+    uint32_t              dma_xfer_remaining; /* Bytes left after the current chunk    */
+    uint32_t              dma_xfer_total;   /* Original transfer size                  */
+    bool                  dma_xfer_pending; /* If true, no STOP on final chunk         */
+    uint8_t               dma_mcode[I2C_DMA_MCODE_SIZE] __ALIGNED(32); /* microcode    */
 #endif
     uint8_t            tx_fifo_threshold; /* Tx Fifo Buffer threshold                */
     uint8_t            rx_fifo_threshold; /* Rx Fifo Buffer threshold                */
+    uint32_t           scl_stuck_timeout; /* SCL Stuck at Low Timeout                */
+    uint32_t           sda_stuck_timeout; /* SDA Stuck at Low Timeout                */
     const I2C_INSTANCE instance;          /* I2C Instance number                     */
 } I2C_RESOURCES;
 
@@ -82,8 +100,12 @@ typedef struct _I2C_RESOURCES {
 
 #define I2C_0_TARADDR          (0x50) /* I2C target address     */
 
-#define I2C_7BIT_ADDRESS_MASK  (0x7F) /* 7bit I2C address mask  */
+/* 7-bit reserved-range boundaries (inclusive of valid window). */
+#define I2C_7BIT_ADDR_MIN          0x08U
+#define I2C_7BIT_ADDR_MAX          0x77U
+#define I2C_7BIT_ADDR_MASK         0x7FU
 
-#define I2C_10BIT_ADDRESS_MASK (0x3FF) /* 10bit I2C address mask */
+/* 10-bit address spans the full 10-bit field */
+#define I2C_10BIT_ADDR_MAX         0x3FFU
 
 #endif /* DRIVER_I2C_PRIVATE_H_ */

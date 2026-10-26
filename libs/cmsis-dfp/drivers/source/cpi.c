@@ -23,7 +23,6 @@
   \fn          void cpi_software_reset(CPI_Type *cpi)
   \brief       CPI software reset
   \param[in]   cpi      Pointer to the CPI register map.
-  \param[in]   mode     Soft reset the CPI
   \return      none.
 */
 void cpi_software_reset(CPI_Type *cpi)

@@ -153,7 +153,7 @@ static int32_t MRAM_ReadData(uint32_t addr, void *data, uint32_t cnt)
     }
 
     /* validate MRAM address and count. */
-    if (addr > MRAM_USER_SIZE) {
+    if (addr > (MRAM_USER_SIZE - 1)) {
         return ARM_DRIVER_ERROR_PARAMETER;
     }
 
@@ -163,7 +163,7 @@ static int32_t MRAM_ReadData(uint32_t addr, void *data, uint32_t cnt)
 
     /* addr is MRAM address-offset,
      * so add MRAM Base-address to it. */
-    addr += MRAM_BASE;
+    addr += MRAM_USER_BASE;
 
     /* read from MRAM */
     mram_read(data, (void *) addr, cnt);
@@ -215,7 +215,7 @@ static int32_t MRAM_ProgramData(uint32_t addr, const void *data, uint32_t cnt)
     }
 
     /* validate MRAM address and count. */
-    if (addr > MRAM_USER_SIZE) {
+    if (addr > (MRAM_USER_SIZE - 1)) {
         return ARM_DRIVER_ERROR_PARAMETER;
     }
 
@@ -225,7 +225,7 @@ static int32_t MRAM_ProgramData(uint32_t addr, const void *data, uint32_t cnt)
 
     /* addr is MRAM address-offset,
      * so add MRAM Base-address to it. */
-    addr                                += MRAM_BASE;
+    addr                                += MRAM_USER_BASE;
 
     /* check address with aligned to 16-Bytes.*/
     uint32_t aligned_addr                = addr & MRAM_ADDR_ALIGN_MASK;

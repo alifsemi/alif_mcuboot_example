@@ -71,10 +71,10 @@ extern "C" {
  * these include data mode, data mask etc
  */
 /* CAM_CFG AXI port bit[2] */
-#define CAM_CFG_AXI_PORT_Pos                           2U
+#define CAM_CFG_AXI_PORT_Pos        2U
 
 /* CAM_CFG ISP port bit[3] */
-#define CAM_CFG_ISP_PORT_Pos                           3U
+#define CAM_CFG_ISP_PORT_Pos        3U
 
 /* CAM_CFG vsync wait bit[4] */
 #define CAM_CFG_VSYNC_WAIT_Pos      4U
@@ -134,29 +134,29 @@ extern "C" {
  * Offsets and Masks. these include CPI HBP, HFP and HFP Enable.
  */
 /* CAM_VIDEO_HCFG HBP bit[13:0] */
-#define CAM_VIDEO_HCFG_HBP_Pos                         0U
-#define CAM_VIDEO_HCFG_HBP_Msk                         (0x3FFFU << CAM_VIDEO_HCFG_HBP_Pos)
+#define CAM_VIDEO_HCFG_HBP_Pos      0U
+#define CAM_VIDEO_HCFG_HBP_Msk      (0x3FFFU << CAM_VIDEO_HCFG_HBP_Pos)
 
 /* CAM_VIDEO_HCFG HFP bit[29:16] */
-#define CAM_VIDEO_HCFG_HFP_Pos                         16U
-#define CAM_VIDEO_HCFG_HFP_Msk                         (0x3FFFU << CAM_VIDEO_HCFG_HFP_Pos)
+#define CAM_VIDEO_HCFG_HFP_Pos      16U
+#define CAM_VIDEO_HCFG_HFP_Msk      (0x3FFFU << CAM_VIDEO_HCFG_HFP_Pos)
 
 /* CAM_VIDEO_HCFG HFP_EN bit[31] */
-#define CAM_VIDEO_HCFG_HFP_EN_Pos                      31U
+#define CAM_VIDEO_HCFG_HFP_EN_Pos   31U
 
 /* Camera Video Vertical Configuration Register (CAM_VIDEO_VCFG) bit Definition, Macros,
  * Offsets and Masks. these include CPI VBP, VFP and VFP Enable.
  */
 /* CAM_VIDEO_HCFG VBP bit[13:0] */
-#define CAM_VIDEO_VCFG_VBP_Pos                         0U
-#define CAM_VIDEO_VCFG_VBP_Msk                         (0xFFFU << CAM_VIDEO_VCFG_VBP_Pos)
+#define CAM_VIDEO_VCFG_VBP_Pos      0U
+#define CAM_VIDEO_VCFG_VBP_Msk      (0xFFFU << CAM_VIDEO_VCFG_VBP_Pos)
 
 /* CAM_VIDEO_VCFG VFP bit[29:16] */
-#define CAM_VIDEO_VCFG_VFP_Pos                         16U
-#define CAM_VIDEO_VCFG_VFP_Msk                         (0xFFFU << CAM_VIDEO_VCFG_VFP_Pos)
+#define CAM_VIDEO_VCFG_VFP_Pos      16U
+#define CAM_VIDEO_VCFG_VFP_Msk      (0xFFFU << CAM_VIDEO_VCFG_VFP_Pos)
 
 /* CAM_VIDEO_VCFG VFP_EN bit[31] */
-#define CAM_VIDEO_VCFG_VFP_EN_Pos                      31U
+#define CAM_VIDEO_VCFG_VFP_EN_Pos   31U
 
 /* Camera Video Frame Configuration Register (CAM_VIDEO_FCFG) bit Definition, Macros,
  * Offsets and Masks. these include CPI frame width and frame height.
@@ -180,8 +180,18 @@ extern "C" {
  * Offsets and Masks these include CPI framebuffer start address.
  */
 /* CAM_FRAME_ADDR framebuffer start address bit[31:3] */
-#define CAM_FRAME_ADDR_ADDR_Pos     0U
-#define CAM_FRAME_ADDR_ADDR_Msk     (0xFFFFFFF8U << CAM_FRAME_ADDR_ADDR_Pos)
+#define CAM_FRAME_ADDR_ADDR_Msk      (0xFFFFFFF8U)
+
+/* CAM_FRAME_ADDR framebuffer start address bit[0] */
+#define CAM_FRAME_ADDR_STREAMING_Pos 0U
+#define CAM_FRAME_ADDR_STREAMING_Msk (1U << CAM_FRAME_ADDR_STREAMING_Pos)
+
+/*  Camera AXI Stream Control Register (CAM_AXI_STREAM_CTRL) bit Definition, Macros,
+ * Offsets and Masks. These include Stream address counter.
+ */
+/* CAM_AXI_STREAM_CTRL Stream address counter bit[2:1] */
+#define CAM_AXI_STREAM_CTRL_FCNT_Pos 1U
+#define CAM_AXI_STREAM_CTRL_FCNT_Msk (0x3U << CAM_AXI_STREAM_CTRL_FCNT_Pos)
 
 /**
  * enum  CPI_VIDEO_CAPTURE_STATUS
@@ -275,8 +285,8 @@ typedef enum _CPI_DATA_ENDIANNESS {
  * CPI transfer 10 bit code on 8 bit data bus.
  */
 typedef enum _CPI_CODE10ON8_CODING {
-    CPI_CODE10ON8_CODING_DISABLE, /**< Disable special 10-bit coding */
-    CPI_CODE10ON8_CODING_ENABLE   /**< Enable special 10-bit coding   */
+    CPI_CODE10ON8_CODING_DISABLE,                   /**< Disable special 10-bit coding */
+    CPI_CODE10ON8_CODING_ENABLE                     /**< Enable special 10-bit coding   */
 } CPI_CODE10ON8_CODING;
 
 /**
@@ -285,10 +295,10 @@ typedef enum _CPI_CODE10ON8_CODING {
  * Valid for 16 bit data mode only and not valid for LPCPI.
  */
 typedef enum _CPI_DATA_MASK {
-    CPI_DATA_MASK_BIT_16, /**< Select 16 bit data mask                                         */
-    CPI_DATA_MASK_BIT_10, /**< Select 10 bit data mask                                         */
-    CPI_DATA_MASK_BIT_12, /**< Select 12 bit data mask                                         */
-    CPI_DATA_MASK_BIT_14  /**< Select 14 bit data mask                                         */
+    CPI_DATA_MASK_BIT_16,                           /**< Select 16 bit data mask        */
+    CPI_DATA_MASK_BIT_10,                           /**< Select 10 bit data mask        */
+    CPI_DATA_MASK_BIT_12,                           /**< Select 12 bit data mask        */
+    CPI_DATA_MASK_BIT_14                            /**< Select 14 bit data mask        */
 } CPI_DATA_MASK;
 
 /**
@@ -296,16 +306,16 @@ typedef enum _CPI_DATA_MASK {
  * @brief    CPI camera sensor information.
  */
 typedef struct _cpi_sensor_info_t {
-    CPI_INTERFACE  interface; /**< CPI Interface                                                  */
-    CPI_WAIT_VSYNC vsync_wait;            /**< CPI VSYNC Wait            */
-    CPI_CAPTURE_DATA_ENABLE vsync_mode;   /**< CPI VSYNC Mode   */
-    CPI_SIG_POLARITY        pixelclk_pol; /**< CPI Pixel Clock Polarity */
-    CPI_SIG_POLARITY        hsync_pol;    /**< CPI HSYNC Polarity    */
-    CPI_SIG_POLARITY        vsync_pol;    /**< CPI VSYNC Polarity    */
-    CPI_DATA_MODE data_mode; /**< CPI Data Mode                                                  */
-    CPI_DATA_ENDIANNESS  data_endianness; /**< Select MSB/LSB */
-    CPI_CODE10ON8_CODING code10on8;       /**< code10on8 enable/disable       */
-    CPI_DATA_MASK data_mask; /**< CPI Data Mask                                                  */
+    CPI_INTERFACE           interface;              /**< CPI Interface                  */
+    CPI_WAIT_VSYNC          vsync_wait;             /**< CPI VSYNC Wait                 */
+    CPI_CAPTURE_DATA_ENABLE vsync_mode;             /**< CPI VSYNC Mode                 */
+    CPI_SIG_POLARITY        pixelclk_pol;           /**< CPI Pixel Clock Polarity       */
+    CPI_SIG_POLARITY        hsync_pol;              /**< CPI HSYNC Polarity             */
+    CPI_SIG_POLARITY        vsync_pol;              /**< CPI VSYNC Polarity             */
+    CPI_DATA_MODE           data_mode;              /**< CPI Data Mode                  */
+    CPI_DATA_ENDIANNESS     data_endianness;        /**< Select MSB/LSB                 */
+    CPI_CODE10ON8_CODING    code10on8;              /**< code10on8 enable/disable       */
+    CPI_DATA_MASK           data_mask;              /**< CPI Data Mask                  */
 } cpi_sensor_info_t;
 
 /**
@@ -313,8 +323,8 @@ typedef struct _cpi_sensor_info_t {
  * @brief    CPI fifo control configuration.
  */
 typedef struct _cpi_fifo_ctrl_cfg_t {
-    uint8_t rd_wmark; /**< FIFO read watermark                                            */
-    uint8_t wr_wmark; /**< FIFO write watermark                                           */
+    uint8_t rd_wmark;                               /**< FIFO read watermark            */
+    uint8_t wr_wmark;                               /**< FIFO write watermark           */
 } cpi_fifo_ctrl_cfg_t;
 
 #if SOC_FEAT_CPI_HAS_CROPPING
@@ -362,8 +372,8 @@ typedef struct _cpi_vertical_cfg_t {
  * @brief    CPI frame configuration.
  */
 typedef struct _cpi_frame_cfg_t {
-    uint16_t data; /**< Valid data in a row                                             */
-    uint16_t row;  /**< Valid data rows in a frame                                      */
+    uint16_t data;                                 /**< Valid data in a row             */
+    uint16_t row;                                  /**< Valid data rows in a frame      */
 } cpi_frame_cfg_t;
 
 /**
@@ -422,47 +432,47 @@ static inline CPI_VIDEO_CAPTURE_STATUS cpi_get_capture_status(CPI_Type *cpi)
 }
 
 /**
-  \fn          uint32_t cpi_get_interrupt_status(CPI_Type *cpi)
-  \brief       Get the interrupt status from the CPI.
-  \param[in]   cpi      Pointer to the CPI register map.
-  \return      interrupt status from the CPI.
-*/
+ * \fn          uint32_t cpi_get_interrupt_status(CPI_Type *cpi)
+ * \brief       Get the interrupt status from the CPI.
+ * \param[in]   cpi      Pointer to the CPI register map.
+ * \return      interrupt status from the CPI.
+ */
 static inline uint32_t cpi_get_interrupt_status(CPI_Type *cpi)
 {
     return (cpi->CAM_INTR & cpi->CAM_INTR_ENA);
 }
 
 /**
-  \fn           void cpi_enable_interrupt(CPI_Type *cpi, uint32_t irq_bitmask)
-  \brief        Enable CPI interrupt.
-  \param[in]    cpi         Pointer to CPI register map.
-  \param[in]    irq_bitmask Possible camera events (refer CPI_INTR_* macros Bitmask).
-  \return       none
-*/
+ * \fn           void cpi_enable_interrupt(CPI_Type *cpi, uint32_t irq_bitmask)
+ * \brief        Enable CPI interrupt.
+ * \param[in]    cpi         Pointer to CPI register map.
+ * \param[in]    irq_bitmask Possible camera events (refer CPI_INTR_* macros Bitmask).
+ * \return       none
+ */
 static inline void cpi_enable_interrupt(CPI_Type *cpi, uint32_t irq_bitmask)
 {
     cpi->CAM_INTR_ENA |= irq_bitmask;
 }
 
 /**
-  \fn           void cpi_disable_interrupt(CPI_Type *cpi, uint32_t irq_bitmask)
-  \brief        Disable CPI interrupt.
-  \param[in]    cpi         Pointer to CPI register map.
-  \param[in]    irq_bitmask Possible camera events (refer CPI_INTR_* macros Bitmask).
-  \return       none
-*/
+ * \fn           void cpi_disable_interrupt(CPI_Type *cpi, uint32_t irq_bitmask)
+ * \brief        Disable CPI interrupt.
+ * \param[in]    cpi         Pointer to CPI register map.
+ * \param[in]    irq_bitmask Possible camera events (refer CPI_INTR_* macros Bitmask).
+ * \return       none
+ */
 static inline void cpi_disable_interrupt(CPI_Type *cpi, uint32_t irq_bitmask)
 {
     cpi->CAM_INTR_ENA &= ~irq_bitmask;
 }
 
 /**
-  \fn           void cpi_irq_handler_clear_intr_status(CPI_Type *cpi, uint32_t irq_bitmask)
-  \brief        Clear CPI interrupt.
-  \param[in]    cpi         Pointer to CPI register map
-  \param[in]    irq_bitmask CPI interrupt status (refer CPI_INTR_* macros Bitmask)
-  \return       none.
-*/
+ * \fn           void cpi_irq_handler_clear_intr_status(CPI_Type *cpi, uint32_t irq_bitmask)
+ * \brief        Clear CPI interrupt.
+ * \param[in]    cpi         Pointer to CPI register map
+ * \param[in]    irq_bitmask CPI interrupt status (refer CPI_INTR_* macros Bitmask)
+ * \return       none.
+ */
 static inline void cpi_irq_handler_clear_intr_status(CPI_Type *cpi, uint32_t irq_bitmask)
 {
     cpi->CAM_INTR = irq_bitmask;
@@ -470,60 +480,135 @@ static inline void cpi_irq_handler_clear_intr_status(CPI_Type *cpi, uint32_t irq
 }
 
 /**
-  \fn          void cpi_set_framebuff_start_addr(CPI_Type *cpi, uint32_t addr)
-  \brief       Set the Video frame start address.
-  \param[in]   cpi   Pointer to the CPI register map.
-  \param[in]   addr  Video frame start address.
-  \return      none.
-*/
+ * \fn          void cpi_set_framebuff_start_addr(CPI_Type *cpi, uint32_t addr)
+ * \brief       Set the Video frame start address.
+ * \param[in]   cpi   Pointer to the CPI register map.
+ * \param[in]   addr  Video frame start address.
+ * \return      none.
+ */
 static inline void cpi_set_framebuff_start_addr(CPI_Type *cpi, uint32_t addr)
 {
-    cpi->CAM_FRAME_ADDR = addr;
+    cpi->CAM_FRAME_ADDR =
+        (cpi->CAM_FRAME_ADDR & CAM_FRAME_ADDR_STREAMING_Msk) |
+        (addr & CAM_FRAME_ADDR_ADDR_Msk);
+}
+
+#if SOC_FEAT_CPI_HAS_STREAM_ENABLE
+/**
+ * \fn          void cpi_set_framebuff_start_addrb(CPI_Type *cpi, uint32_t addr)
+ * \brief       Set the Sequential Video frame start address.
+ * \param[in]   cpi   Pointer to the CPI register map.
+ * \param[in]   addr  Sequential video frame start address.
+ * \return      none.
+ */
+static inline void cpi_set_framebuff_start_addrb(CPI_Type *cpi, uint32_t addr)
+{
+    cpi->CAM_FRAME_ADDRB = addr;
 }
 
 /**
-  \fn          void cpi_stop_capture(CPI_Type *cpi)
-  \brief       CPI Stop capturing frame.
-  \param[in]   cpi   Pointer to the CPI register map.
-  \return      none.
-*/
+ * \fn          void cpi_set_framebuff_start_addrc(CPI_Type *cpi, uint32_t addr)
+ * \brief       Set the Sequential Video frame start address.
+ * \param[in]   cpi   Pointer to the CPI register map.
+ * \param[in]   addr  Sequential video frame start address.
+ * \return      none.
+ */
+static inline void cpi_set_framebuff_start_addrc(CPI_Type *cpi, uint32_t addr)
+{
+    cpi->CAM_FRAME_ADDRC = addr;
+}
+
+/**
+ * \fn          void cpi_set_framebuff_start_addrd(CPI_Type *cpi, uint32_t addr)
+ * \brief       Set the Sequential Video frame start address.
+ * \param[in]   cpi   Pointer to the CPI register map.
+ * \param[in]   addr  Sequential video frame start address.
+ * \return      none.
+ */
+static inline void cpi_set_framebuff_start_addrd(CPI_Type *cpi, uint32_t addr)
+{
+    cpi->CAM_FRAME_ADDRD = addr;
+}
+
+/**
+ * \fn          void cpi_enable_streaming(CPI_Type *cpi)
+ * \brief       Set the streaming bit.
+ * \param[in]   cpi   Pointer to the CPI register map.
+ * \return      none.
+ */
+static inline void cpi_enable_streaming(CPI_Type *cpi)
+{
+    cpi->CAM_FRAME_ADDR |= CAM_FRAME_ADDR_STREAMING_Msk;
+}
+
+/**
+ * \fn          void cpi_disable_streaming(CPI_Type *cpi)
+ * \brief       Clear the streaming bit.
+ * \param[in]   cpi   Pointer to the CPI register map.
+ * \return      none.
+ */
+static inline void cpi_disable_streaming(CPI_Type *cpi)
+{
+    cpi->CAM_FRAME_ADDR &= ~CAM_FRAME_ADDR_STREAMING_Msk;
+}
+
+/**
+ * \fn          uint32_t cpi_get_completed_buf_idx(CPI_Type *cpi)
+ * \brief       Read completed buffer index
+ * \param[in]   cpi   Pointer to the CPI register map.
+ * \return      none.
+ */
+static inline uint32_t cpi_get_completed_buf_idx(CPI_Type *cpi)
+{
+    return (cpi->CAM_AXI_STREAM_CTRL & CAM_AXI_STREAM_CTRL_FCNT_Msk)
+           >> CAM_AXI_STREAM_CTRL_FCNT_Pos;
+}
+
+#endif
+
+/**
+ * \fn          void cpi_stop_capture(CPI_Type *cpi)
+ * \brief       CPI Stop capturing frame.
+ * \param[in]   cpi   Pointer to the CPI register map.
+ * \return      none.
+ */
 static inline void cpi_stop_capture(CPI_Type *cpi)
 {
     cpi->CAM_CTRL = 0;
 }
 
 /**
-\fn          void cpi_software_reset(CPI_Type *cpi)
-\brief       CPI software reset
-\param[in]   cpi      Pointer to the CPI register map.
-\param[in]   mode     Soft reset the CPI
-\return      none.
-*/
+ * \fn          void cpi_software_reset(CPI_Type *cpi)
+ * \brief       CPI software reset
+ * \param[in]   cpi      Pointer to the CPI register map.
+ * \return      none.
+ */
 void cpi_software_reset(CPI_Type *cpi);
 
 /**
-  \fn          void cpi_start_capture(CPI_Type *cpi, CPI_MODE_SELECT mode)
-  \brief       Capture frame in snapshot/ continuous capture mode.
-                   -Set CAM_CTRL = 0—prepare for soft reset
-                   -Set CAM_CTRL = 0x100—activate soft reset
-                   -Set CAM_CTRL = 0—stop soft reset
-                   -Set CAM_CTRL = 0x1001 or 0x1011—start the CPI controller,
-                    with bit [SNAPSHOT] defining the operation mode:
-                        -[SNAPSHOT] = 0—Capture video frames continuously
-                        -[SNAPSHOT] = 1—Capture one frame then stop
-  \param[in]   cpi      Pointer to the CPI register map.
-  \param[in]   mode     Select to capture one frame and stop/ or to capture video frames
-  continuously \return      none.
-*/
+ * \fn          void cpi_start_capture(CPI_Type *cpi, CPI_MODE_SELECT mode)
+ * \brief       Capture frame in snapshot/ continuous capture mode.
+ *                  -Set CAM_CTRL = 0—prepare for soft reset
+ *                  -Set CAM_CTRL = 0x100—activate soft reset
+ *                  -Set CAM_CTRL = 0—stop soft reset
+ *                  -Set CAM_CTRL = 0x1001 or 0x1011—start the CPI controller,
+ *                   with bit [SNAPSHOT] defining the operation mode:
+ *                       -[SNAPSHOT] = 0—Capture video frames continuously
+ *                       -[SNAPSHOT] = 1—Capture one frame then stop
+ * \param[in]   cpi      Pointer to the CPI register map.
+ * \param[in]   mode     Select to capture one frame and stop/ or to capture video frames
+ *                       continuously
+ * \return      none.
+ */
 void cpi_start_capture(CPI_Type *cpi, CPI_MODE_SELECT mode);
 
 /**
-  \fn           void cpi_set_config(CPI_Type *cpi, cpi_cfg_info_t *info)
-  \brief        Configure the cpi with given information.
-  \param[in]    cpi    Pointer to CPI register map
-  \param[in]    info   Pointer to cpi configuration structure.
-  \return       none
-*/
+ * \fn           void cpi_set_config(CPI_Type *cpi, cpi_cfg_info_t *info)
+ * \brief        Configure the cpi with given information.
+ * \param[in]    cpi    Pointer to CPI register map
+ * \param[in]    info   Pointer to cpi configuration structure.
+ * \return       none
+ */
 void cpi_set_config(CPI_Type *cpi, cpi_cfg_info_t *info);
 
 #ifdef __cplusplus

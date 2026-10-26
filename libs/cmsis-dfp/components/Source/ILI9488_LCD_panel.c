@@ -10,6 +10,7 @@
 
 /* System Includes */
 #include "RTE_Device.h"
+#include "board_config.h"
 #include "RTE_Components.h"
 #include CMSIS_device_header
 
@@ -21,12 +22,12 @@
 #include "sys_utils.h"
 
 /* ILI9488 panel reset GPIO port */
-extern ARM_DRIVER_GPIO  ARM_Driver_GPIO_(RTE_ILI9488_PANEL_RESET_GPIO_PORT);
-static ARM_DRIVER_GPIO *GPIO_Driver_Rst = &ARM_Driver_GPIO_(RTE_ILI9488_PANEL_RESET_GPIO_PORT);
+extern ARM_DRIVER_GPIO  ARM_Driver_GPIO_(BOARD_LCD_RESET_GPIO_PORT);
+static ARM_DRIVER_GPIO *GPIO_Driver_Rst = &ARM_Driver_GPIO_(BOARD_LCD_RESET_GPIO_PORT);
 
 /* ILI9488 panel black light LED GPIO port */
-extern ARM_DRIVER_GPIO  ARM_Driver_GPIO_(RTE_ILI9488_PANEL_BL_LED_GPIO_PORT);
-static ARM_DRIVER_GPIO *GPIO_Driver_BLED = &ARM_Driver_GPIO_(RTE_ILI9488_PANEL_BL_LED_GPIO_PORT);
+extern ARM_DRIVER_GPIO  ARM_Driver_GPIO_(BOARD_LCD_BL_LED_GPIO_PORT);
+static ARM_DRIVER_GPIO *GPIO_Driver_BLED = &ARM_Driver_GPIO_(BOARD_LCD_BL_LED_GPIO_PORT);
 
 #define ILI9488_PANEL_MIPI_DATA_LANES 1
 
@@ -90,36 +91,36 @@ static int32_t ILI9488_Display_Reset(void)
         return ARM_DRIVER_ERROR_PARAMETER;
     }
 
-    ret = GPIO_Driver_Rst->Initialize(RTE_ILI9488_PANEL_RESET_PIN_NO, NULL);
+    ret = GPIO_Driver_Rst->Initialize(BOARD_LCD_RESET_GPIO_PIN, NULL);
     if (ret != ARM_DRIVER_OK) {
         return ARM_DRIVER_ERROR;
     }
 
-    ret = GPIO_Driver_Rst->PowerControl(RTE_ILI9488_PANEL_RESET_PIN_NO, ARM_POWER_FULL);
+    ret = GPIO_Driver_Rst->PowerControl(BOARD_LCD_RESET_GPIO_PIN, ARM_POWER_FULL);
     if (ret != ARM_DRIVER_OK) {
         return ARM_DRIVER_ERROR;
     }
 
-    ret = GPIO_Driver_Rst->SetDirection(RTE_ILI9488_PANEL_RESET_PIN_NO, GPIO_PIN_DIRECTION_OUTPUT);
+    ret = GPIO_Driver_Rst->SetDirection(BOARD_LCD_RESET_GPIO_PIN, GPIO_PIN_DIRECTION_OUTPUT);
     if (ret != ARM_DRIVER_OK) {
         return ARM_DRIVER_ERROR;
     }
 
-    ret = GPIO_Driver_Rst->SetValue(RTE_ILI9488_PANEL_RESET_PIN_NO, GPIO_PIN_OUTPUT_STATE_HIGH);
+    ret = GPIO_Driver_Rst->SetValue(BOARD_LCD_RESET_GPIO_PIN, GPIO_PIN_OUTPUT_STATE_HIGH);
     if (ret != ARM_DRIVER_OK) {
         return ARM_DRIVER_ERROR;
     }
 
     sys_busy_loop_us(5000);
 
-    ret = GPIO_Driver_Rst->SetValue(RTE_ILI9488_PANEL_RESET_PIN_NO, GPIO_PIN_OUTPUT_STATE_LOW);
+    ret = GPIO_Driver_Rst->SetValue(BOARD_LCD_RESET_GPIO_PIN, GPIO_PIN_OUTPUT_STATE_LOW);
     if (ret != ARM_DRIVER_OK) {
         return ARM_DRIVER_ERROR;
     }
 
     sys_busy_loop_us(20000);
 
-    ret = GPIO_Driver_Rst->SetValue(RTE_ILI9488_PANEL_RESET_PIN_NO, GPIO_PIN_OUTPUT_STATE_HIGH);
+    ret = GPIO_Driver_Rst->SetValue(BOARD_LCD_RESET_GPIO_PIN, GPIO_PIN_OUTPUT_STATE_HIGH);
     if (ret != ARM_DRIVER_OK) {
         return ARM_DRIVER_ERROR;
     }
@@ -143,17 +144,17 @@ static int32_t ILI9488_BL_LED_Init(void)
         return ARM_DRIVER_ERROR_PARAMETER;
     }
 
-    ret = GPIO_Driver_BLED->Initialize(RTE_ILI9488_PANEL_BL_LED_PIN_NO, NULL);
+    ret = GPIO_Driver_BLED->Initialize(BOARD_LCD_BL_LED_GPIO_PIN, NULL);
     if (ret != ARM_DRIVER_OK) {
         return ARM_DRIVER_ERROR;
     }
 
-    ret = GPIO_Driver_BLED->PowerControl(RTE_ILI9488_PANEL_BL_LED_PIN_NO, ARM_POWER_FULL);
+    ret = GPIO_Driver_BLED->PowerControl(BOARD_LCD_BL_LED_GPIO_PIN, ARM_POWER_FULL);
     if (ret != ARM_DRIVER_OK) {
         return ARM_DRIVER_ERROR;
     }
 
-    return GPIO_Driver_BLED->SetDirection(RTE_ILI9488_PANEL_BL_LED_PIN_NO,
+    return GPIO_Driver_BLED->SetDirection(BOARD_LCD_BL_LED_GPIO_PIN,
                                           GPIO_PIN_DIRECTION_OUTPUT);
 }
 
@@ -169,13 +170,13 @@ static int32_t ILI9488_BL_LED_Control(uint8_t state)
 
     if (state == ENABLE) {
         ret =
-            GPIO_Driver_BLED->SetValue(RTE_ILI9488_PANEL_BL_LED_PIN_NO, GPIO_PIN_OUTPUT_STATE_HIGH);
+            GPIO_Driver_BLED->SetValue(BOARD_LCD_BL_LED_GPIO_PIN, GPIO_PIN_OUTPUT_STATE_HIGH);
         if (ret != ARM_DRIVER_OK) {
             return ARM_DRIVER_ERROR;
         }
     } else {
         ret =
-            GPIO_Driver_BLED->SetValue(RTE_ILI9488_PANEL_BL_LED_PIN_NO, GPIO_PIN_OUTPUT_STATE_LOW);
+            GPIO_Driver_BLED->SetValue(BOARD_LCD_BL_LED_GPIO_PIN, GPIO_PIN_OUTPUT_STATE_LOW);
         if (ret != ARM_DRIVER_OK) {
             return ARM_DRIVER_ERROR;
         }
@@ -260,7 +261,7 @@ static int32_t ILI9488_Init(void)
   */
 static int32_t ILI9488_Uninit(void)
 {
-    return GPIO_Driver_Rst->SetValue(RTE_ILI9488_PANEL_RESET_PIN_NO, GPIO_PIN_OUTPUT_STATE_LOW);
+    return GPIO_Driver_Rst->SetValue(BOARD_LCD_RESET_GPIO_PIN, GPIO_PIN_OUTPUT_STATE_LOW);
 }
 
 /**

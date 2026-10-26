@@ -29,14 +29,14 @@
 
 #ifdef __cplusplus
 #if __cplusplus
-extern "C" {
+extern "C"{
 #endif
 #endif
 
 #include "mpi_isp.h"
 #include "mpi_isp_bls.h"
 #include "mpi_isp_expm.h"
-// #include "mpi_isp_ae.h"
+#include "mpi_isp_ae.h"
 #include "mpi_isp_wbm.h"
 #include "mpi_isp_wb.h"
 #include "mpi_isp_dmsc.h"
@@ -54,23 +54,23 @@ typedef struct vsiISP_CALIB_HEAD_S {
 
 /** \brief   Calibration module. */
 typedef struct vsiISP_CALIB_MODULE_S {
-    ISP_AUTO_ROUTE_S autoRoute;    /**< \brief Auto route. */
-    ISP_BLS_ATTR_S   bls;          /**< \brief BLS. */
-    ISP_EXPM_ATTR_S  aem;          /**< \brief AE measurement. */
-                                   //    ISP_EXPOSURE_ATTR_S ae;       /**< \brief AE. */
-    ISP_WBM_ATTR_S       wbm;      /**< \brief WB measurement. */
-    ISP_WB_ATTR_S        wb;       /**< \brief WB. */
-    ISP_DMSC_ATTR_S      dmsc;     /**< \brief Demosaic. */
-    ISP_FLT_ATTR_S       flt;      /**< \brief Filter. */
-    ISP_CCM_ATTR_S       ccm;      /**< \brief CCM. */
-    ISP_GAMMA_OUT_ATTR_S gammaOut; /**< \brief Gamma out. */
-    ISP_CSM_ATTR_S       csm;      /**< \brief CSM. */
+    ISP_AUTO_ROUTE_S autoRoute;   /**< \brief Auto route. */
+    ISP_BLS_ATTR_S  bls;          /**< \brief BLS. */
+    ISP_EXPM_ATTR_S aem;          /**< \brief AE measurement. */
+    ISP_EXPOSURE_ATTR_S ae;       /**< \brief AE. */
+    ISP_WBM_ATTR_S wbm;           /**< \brief WB measurement. */
+    ISP_WB_ATTR_S wb;             /**< \brief WB. */
+    ISP_DMSC_ATTR_S dmsc;         /**< \brief Demosaic. */
+    ISP_FLT_ATTR_S flt;           /**< \brief Filter. */
+    ISP_CCM_ATTR_S ccm;           /**< \brief CCM. */
+    ISP_GAMMA_OUT_ATTR_S gammaOut;/**< \brief Gamma out. */
+    ISP_CSM_ATTR_S csm;           /**< \brief CSM. */
 } ISP_CALIB_MODULE_S;
 
 /** \brief   Calibration data. */
 typedef struct vsiISP_CALIB_DATA_S {
-    ISP_CALIB_HEAD_S   head;    /**< \brief Calibration data head. */
-    ISP_CALIB_MODULE_S modules; /**< \brief Calibration data module. */
+    ISP_CALIB_HEAD_S head;       /**< \brief Calibration data head. */
+    ISP_CALIB_MODULE_S modules;  /**< \brief Calibration data module. */
 } ISP_CALIB_DATA_S;
 
 #ifdef __cplusplus

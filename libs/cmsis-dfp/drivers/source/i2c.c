@@ -216,55 +216,88 @@ static inline int32_t i2c_rx_ready(I2C_Type *i2c)
  * @param   transfer : transfer info
  * @retval  none
  */
-static int32_t i2c_master_check_error(I2C_Type *i2c, i2c_transfer_info_t *transfer)
+static void i2c_master_check_error(I2C_Type *i2c, i2c_transfer_info_t *transfer)
 {
     uint32_t status;
-    int32_t  ercd = I2C_ERR_NONE;
 
-    status        = i2c->I2C_RAW_INTR_STAT;
+    status = i2c->I2C_RAW_INTR_STAT;
 
-    /*transmit abort*/
+    /* during transmit set once TX_fifo is at max buffer_length and
+     * processor sends another i2c cmd by writing to IC_DATA_CMD
+     */
+    if (status & I2C_IC_INTR_STAT_TX_OVER) {
+        transfer->tx_over++;
+        /* clear reg */
+        (void)i2c->I2C_CLR_TX_OVER;
+    }
+
+    /* RX_fifo full and received one more byte | RX_fifo is empty \
+     * and trying to read from ic_data_cmd
+     */
+    if (status & (I2C_IC_INTR_STAT_RX_OVER | I2C_IC_INTR_STAT_RX_UNDER)) {
+        transfer->rx_over++;
+        /* clear reg */
+        (void)i2c->I2C_CLR_RX_OVER;
+        (void)i2c->I2C_CLR_RX_UNDER;
+    }
+
+    if (status & I2C_IC_INTR_STAT_SCL_STUCK_AT_LOW) {
+        /* SCL is stuck at low . */
+        i2c_mask_interrupt(i2c, I2C_IC_MST_INTR_STAT_ALL);
+
+        transfer->evt_sts = I2C_XFER_EVENT_SCL_STUCK_AT_LOW;
+        (void)i2c->I2C_CLR_SCL_STUCK_DET;
+    }
+
+    /* transmit abort */
     if (status & I2C_IC_INTR_STAT_TX_ABRT) {
         status = i2c->I2C_TX_ABRT_SOURCE;
 
-        if (status & I2C_MST_ABRT_LOST_BUS) {
-            ercd = I2C_ERR_LOST_BUS;
+        /* Check USER_ABRT first - it's a deliberate user action */
+        if (status & I2C_IC_TX_ABRT_USER_ABRT) {
+            /* User aborted the xfer */
+            transfer->evt_sts = I2C_XFER_EVENT_USER_ABORT;
+        } else if (status & I2C_ABRT_ARBITRATION_LOST) {
+            /* Master lost arbitration. */
+            transfer->evt_sts = I2C_XFER_EVENT_ARBITRATION_LOST;
         } else if (status & I2C_MST_ABRT_ADDR_NOACK) {
-            ercd = I2C_ERR_ADDR_NOACK;
+            /* Slave not acknowledge 7bit/10bit/Device ID addr. */
+            transfer->evt_sts = I2C_XFER_EVENT_ADDR_NOACK;
         }
-        /* master got ack from slave for 7/10bit addr then
-         * master sends data, no ack for the data */
+        /* Master got ack from slave for 7/10bit addr then
+         * master sends data, no ack for the data
+         */
         else if (status & I2C_MST_ABRT_DATA_NOACK) {
-            ercd = I2C_ERR_DATA_NOACK;
-        } else if (status & I2C_IC_TX_ABRT_10B_RD_NORSTRT) {
-            ercd = I2C_ERR_10B_RD_NORSTRT;
-        } else if (status & I2C_IC_TX_ABRT_HS_ACKDET) {
-            ercd = I2C_ERR_HS_ACKDET;
-        } else if (status & I2C_IC_TX_ABRT_HS_NORSTRT) {
-            ercd = I2C_ERR_HS_NORSTRT;
-        } else {
-            ercd = I2C_ERR_UNDEF;
+            /* Slave not acknowledged for the data. */
+            transfer->evt_sts = I2C_XFER_EVENT_INCOMPLETE;
+        } else if (status & I2C_MST_ABRT_GCALL) {
+            /* General call error */
+            transfer->evt_sts = I2C_XFER_EVENT_GCALL_ERR;
+        } else if (status & I2C_MST_ABRT_UNEXPECTED_ACK_DET) {
+            /* Unexpected ack received */
+            transfer->evt_sts = I2C_XFER_EVENT_UNEXPECTED_ACK;
+        } else if (status & I2C_MST_ABRT_NORSTRT) {
+            /* Restart not enabled which is strictly required for the given mode */
+            transfer->evt_sts = I2C_XFER_EVENT_NO_RESTART;
+        } else if (status & I2C_IC_TX_ABRT_MASTER_DIS) {
+            /* Master mode disabled */
+            transfer->evt_sts = I2C_XFER_EVENT_MASTER_DIS;
+        } else if (status & I2C_IC_TX_ABRT_SDA_STUCK_AT_LOW) {
+            /* SDA line stuck at low  */
+            transfer->evt_sts = I2C_XFER_EVENT_SDA_STUCK_AT_LOW;
+        } else if (status & I2C_IC_TX_ABRT_DEVICE_NOACK) {
+            /* NO ack received for Device ID xfer */
+            transfer->evt_sts = I2C_XFER_EVENT_DEV_ID_NOACK;
+        } else if (status & I2C_IC_TX_ABRT_DEVICE_WRITE) {
+            /* Tx buffer not empty during Device ID xfer */
+            transfer->evt_sts = I2C_XFER_EVENT_DEV_ID_WRITE;
+        }  else {
+            /* Undefined Tx abort */
+            transfer->evt_sts = I2C_XFER_EVENT_UNDEF_TX_ABORT;
         }
-        status = i2c->I2C_CLR_TX_ABRT;
-    } else {
-        /* during transmit set once TX_fifo is at max buffer_length and
-         * processor sends another i2c cmd by writing to IC_DATA_CMD */
-        if (status & I2C_IC_INTR_STAT_TX_OVER) {
-            transfer->tx_over++;
-            /* clear reg */
-            status = i2c->I2C_CLR_TX_OVER;
-        }
-
-        /* RX_fifo full and received one more byte | RX_fifo is empty \
-         * and trying to read from ic_data_cmd */
-        if (status & (I2C_IC_INTR_STAT_RX_OVER | I2C_IC_INTR_STAT_RX_UNDER)) {
-            transfer->rx_over++;
-            /* clear reg */
-            status = i2c->I2C_CLR_RX_OVER;
-            status = i2c->I2C_CLR_RX_UNDER;
-        }
+        (void)i2c->I2C_CLR_TX_ABRT;
+        transfer->abort = true;
     }
-    return ercd;
 }
 
 /**
@@ -273,45 +306,50 @@ static int32_t i2c_master_check_error(I2C_Type *i2c, i2c_transfer_info_t *transf
  * @param   i2c    : Pointer to i2c register map
  * @retval  none
  */
-static int32_t i2c_slave_check_error(I2C_Type *i2c, i2c_transfer_info_t *transfer)
+static void i2c_slave_check_error(I2C_Type *i2c, i2c_transfer_info_t *transfer)
 {
     uint32_t status;
-    int32_t  ercd = I2C_ERR_NONE;
 
     status        = i2c->I2C_RAW_INTR_STAT;
 
     if (status & I2C_IC_INTR_STAT_START_DET) {
-        status = i2c->I2C_CLR_START_DET;
-    }
-
-    if (status & I2C_IC_INTR_STAT_STOP_DET) {
-        status = i2c->I2C_CLR_STOP_DET;
+        (void)i2c->I2C_CLR_START_DET;
     }
 
     if (status & I2C_IC_INTR_STAT_GEN_CALL) {
-        status = i2c->I2C_CLR_GEN_CALL;
+        (void)i2c->I2C_CLR_GEN_CALL;
     }
 
     if (status & I2C_IC_INTR_STAT_TX_OVER) {
         transfer->tx_over++;
-        status = i2c->I2C_CLR_TX_OVER;
+        (void)i2c->I2C_CLR_TX_OVER;
     }
 
     if (status & (I2C_IC_INTR_STAT_RX_OVER | I2C_IC_INTR_STAT_RX_UNDER)) {
         transfer->rx_over++;
-        status = i2c->I2C_CLR_RX_OVER;
-        status = i2c->I2C_CLR_RX_UNDER;
+        (void)i2c->I2C_CLR_RX_OVER;
+        (void)i2c->I2C_CLR_RX_UNDER;
     }
+
     if (status & I2C_IC_INTR_STAT_TX_ABRT) {
         status = i2c->I2C_TX_ABRT_SOURCE;
-        if (status & I2C_SLV_ABRT_LOST_BUS) {
-            ercd = I2C_ERR_LOST_BUS;
+        if (status & I2C_ABRT_ARBITRATION_LOST) {
+            /* slave lost the arbitration */
+            transfer->evt_sts = I2C_XFER_EVENT_ARBITRATION_LOST;
+        } else if (status & I2C_IC_TX_ABRT_SLVFLUSH_TXFIFO) {
+            /* slave flushes stale tx buffer data when a new read request occurs */
+            transfer->evt_sts = I2C_XFER_EVENT_TX_FIFO_FLUSH;
+        } else if (status & I2C_IC_TX_ABRT_SLVRD_INTX) {
+            /* slave is reading data in write mode */
+            transfer->evt_sts = I2C_XFER_EVENT_RX_IN_TX_MODE;
+        } else {
+            /* slave is in undefined tx abort state */
+            transfer->evt_sts = I2C_XFER_EVENT_UNDEF_TX_ABORT;
         }
 
-        status = i2c->I2C_CLR_TX_ABRT;
+        (void)i2c->I2C_CLR_TX_ABRT;
+        transfer->abort = true;
     }
-
-    return ercd;
 }
 
 /**
@@ -323,7 +361,7 @@ static int32_t i2c_slave_check_error(I2C_Type *i2c, i2c_transfer_info_t *transfe
  * @retval   none
  */
 void i2c_set_target_addr(I2C_Type *i2c, const uint32_t address, const i2c_address_mode_t addr_mode,
-                         const I2C_TRANSFER_STATE cur_state)
+                         const I2C_XFER_STATE cur_state)
 {
     uint32_t ic_tar_reg = i2c->I2C_TAR;
 
@@ -333,19 +371,20 @@ void i2c_set_target_addr(I2C_Type *i2c, const uint32_t address, const i2c_addres
     ic_tar_reg = (I2C_IC_TAR_10BIT_ADDR_MASK & address);
 
     if (addr_mode == I2C_10BIT_ADDRESS) {
-        /* Configuring master to 10 Bit addressing mode*/
+        /* Configuring master to 10 Bit addressing mode */
         ic_tar_reg   |= I2C_MASTER_10BIT_ADDR_MODE;
         i2c->I2C_CON |= I2C_IC_CON_10BITADDR_MASTER;
 
-        if (cur_state == I2C_TRANSFER_MST_RX) {
+        if (cur_state == I2C_XFER_MST_RX) {
             /* When I2C master is in 10 bit Receive mode,
-             * the Restart condition must be enabled */
+             * the Restart condition must be enabled
+             */
             if (!(i2c_master_check_restart_cond(i2c))) {
                 i2c_master_enable_restart_cond(i2c);
             }
         }
     } else {
-        /* Configuring master to 7 Bit addressing mode*/
+        /* Configuring master to 7 Bit addressing mode */
         ic_tar_reg   &= (~I2C_MASTER_10BIT_ADDR_MODE);
         i2c->I2C_CON &= (~I2C_IC_CON_10BITADDR_MASTER);
     }
@@ -396,8 +435,9 @@ void i2c_master_init(I2C_Type *i2c, const uint32_t tar_addr)
     i2c->I2C_TAR =
         (tar_addr & I2C_IC_TAR_10BIT_ADDR_MASK) | I2C_IC_TAR_SPECIAL | I2C_IC_TAR_GC_OR_START;
 
-    /* master mode, restart enabled */
-    ic_con_reg_value = I2C_IC_CON_ENABLE_MASTER_MODE | I2C_IC_CON_MASTER_RESTART_EN;
+    /* master mode, restart enabled , Bus Clear Feature Control*/
+    ic_con_reg_value = I2C_IC_CON_ENABLE_MASTER_MODE | I2C_IC_CON_MASTER_RESTART_EN |
+                       I2C_IC_CON_BUS_CLEAR_FEATURE_CTRL;
 
     /* Set final IC_CON value */
     i2c->I2C_CON     = ic_con_reg_value;
@@ -452,108 +492,84 @@ void i2c_master_tx_isr(I2C_Type *i2c, i2c_transfer_info_t *transfer)
 {
     uint32_t    i2c_int_status; /* i2c interrupt status */
     uint16_t    xmit_data = 0;
-    static bool tx_abort;
     bool        exit      = false;
 
     i2c_int_status        = (i2c->I2C_INTR_STAT);
 
-    if (i2c_int_status & I2C_IC_INTR_STAT_TX_ABRT) {
-        transfer->err_state = i2c_master_check_error(i2c, transfer);
-    }
+    i2c_master_check_error(i2c, transfer);
 
-    /* Clear Interrupt */
-    (void) i2c->I2C_CLR_INTR;
+    /* Checks if Tx FIFO is empty then,
+     * Skip when TX DMA is enabled and the I2C controller masks TX_EMPTY
+     * for the DMA path.
+     */
+    if ((!transfer->abort) && (!i2c_is_tx_dma_enable(i2c)) &&
+        (i2c_int_status & I2C_IC_INTR_STAT_TX_EMPTY)) {
+        do {
+            xmit_data = (uint16_t) (transfer->tx_buf[transfer->tx_curr_cnt++]) |
+                        I2C_IC_DATA_CMD_WRITE_REQ;
 
-    /* Transmission Error state check */
-    if (transfer->err_state) {
-        tx_abort = true;
-        if (transfer->err_state == I2C_ERR_LOST_BUS) {
-            /* mark event as master lost arbitration. */
-            transfer->status |= I2C_TRANSFER_STATUS_ARBITRATION_LOST;
-        } else if (transfer->err_state == I2C_ERR_ADDR_NOACK) {
-            /* mark event as slave not acknowledge 7bit/10bit addr. */
-            transfer->status |= I2C_TRANSFER_STATUS_ADDRESS_NACK;
-        }
-        /* master got ack from slave for 7/10bit addr then
-         * master sends data, no ack for the data */
-        else if (transfer->err_state == I2C_ERR_DATA_NOACK) {
-            /* mark event as slave not acknowledge for the data. */
-            transfer->status |= I2C_TRANSFER_STATUS_INCOMPLETE;
-        } else if (transfer->err_state == I2C_ERR_HS_ACKDET) {
-            /* mark event as ack detected for HS code. */
-            transfer->status |= I2C_TRANSFER_STATUS_HS_ACKDET;
-        } else if (transfer->err_state == I2C_ERR_HS_NORSTRT) {
-            /* mark event as no restart available for HS mdoe. */
-            transfer->status |= I2C_TRANSFER_STATUS_HS_NORSTRT;
-        } else if (transfer->err_state == I2C_ERR_UNDEF) {
-            transfer->status |= I2C_TRANSFER_STATUS_BUS_ERROR;
-        }
-        /* Clear TX ABRT interrupt */
-        (void) i2c->I2C_CLR_TX_ABRT;
-
-        transfer->err_state = I2C_ERR_NONE;
-    }
-
-    /* Checks if Tx FIFO is empty then
-     * performs the below operations */
-    else if (i2c_int_status & I2C_IC_INTR_STAT_TX_EMPTY) {
-        if (transfer->tx_buf) {
-            do {
-                xmit_data = (uint16_t) (transfer->tx_buf[transfer->tx_curr_cnt++]) |
-                            I2C_IC_DATA_CMD_WRITE_REQ;
-
-                /* Transmitted all the bytes */
-                if (transfer->tx_curr_cnt >= transfer->tx_total_num) {
-                    xmit_data |= ((transfer->xfer_pending) ? 0U : I2C_IC_DATA_CMD_STOP);
-                    exit       = true;
-                }
-
-                /* Updating transmitting data to FIFO */
-                i2c->I2C_DATA_CMD  = xmit_data;
-
-                transfer->curr_cnt = transfer->tx_curr_cnt;
-            } while (i2c_tx_ready(i2c) && (!exit));
-
-            if (exit) {
-                if (transfer->xfer_pending) {
-                    /* transmitted all the bytes, disable tx
-                     * interrupts as restart is requested */
-                    i2c_master_disable_tx_interrupt(i2c);
-
-                    transfer->curr_stat  = I2C_TRANSFER_NONE;
-                    /* mark event as master receive complete successfully. */
-                    transfer->status    |= I2C_TRANSFER_STATUS_DONE;
-                } else {
-                    /* transmitted all the bytes, Mask the TX_EMPTY interrupt */
-                    i2c_mask_interrupt(i2c, I2C_IC_INTR_STAT_TX_EMPTY);
-                }
+            /* Transmitted all the bytes */
+            if (transfer->tx_curr_cnt >= transfer->tx_total_num) {
+                xmit_data |= ((transfer->xfer_pending) ? 0U : I2C_IC_DATA_CMD_STOP);
+                exit       = true;
             }
-        } else {
-            i2c_master_disable_tx_interrupt(i2c);
-            transfer->curr_stat  = I2C_TRANSFER_NONE;
 
-            transfer->status    |= I2C_TRANSFER_STATUS_DONE;
-            transfer->status    |= I2C_TRANSFER_STATUS_INCOMPLETE;
+            /* Updating transmitting data to FIFO */
+            i2c->I2C_DATA_CMD  = xmit_data;
+
+            transfer->curr_cnt = transfer->tx_curr_cnt;
+        } while (i2c_tx_ready(i2c) && (!exit));
+
+        if (exit) {
+            if (transfer->xfer_pending) {
+                /* transmitted all the bytes, disable tx
+                 * interrupts as restart is requested
+                 */
+                i2c_master_disable_tx_interrupt(i2c);
+
+                transfer->curr_stat  = I2C_XFER_NONE;
+                /* mark event as master receive complete successfully. */
+                transfer->evt_sts    |= I2C_XFER_EVENT_DONE;
+            } else {
+                /* transmitted all the bytes, Mask the TX_EMPTY interrupt */
+                i2c_mask_interrupt(i2c, I2C_IC_INTR_STAT_TX_EMPTY);
+            }
         }
-    }
-
-    if (i2c_int_status & I2C_IC_INTR_STAT_TX_OVER) {
-        transfer->tx_over++;
     }
 
     if (i2c_int_status & I2C_IC_INTR_STAT_STOP_DET) {
-        if (tx_abort) {
-            transfer->curr_stat = I2C_TRANSFER_NONE;
-            transfer->status    = I2C_TRANSFER_STATUS_NONE;
-            tx_abort            = false;
-        } else {
-            transfer->curr_stat  = I2C_TRANSFER_NONE;
+        (void) i2c->I2C_CLR_STOP_DET;
+
+        transfer->curr_stat = I2C_XFER_NONE;
+        if (!transfer->abort) {
             /* mark event as master receive complete successfully. */
-            transfer->status    |= I2C_TRANSFER_STATUS_DONE;
+            transfer->evt_sts    |= I2C_XFER_EVENT_DONE;
+        } else {
+            /* Promote SDA_STUCK_AT_LOW to BUS_CLEAR only on a user
+             * bus-clear that actually recovered.
+             */
+            if (transfer->cmd_bus_clr &&
+                (transfer->evt_sts & I2C_XFER_EVENT_SDA_STUCK_AT_LOW)) {
+                if (!(i2c->I2C_STATUS & I2C_IC_STATUS_SDA_STUCK_NOT_RECOVERED)) {
+                    transfer->evt_sts = (transfer->evt_sts &
+                                         ~I2C_XFER_EVENT_SDA_STUCK_AT_LOW) |
+                                        I2C_XFER_EVENT_BUS_CLEAR;
+                }
+            }
+            /* clear xfer abort status */
+            transfer->abort = false;
         }
+        /* cmd_bus_clr is scoped to one BUS_CLEAR command; the HW ends
+         * that command with STOP_DET whether recovery succeeded or not.
+         * Clear here so the flag never leaks into the next transfer.
+         */
+        transfer->cmd_bus_clr = false;
 
         /* transmitted all the bytes, disable the transmit interrupt */
         i2c_master_disable_tx_interrupt(i2c);
+
+        /* Clear TDMAE so the next master transmit can re-arm DMA cleanly. */
+        i2c_disable_tx_dma(i2c);
     }
 }
 
@@ -567,50 +583,16 @@ void i2c_master_rx_isr(I2C_Type *i2c, i2c_transfer_info_t *transfer)
 {
     uint32_t    i2c_int_status; /* i2c interrupt status */
     uint16_t    xmit_data = 0;
-    static bool tx_abort;
     bool        exit      = false;
 
     i2c_int_status        = (i2c->I2C_INTR_STAT);
 
-    if (i2c_int_status & I2C_IC_INTR_STAT_TX_ABRT) {
-        transfer->err_state = i2c_master_check_error(i2c, transfer);
-    }
+    i2c_master_check_error(i2c, transfer);
 
-    /* Clear Interrupt */
-    (void) i2c->I2C_CLR_INTR;
+    if (!transfer->abort) {
+        if ((!i2c_is_tx_dma_enable(i2c)) &&
+            (i2c_int_status & I2C_IC_INTR_STAT_TX_EMPTY)) {
 
-    /* Transmission Error state check */
-    if (transfer->err_state) {
-        tx_abort = true;
-        if (transfer->err_state == I2C_ERR_LOST_BUS) {
-            /* mark event as master lost arbitration. */
-            transfer->status |= I2C_TRANSFER_STATUS_ARBITRATION_LOST;
-        } else if (transfer->err_state == I2C_ERR_ADDR_NOACK) {
-            /* mark event as slave not acknowledge 7bit/10bit addr. */
-            transfer->status |= I2C_TRANSFER_STATUS_ADDRESS_NACK;
-        }
-        /* master got ack from slave for 7/10bit addr then
-         * master sends data, no ack for the data */
-        else if (transfer->err_state == I2C_ERR_DATA_NOACK) {
-            /* mark event as slave not acknowledge for the data. */
-            transfer->status |= I2C_TRANSFER_STATUS_INCOMPLETE;
-        } else if (transfer->err_state == I2C_ERR_HS_ACKDET) {
-            /* mark event as ack detected for HS code. */
-            transfer->status |= I2C_TRANSFER_STATUS_HS_ACKDET;
-        } else if (transfer->err_state == I2C_ERR_HS_NORSTRT) {
-            /* mark event as no restart available for HS mdoe. */
-            transfer->status |= I2C_TRANSFER_STATUS_HS_NORSTRT;
-        } else if (transfer->err_state == I2C_ERR_UNDEF) {
-            transfer->status |= I2C_TRANSFER_STATUS_BUS_ERROR;
-        }
-        /* Clear TX ABRT interrupt */
-        (void) i2c->I2C_CLR_TX_ABRT;
-
-        transfer->err_state = I2C_ERR_NONE;
-    }
-
-    else if (transfer->rx_buf) {
-        if (i2c_int_status & I2C_IC_INTR_STAT_TX_EMPTY) {
             if (transfer->wr_mode) {
                 while (i2c_tx_ready(i2c)) {
                     xmit_data = (uint16_t) (transfer->tx_buf[transfer->tx_curr_cnt++]) |
@@ -646,8 +628,10 @@ void i2c_master_rx_isr(I2C_Type *i2c, i2c_transfer_info_t *transfer)
         /* Checks if transmitted all the read condition,
          *  waiting for i2c to receive data from slave.
          * IC_INTR_STAT_RX_FULL set when i2c receives reaches
-         * or goes above RX_TL threshold */
-        if (i2c_int_status & I2C_IC_INTR_STAT_RX_FULL) {
+         * threshold. Skip when RX DMA is enabled
+         */
+        if ((!i2c_is_rx_dma_enable(i2c)) &&
+            (i2c_int_status & I2C_IC_INTR_STAT_RX_FULL)) {
             while (i2c_rx_ready(i2c)) {
                 /* rx ready, data is available into data buffer read it. */
                 transfer->rx_buf[transfer->rx_curr_cnt] = i2c_read_data_from_buffer(i2c);
@@ -661,79 +645,95 @@ void i2c_master_rx_isr(I2C_Type *i2c, i2c_transfer_info_t *transfer)
                         /* read all required bytes. disable the rx interrupt */
                         i2c_master_disable_rx_interrupt(i2c);
 
-                        transfer->curr_stat  = I2C_TRANSFER_NONE;
+                        transfer->curr_stat  = I2C_XFER_NONE;
                         /* mark event as master receive complete successfully. */
-                        transfer->status    |= I2C_TRANSFER_STATUS_DONE;
+                        transfer->evt_sts    |= I2C_XFER_EVENT_DONE;
                     } else {
                         /* received all the bytes disable the RX interrupt
-                         * and update callback event. */
+                         * and update callback event.
+                         */
                         i2c_mask_interrupt(i2c, I2C_IC_INTR_STAT_RX_FULL);
                     }
                     break;
                 }
             }
         }
+    }
 
-        if (i2c_int_status & (I2C_IC_INTR_STAT_RX_OVER | I2C_IC_INTR_STAT_RX_UNDER)) {
-            transfer->rx_over++;
-        }
+    if (i2c_int_status & I2C_IC_INTR_STAT_STOP_DET) {
+        (void) i2c->I2C_CLR_STOP_DET;
 
-        if (i2c_int_status & I2C_IC_INTR_STAT_STOP_DET) {
-            if (tx_abort) {
-                transfer->curr_stat = I2C_TRANSFER_NONE;
-                transfer->status    = I2C_TRANSFER_STATUS_NONE;
-                tx_abort            = false;
-            } else {
-                /* Checks if rx-dma is not enabled */
-                if (!i2c_is_rx_dma_enable(i2c)) {
-                    /* Check if some data is yet to be received. If yes
-                     * performs the below operations */
-                    if (transfer->rx_curr_cnt < transfer->rx_total_num) {
-                        /* Checks if there are pending data
-                         * present in Rx FIFO that are expected */
-                        if (i2c->I2C_RXFLR >=
-                            (transfer->rx_total_num - (transfer->rx_curr_cnt + 1U))) {
-                            while (transfer->rx_total_num - transfer->rx_curr_cnt) {
-                                /* Read the data available in data buffer. */
-                                transfer->rx_buf[transfer->rx_curr_cnt] =
-                                    i2c_read_data_from_buffer(i2c);
+        if (!transfer->abort) {
+            /* Checks if rx-dma is not enabled */
+            if (!i2c_is_rx_dma_enable(i2c)) {
+                /* Check if some data is yet to be received. If yes
+                 * performs the below operations
+                 */
+                if (transfer->rx_curr_cnt < transfer->rx_total_num) {
+                    /* Checks if there are pending data
+                     * present in Rx FIFO that are expected
+                     */
+                    if (i2c->I2C_RXFLR >=
+                        (transfer->rx_total_num - (transfer->rx_curr_cnt + 1U))) {
+                        while (transfer->rx_total_num - transfer->rx_curr_cnt) {
+                            /* Read the data available in data buffer. */
+                            transfer->rx_buf[transfer->rx_curr_cnt] =
+                                i2c_read_data_from_buffer(i2c);
 
-                                transfer->rx_curr_cnt++;
-                                transfer->curr_cnt = transfer->rx_curr_cnt;
-                            }
+                            transfer->rx_curr_cnt++;
+                            transfer->curr_cnt = transfer->rx_curr_cnt;
                         }
                     }
-
-                    /* Checks mode is DMA or if expected nuber of bytes received*/
-                    if (transfer->rx_curr_cnt >= transfer->rx_total_num) {
-                        transfer->curr_stat  = I2C_TRANSFER_NONE;
-                        /* mark event as master receive complete successfully. */
-                        transfer->status    |= I2C_TRANSFER_STATUS_DONE;
-                        tx_abort             = false;
-                    } else {
-                        transfer->curr_stat  = I2C_TRANSFER_NONE;
-                        /* mark event as master receive incomplete. */
-                        transfer->status    |= I2C_TRANSFER_STATUS_INCOMPLETE;
-                    }
-
                 }
-                /* Rx-DMA is enabled, so perform the below */
-                else {
-                    transfer->curr_stat  = I2C_TRANSFER_NONE;
+
+                if (transfer->rx_curr_cnt >= transfer->rx_total_num) {
+                    transfer->curr_stat  = I2C_XFER_NONE;
                     /* mark event as master receive complete successfully. */
-                    transfer->status    |= I2C_TRANSFER_STATUS_DONE;
+                    transfer->evt_sts    |= I2C_XFER_EVENT_DONE;
+                } else {
+                    transfer->curr_stat  = I2C_XFER_NONE;
+                    /* mark event as master receive incomplete. */
+                    transfer->evt_sts    |= I2C_XFER_EVENT_INCOMPLETE;
+                }
+
+            }
+            /* Rx-DMA is enabled, so perform the below */
+            else {
+                transfer->curr_stat = I2C_XFER_NONE;
+                if (i2c->I2C_RXFLR == 0U) {
+                    /* mark event as master receive complete successfully. */
+                    transfer->evt_sts |= I2C_XFER_EVENT_DONE;
+                } else {
+                    /* DMA did not drain in time — truncated transfer. */
+                    transfer->evt_sts |= I2C_XFER_EVENT_INCOMPLETE;
                 }
             }
-
-            /* Stop bit detected, disable the Receive interrupt */
-            i2c_master_disable_rx_interrupt(i2c);
+        } else {
+            /* Promote SDA_STUCK_AT_LOW to BUS_CLEAR only on a user
+             * bus-clear that actually recovered.
+             */
+            if (transfer->cmd_bus_clr &&
+                (transfer->evt_sts & I2C_XFER_EVENT_SDA_STUCK_AT_LOW)) {
+                if (!(i2c->I2C_STATUS & I2C_IC_STATUS_SDA_STUCK_NOT_RECOVERED)) {
+                    transfer->evt_sts = (transfer->evt_sts &
+                                         ~I2C_XFER_EVENT_SDA_STUCK_AT_LOW) |
+                                        I2C_XFER_EVENT_BUS_CLEAR;
+                }
+            }
+            /* clear xfer abort status */
+            transfer->abort = false;
         }
-    } else {
+        /* cmd_bus_clr is scoped to one BUS_CLEAR command; the HW ends
+         * that command with STOP_DET whether recovery succeeded or not.
+         * Clear here so the flag never leaks into the next transfer.
+         */
+        transfer->cmd_bus_clr = false;
+
+        /* Stop bit detected, disable the Receive interrupt */
         i2c_master_disable_rx_interrupt(i2c);
-        transfer->curr_stat  = I2C_TRANSFER_NONE;
-        /* clear busy status bit. */
-        transfer->status    |= I2C_TRANSFER_STATUS_DONE;
-        transfer->status    |= I2C_TRANSFER_STATUS_INCOMPLETE;
+
+        /* Clear RDMAE so the next master receive can re-arm DMA cleanly. */
+        i2c_disable_rx_dma(i2c);
     }
 }
 
@@ -751,15 +751,29 @@ void i2c_slave_tx_isr(I2C_Type *i2c, i2c_transfer_info_t *transfer)
     i2c_int_status      = (i2c->I2C_INTR_STAT);
 
     /* Slave error state check */
-    transfer->err_state = i2c_slave_check_error(i2c, transfer);
+    i2c_slave_check_error(i2c, transfer);
 
-    /* Clear Interrupt */
-    (void) i2c->I2C_CLR_INTR;
+    /* Slave is Active */
+    if (i2c->I2C_STATUS & I2C_IC_STATUS_SLAVE_ACT) {
+        /* DMA-mode arm-on-RD_REQ. tx_total_num == 0 distinguishes
+         * DMA SlaveTransmit (channels armed by upper layer, byte
+         * count not tracked here) from IRQ SlaveTransmit (which
+         * populates tx_total_num). Enable TDMAE so the DMA channel
+         * pushes the first byte, then mask RD_REQ so a transient
+         * FIFO underrun mid-transaction does not re-enter this
+         * block
+         */
+        if ((!transfer->abort) && (transfer->tx_total_num == 0U) &&
+            (i2c_int_status & I2C_IC_INTR_STAT_RD_REQ) &&
+            (!i2c_is_tx_dma_enable(i2c))) {
+            i2c_enable_tx_dma(i2c);
+            i2c_mask_interrupt(i2c, I2C_IC_INTR_STAT_RD_REQ);
+            (void) i2c->I2C_CLR_RD_REQ;
+        }
 
-    /* Transfer buffer has data to transmit */
-    if (transfer->tx_buf) {
-        /* Slave is Active */
-        if (i2c->I2C_STATUS & I2C_IC_STATUS_SLAVE_ACT) {
+        /* Fill data when Read is requested. Skip when TX DMA is enabled. */
+        if ((!transfer->abort) && (!i2c_is_tx_dma_enable(i2c)) &&
+            (i2c_int_status & I2C_IC_INTR_STAT_RD_REQ)) {
             /* checking FIFO is full ready to transmit data */
             while (i2c_tx_ready(i2c)) {
                 xmit_data = (uint16_t) (transfer->tx_buf[transfer->tx_curr_cnt]) |
@@ -775,43 +789,44 @@ void i2c_slave_tx_isr(I2C_Type *i2c, i2c_transfer_info_t *transfer)
                     /* transmitted all the bytes, disable the transmit interrupt */
                     i2c_slave_disable_tx_interrupt(i2c);
 
-                    transfer->curr_stat  = I2C_TRANSFER_NONE;
+                    transfer->curr_stat  = I2C_XFER_NONE;
 
                     /* mark event as slave transmit complete successfully. */
-                    transfer->status    |= I2C_TRANSFER_STATUS_DONE;
+                    transfer->evt_sts    |= I2C_XFER_EVENT_DONE;
                     break;
                 } /* (xmit_end) */
 
             } /* while(i2c_tx_ready(i2c_reg_ptr)) END*/
 
-        } /* (i2c_reg_ptr->ic_status & I2C_IC_STATUS_SLAVE_ACT) END*/
-
-    } /* (i2c_info_ptr->transfer.tx_buf) END*/
-
-    if (i2c_int_status & I2C_IC_INTR_STAT_TX_OVER) {
-        transfer->tx_over++;
-    }
-
-    /* Slave Transmit Abort/bus error */
-    if (transfer->err_state == I2C_ERR_LOST_BUS) {
-        i2c_slave_disable_tx_interrupt(i2c);
-        /* mark event as slave lost bus */
-        transfer->status    |= I2C_TRANSFER_STATUS_BUS_ERROR;
-        transfer->status    |= I2C_TRANSFER_STATUS_DONE;
-        transfer->status    |= I2C_TRANSFER_STATUS_INCOMPLETE;
-
-        transfer->err_state  = I2C_ERR_NONE;
-    }
+            (void) i2c->I2C_CLR_RD_REQ;
+        } /* Read request END */
+    } /* (i2c_reg_ptr->ic_status & I2C_IC_STATUS_SLAVE_ACT) END*/
 
     /* Checks for stop condition */
     if (i2c_int_status & I2C_IC_INTR_STAT_STOP_DET) {
-        /* transmitted all the bytes, disable the transmit interrupt */
+        (void) i2c->I2C_CLR_STOP_DET;
+
+        transfer->curr_stat = I2C_XFER_NONE;
         i2c_slave_disable_tx_interrupt(i2c);
 
-        transfer->curr_stat  = I2C_TRANSFER_NONE;
+        if (i2c_is_tx_dma_enable(i2c)) {
+            /* STOP arrived while DMA still active — master read fewer
+             * bytes than provided. Report incomplete.
+             */
+            i2c_disable_tx_dma(i2c);
+            transfer->evt_sts |= I2C_XFER_EVENT_INCOMPLETE;
+        } else {
+            /* IRQ mode, or DMA already drained cleanly. Report success. */
+            transfer->evt_sts |= I2C_XFER_EVENT_DONE;
+        }
+    }
 
-        /* mark event as slave transmit complete successfully. */
-        transfer->status    |= I2C_TRANSFER_STATUS_DONE;
+    if (transfer->abort) {
+        transfer->abort = false;
+        transfer->curr_stat  = I2C_XFER_NONE;
+        /* disable the transmit interrupt */
+        i2c_slave_disable_tx_interrupt(i2c);
+        i2c_disable_tx_dma(i2c);
     }
 }
 
@@ -827,11 +842,12 @@ void i2c_slave_rx_isr(I2C_Type *i2c, i2c_transfer_info_t *transfer)
 
     i2c_int_status = (i2c->I2C_INTR_STAT);
 
-    /* Clear Interrupt */
-    (void) i2c->I2C_CLR_INTR;
+    /* Slave error state check */
+    i2c_slave_check_error(i2c, transfer);
 
-    /* Checking for the RX full interrupt */
-    if (i2c_int_status & I2C_IC_INTR_STAT_RX_FULL) {
+    /* Checking for the RX full interrupt. Skip when RX DMA is enabled. */
+    if ((!i2c_is_rx_dma_enable(i2c)) &&
+        (i2c_int_status & I2C_IC_INTR_STAT_RX_FULL)) {
         /* Ready to receive data, FIFO has data */
         while (i2c_rx_ready(i2c)) {
             /* rx ready, data is available into data buffer read it. */
@@ -842,9 +858,9 @@ void i2c_slave_rx_isr(I2C_Type *i2c, i2c_transfer_info_t *transfer)
 
             /* received all the bytes? */
             if (transfer->rx_curr_cnt >= transfer->rx_total_num) {
-                transfer->curr_stat  = I2C_TRANSFER_NONE;
+                transfer->curr_stat  = I2C_XFER_NONE;
                 /* mark event as Slave Receive complete successfully. */
-                transfer->status    |= I2C_TRANSFER_STATUS_DONE;
+                transfer->evt_sts    |= I2C_XFER_EVENT_DONE;
 
                 /* Disable the RX interrupt */
                 i2c_slave_disable_rx_interrupt(i2c);
@@ -855,32 +871,43 @@ void i2c_slave_rx_isr(I2C_Type *i2c, i2c_transfer_info_t *transfer)
 
     } /* (i2c_int_status & I2C_IC_INTR_STAT_RX_FULL) END */
 
-    if (i2c_int_status & (I2C_IC_INTR_STAT_RX_OVER | I2C_IC_INTR_STAT_RX_UNDER)) {
-        transfer->rx_over++;
-    }
     if (i2c_int_status & I2C_IC_INTR_STAT_STOP_DET) {
-        if (transfer->rx_curr_cnt < transfer->rx_total_num) {
-            /* Checks if there are pending data
-             * present in Rx FIFO that are expected */
-            if (i2c->I2C_RXFLR >= (transfer->rx_total_num - (transfer->rx_curr_cnt + 1U))) {
-                while (transfer->rx_total_num - transfer->rx_curr_cnt) {
-                    /* Read the data available in data buffer. */
-                    transfer->rx_buf[transfer->rx_curr_cnt] = i2c_read_data_from_buffer(i2c);
+        (void) i2c->I2C_CLR_STOP_DET;
 
-                    transfer->rx_curr_cnt++;
-                    transfer->curr_cnt = transfer->rx_curr_cnt;
+        if (!i2c_is_rx_dma_enable(i2c)) {
+            if (transfer->rx_curr_cnt < transfer->rx_total_num) {
+                /* Checks if there are pending data
+                 * present in Rx FIFO that are expected
+                 */
+                if (i2c->I2C_RXFLR >= (transfer->rx_total_num - (transfer->rx_curr_cnt + 1U))) {
+                    while (transfer->rx_total_num - transfer->rx_curr_cnt) {
+                        /* Read the data available in data buffer. */
+                        transfer->rx_buf[transfer->rx_curr_cnt] = i2c_read_data_from_buffer(i2c);
+
+                        transfer->rx_curr_cnt++;
+                        transfer->curr_cnt = transfer->rx_curr_cnt;
+                    }
                 }
             }
+            /* Checks if expected number of bytes received */
+            if (transfer->rx_curr_cnt >= transfer->rx_total_num) {
+                transfer->curr_stat  = I2C_XFER_NONE;
+                /* mark event as Slave Receive complete successfully. */
+                transfer->evt_sts    |= I2C_XFER_EVENT_DONE;
+            } else {
+                transfer->curr_stat  = I2C_XFER_NONE;
+                /* mark event as Slave Receive incomplete. */
+                transfer->evt_sts    |= I2C_XFER_EVENT_INCOMPLETE;
+            }
         }
-        /* Checks mode is DMA or if expected nuber of bytes received*/
-        if (transfer->rx_curr_cnt >= transfer->rx_total_num) {
-            transfer->curr_stat  = I2C_TRANSFER_NONE;
-            /* mark event as Slave Receive complete successfully. */
-            transfer->status    |= I2C_TRANSFER_STATUS_DONE;
-        } else {
-            transfer->curr_stat  = I2C_TRANSFER_NONE;
-            /* mark event as Slave Receive incomplete. */
-            transfer->status    |= I2C_TRANSFER_STATUS_INCOMPLETE;
+        /* Rx-DMA is enabled */
+        else {
+            /* DMA with Abort cases: Make sure no inflight transfer */
+            sys_busy_loop_us(1);
+
+            transfer->curr_stat = I2C_XFER_NONE;
+            transfer->evt_sts |= I2C_XFER_EVENT_INCOMPLETE;
+            i2c_disable_rx_dma(i2c);
         }
         /* Disable the RX interrupt */
         i2c_slave_disable_rx_interrupt(i2c);

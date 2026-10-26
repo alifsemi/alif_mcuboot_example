@@ -41,10 +41,9 @@ extern "C" {
 /* APS512XXN wait cycle macros
  * device considers wait cycles from last cycle of addr phase
  */
-#define APS512XXN_INIT_REG_READ_WAIT_CYCLES    4
+#define APS512XXN_INIT_REG_READ_WAIT_CYCLES    5
 #define APS512XXN_REG_WRITE_WAIT_CYCLES        0
 #define APS512XXN_RESET_WAIT_CYCLES            3
-#define APS512XXN_INIT_READ_WRITE_WAIT_CYCLES  4
 
 /* APS512XXN Register address */
 #define APS512XXN_MODE_REG0_ADDR               0x0

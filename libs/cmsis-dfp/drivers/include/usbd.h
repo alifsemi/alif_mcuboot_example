@@ -92,6 +92,7 @@ extern "C" {
 #define USB_SETUP_PKT_SIZE                        8
 
 #define USB_DCTL_START_TIMEOUT                    500
+#define USB_DCTL_STOP_TIMEOUT                     500
 #define USB_GENERIC_CMD_TIMEOUT                   500
 #define USB_DEPCMD_TIMEOUT                        1000
 #define USB_DCTL_CSFTRST_TIMEOUT                  1000
@@ -660,6 +661,8 @@ typedef struct _USB_DRIVER {
     uint32_t                     fladj;
     uint32_t                     event_type;
     uint32_t                     actual_length;
+    uint8_t                      speed;
+    uint8_t                      active;
 } USB_DRIVER;
 
 void     usbd_interrupt_handler(void);

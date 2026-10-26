@@ -21,6 +21,7 @@
 
 /* System Includes */
 #include "RTE_Device.h"
+#include "board_config.h"
 #include "RTE_Components.h"
 #include CMSIS_device_header
 
@@ -34,12 +35,12 @@
 #if defined(RTE_Drivers_MIPI_DSI_ILI9806E_PANEL)
 
 /* ILI9806E panel reset GPIO port */
-extern ARM_DRIVER_GPIO  ARM_Driver_GPIO_(RTE_ILI9806E_PANEL_RESET_GPIO_PORT);
-static ARM_DRIVER_GPIO *GPIO_Driver_Rst = &ARM_Driver_GPIO_(RTE_ILI9806E_PANEL_RESET_GPIO_PORT);
+extern ARM_DRIVER_GPIO  ARM_Driver_GPIO_(BOARD_LCD_RESET_GPIO_PORT);
+static ARM_DRIVER_GPIO *GPIO_Driver_Rst = &ARM_Driver_GPIO_(BOARD_LCD_RESET_GPIO_PORT);
 
 /* ILI9806E panel black light LED GPIO port */
-extern ARM_DRIVER_GPIO  ARM_Driver_GPIO_(RTE_ILI9806E_PANEL_BL_LED_GPIO_PORT);
-static ARM_DRIVER_GPIO *GPIO_Driver_BLED = &ARM_Driver_GPIO_(RTE_ILI9806E_PANEL_BL_LED_GPIO_PORT);
+extern ARM_DRIVER_GPIO  ARM_Driver_GPIO_(BOARD_LCD_BL_LED_GPIO_PORT);
+static ARM_DRIVER_GPIO *GPIO_Driver_BLED = &ARM_Driver_GPIO_(BOARD_LCD_BL_LED_GPIO_PORT);
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
@@ -173,36 +174,36 @@ static int32_t ILI9806E_Display_Reset(void)
         return ARM_DRIVER_ERROR_PARAMETER;
     }
 
-    ret = GPIO_Driver_Rst->Initialize(RTE_ILI9806E_PANEL_RESET_PIN_NO, NULL);
+    ret = GPIO_Driver_Rst->Initialize(BOARD_LCD_RESET_GPIO_PIN, NULL);
     if (ret != ARM_DRIVER_OK) {
         return ARM_DRIVER_ERROR;
     }
 
-    ret = GPIO_Driver_Rst->PowerControl(RTE_ILI9806E_PANEL_RESET_PIN_NO, ARM_POWER_FULL);
+    ret = GPIO_Driver_Rst->PowerControl(BOARD_LCD_RESET_GPIO_PIN, ARM_POWER_FULL);
     if (ret != ARM_DRIVER_OK) {
         return ARM_DRIVER_ERROR;
     }
 
-    ret = GPIO_Driver_Rst->SetDirection(RTE_ILI9806E_PANEL_RESET_PIN_NO, GPIO_PIN_DIRECTION_OUTPUT);
+    ret = GPIO_Driver_Rst->SetDirection(BOARD_LCD_RESET_GPIO_PIN, GPIO_PIN_DIRECTION_OUTPUT);
     if (ret != ARM_DRIVER_OK) {
         return ARM_DRIVER_ERROR;
     }
 
-    ret = GPIO_Driver_Rst->SetValue(RTE_ILI9806E_PANEL_RESET_PIN_NO, GPIO_PIN_OUTPUT_STATE_HIGH);
+    ret = GPIO_Driver_Rst->SetValue(BOARD_LCD_RESET_GPIO_PIN, GPIO_PIN_OUTPUT_STATE_HIGH);
     if (ret != ARM_DRIVER_OK) {
         return ARM_DRIVER_ERROR;
     }
 
     sys_busy_loop_us(5000);
 
-    ret = GPIO_Driver_Rst->SetValue(RTE_ILI9806E_PANEL_RESET_PIN_NO, GPIO_PIN_OUTPUT_STATE_LOW);
+    ret = GPIO_Driver_Rst->SetValue(BOARD_LCD_RESET_GPIO_PIN, GPIO_PIN_OUTPUT_STATE_LOW);
     if (ret != ARM_DRIVER_OK) {
         return ARM_DRIVER_ERROR;
     }
 
     sys_busy_loop_us(50000);
 
-    ret = GPIO_Driver_Rst->SetValue(RTE_ILI9806E_PANEL_RESET_PIN_NO, GPIO_PIN_OUTPUT_STATE_HIGH);
+    ret = GPIO_Driver_Rst->SetValue(BOARD_LCD_RESET_GPIO_PIN, GPIO_PIN_OUTPUT_STATE_HIGH);
     if (ret != ARM_DRIVER_OK) {
         return ARM_DRIVER_ERROR;
     }
@@ -226,18 +227,18 @@ static int32_t ILI9806E_BL_LED_Init(void)
         return ARM_DRIVER_ERROR_PARAMETER;
     }
 
-    ret = GPIO_Driver_BLED->Initialize(RTE_ILI9806E_PANEL_BL_LED_PIN_NO, NULL);
+    ret = GPIO_Driver_BLED->Initialize(BOARD_LCD_BL_LED_GPIO_PIN, NULL);
     if (ret != ARM_DRIVER_OK) {
         return ARM_DRIVER_ERROR;
     }
 
-    ret = GPIO_Driver_BLED->PowerControl(RTE_ILI9806E_PANEL_BL_LED_PIN_NO, ARM_POWER_FULL);
+    ret = GPIO_Driver_BLED->PowerControl(BOARD_LCD_BL_LED_GPIO_PIN, ARM_POWER_FULL);
     if (ret != ARM_DRIVER_OK) {
         return ARM_DRIVER_ERROR;
     }
 
     ret =
-        GPIO_Driver_BLED->SetDirection(RTE_ILI9806E_PANEL_BL_LED_PIN_NO, GPIO_PIN_DIRECTION_OUTPUT);
+        GPIO_Driver_BLED->SetDirection(BOARD_LCD_BL_LED_GPIO_PIN, GPIO_PIN_DIRECTION_OUTPUT);
     if (ret != ARM_DRIVER_OK) {
         return ARM_DRIVER_ERROR;
     }
@@ -256,14 +257,14 @@ static int32_t ILI9806E_BL_LED_Control(uint8_t state)
     int32_t ret = 0;
 
     if (state == ENABLE) {
-        ret = GPIO_Driver_BLED->SetValue(RTE_ILI9806E_PANEL_BL_LED_PIN_NO,
+        ret = GPIO_Driver_BLED->SetValue(BOARD_LCD_BL_LED_GPIO_PIN,
                                          GPIO_PIN_OUTPUT_STATE_HIGH);
         if (ret != ARM_DRIVER_OK) {
             return ARM_DRIVER_ERROR;
         }
     } else {
         ret =
-            GPIO_Driver_BLED->SetValue(RTE_ILI9806E_PANEL_BL_LED_PIN_NO, GPIO_PIN_OUTPUT_STATE_LOW);
+            GPIO_Driver_BLED->SetValue(BOARD_LCD_BL_LED_GPIO_PIN, GPIO_PIN_OUTPUT_STATE_LOW);
         if (ret != ARM_DRIVER_OK) {
             return ARM_DRIVER_ERROR;
         }
@@ -317,23 +318,14 @@ static void ILI9806E_Configure(void)
         DSI_DCS_Short_Write(page0_cfg[i].cmd, page0_cfg[i].data);
     }
 
-    DSI_DCS_CMD_Short_Write(0x11);
+    DSI_DCS_CMD_Short_Write(0x11);   /* Sleep Out */
+    sys_busy_loop_us(120000);
 
-    sys_busy_loop_us(100000);
+    DSI_DCS_CMD_Short_Write(0x20);   /* Display Inversion OFF */
+    sys_busy_loop_us(10000);
+
+    DSI_DCS_CMD_Short_Write(0x29);   /* Display On */
     sys_busy_loop_us(20000);
-
-    DSI_DCS_CMD_Short_Write(0x29);
-
-    sys_busy_loop_us(25000);
-
-    /*Normal Display mode on*/
-    DSI_DCS_Short_Write(0x05, 0x13);
-
-    /*All Pixel On*/
-    DSI_DCS_Short_Write(0x05, 0x23);
-
-    /*Display On*/
-    DSI_DCS_Short_Write(0x05, 0x29);
 }
 
 /**
@@ -367,7 +359,7 @@ static int32_t ILI9806E_Uninit(void)
 {
     int32_t ret = ARM_DRIVER_OK;
 
-    ret = GPIO_Driver_Rst->SetValue(RTE_ILI9806E_PANEL_RESET_PIN_NO, GPIO_PIN_OUTPUT_STATE_LOW);
+    ret = GPIO_Driver_Rst->SetValue(BOARD_LCD_RESET_GPIO_PIN, GPIO_PIN_OUTPUT_STATE_LOW);
     if (ret != ARM_DRIVER_OK) {
         return ARM_DRIVER_ERROR;
     }

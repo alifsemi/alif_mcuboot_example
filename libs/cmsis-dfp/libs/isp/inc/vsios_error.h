@@ -29,28 +29,29 @@
 
 #ifdef __cplusplus
 #if __cplusplus
-extern "C" {
+extern "C"{
 #endif
 #endif
 
-typedef enum VsiErrCode_e {
-    VSI_ERR_INVALID_DEVID  = 1,
-    VSI_ERR_INVALID_PORTID = 2,
-    VSI_ERR_INVALID_CHNID  = 3,
-    VSI_ERR_NULL_PTR       = 4,
-    VSI_ERR_ILLEGAL_PARAM  = 5,
-    VSI_ERR_NOT_CONFIG     = 6,
-    VSI_ERR_NOT_SUPPORT    = 7,
-    VSI_ERR_NOT_PERM       = 8,
-    VSI_ERR_NOT_READY      = 9,
-    VSI_ERR_EXIST          = 10,
-    VSI_ERR_UNEXIST        = 11,
-    VSI_ERR_BUF_EMPTY      = 12,
-    VSI_ERR_BUF_FULL       = 13,
-    VSI_ERR_NOMEM          = 14,
-    VSI_ERR_NOBUF          = 15,
-    VSI_ERR_TIMEOUT        = 16,
-    VSI_ERR_BUSY           = 17,
+typedef enum VsiErrCode_e
+{
+    VSI_ERR_INVALID_DEVID     = 1,
+    VSI_ERR_INVALID_PORTID    = 2,
+    VSI_ERR_INVALID_CHNID     = 3,
+    VSI_ERR_NULL_PTR          = 4,
+    VSI_ERR_ILLEGAL_PARAM     = 5,
+    VSI_ERR_NOT_CONFIG        = 6,
+    VSI_ERR_NOT_SUPPORT       = 7,
+    VSI_ERR_NOT_PERM          = 8,
+    VSI_ERR_NOT_READY         = 9,
+    VSI_ERR_EXIST             = 10,
+    VSI_ERR_UNEXIST           = 11,
+    VSI_ERR_BUF_EMPTY         = 12,
+    VSI_ERR_BUF_FULL          = 13,
+    VSI_ERR_NOMEM             = 14,
+    VSI_ERR_NOBUF             = 15,
+    VSI_ERR_TIMEOUT           = 16,
+    VSI_ERR_BUSY              = 17,
 } VsiErrCode_t;
 
 #ifdef __cplusplus

@@ -160,7 +160,7 @@ uint32_t SERVICES_system_get_toc_via_cpuid(uint32_t services_handle, SERVICES_cp
 
     toc_info->number_of_toc_entries = 0;
 
-    get_toc_data_t *p_svc;
+    get_toc_data_t *p_svc=NULL;
     for (uint32_t i = 0; i < toc_number; i++) {
         p_svc = (get_toc_data_t *) SERVICES_prepare_packet_buffer(sizeof(get_toc_data_t));
 
@@ -175,8 +175,9 @@ uint32_t SERVICES_system_get_toc_via_cpuid(uint32_t services_handle, SERVICES_cp
                 toc_info->number_of_toc_entries++;
             }
         }
-        *error_code = p_svc->resp_error_code;
     }
+
+    *error_code = p_svc->resp_error_code;
 
     return return_code;
 }
@@ -213,7 +214,7 @@ uint32_t SERVICES_system_get_toc_data(uint32_t services_handle, SERVICES_toc_dat
 
     toc_info->number_of_toc_entries = toc_number;
 
-    get_toc_data_t *p_svc;
+    get_toc_data_t *p_svc=NULL;
     for (uint32_t i = 0; i < toc_number; i++) {
         p_svc = (get_toc_data_t *) SERVICES_prepare_packet_buffer(sizeof(get_toc_data_t));
 
@@ -223,8 +224,9 @@ uint32_t SERVICES_system_get_toc_data(uint32_t services_handle, SERVICES_toc_dat
                                                      DEFAULT_TIMEOUT)) {
             memcpy(&toc_info->toc_entry[i], &p_svc->resp_toc_entry, sizeof(get_toc_entry_t));
         }
-        *error_code = p_svc->resp_error_code;
     }
+
+    *error_code = p_svc->resp_error_code;
 
     return return_code;
 }
@@ -549,19 +551,6 @@ uint32_t SERVICES_system_get_eui_extension(uint32_t services_handle, bool is_eui
     if (return_code != SERVICES_REQ_SUCCESS) {
         return return_code;
     }
-
-    mfg_data_t *p_mfg_data = (mfg_data_t *) device_data.MfgData;
-    TEST_print(services_handle,
-               "******* x-loc:%d y-loc:%d fab:%d, wafer:%d\n",
-               p_mfg_data->x_loc,
-               p_mfg_data->y_loc,
-               p_mfg_data->fab_id,
-               p_mfg_data->wfr_id);
-    TEST_print(services_handle,
-               "******* year:%d, week:%d, lot:%d\n",
-               p_mfg_data->year,
-               p_mfg_data->week,
-               p_mfg_data->lot_no);
 
     // init_test_mgf_data(device_data.MfgData);
 

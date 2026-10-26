@@ -29,7 +29,7 @@
 
 #ifdef __cplusplus
 #if __cplusplus
-extern "C" {
+extern "C"{
 #endif
 #endif
 
@@ -61,6 +61,18 @@ int VSI_MPI_ISP_Init(ISP_DEV IspDev);
  *
  *****************************************************************************/
 int VSI_MPI_ISP_Exit(ISP_DEV IspDev);
+
+/*****************************************************************************/
+/**
+ * @brief   Register sensor call back function.
+ *
+ * @param   IspPort             Port ID.
+ * @param   pAeSnsFunc          Pointer to the AE control sensor function.
+ *
+ * @retval  VSI_SUCCESS         Operation succeeded
+ *
+ *****************************************************************************/
+int VSI_MPI_ISP_InitAeSnsFunc(ISP_PORT IspPort, AE_SNS_FUNC_S *pAeSnsFunc);
 
 /*****************************************************************************/
 /**
@@ -297,7 +309,8 @@ int VSI_MPI_ISP_QBUF(ISP_CHN IspChn, VIDEO_BUF_S *pBuf);
  * @retval  VSI_SUCCESS         Operation succeeded
  *
  *****************************************************************************/
-int VSI_MPI_ISP_DQBUF(ISP_CHN IspChn, VIDEO_BUF_S *pBuf, vsi_u32_t timeMs);
+int VSI_MPI_ISP_DQBUF(ISP_CHN IspChn, VIDEO_BUF_S *pBuf,  vsi_u32_t timeMs);
+
 
 /* @} mpi_isp */
 

@@ -29,143 +29,59 @@ extern "C" {
 /* Includes */
 #include "stdint.h"
 #include "soc.h"
+#include "sd_types.h"
 
-#define SDMMC_HC_VERSION_REG     (SDMMC_BASE + 0xFEU)
-#define SDMMC_HC_VERSION_REG_Msk 0xFFFFU
-#define SDMMC_IRQ_NUM            SDMMC_IRQ_IRQn
-#define SDMMC_WAKEUP_IRQ_NUM     SDMMC_WAKEUP_IRQ_IRQn
+/* Forward declaration */
+struct _sd_handle_t;
 
-/**
- * @brief  Host controller driver status enum definition
+#define SDMMC_HC_VERSION_REG    (SDMMC_BASE + 0xFEU)
+#define SDHC_HC_VERSION_REG_Msk 0xFFFFU
+#define SDHC_IRQ_NUM            SDMMC_IRQ_IRQn
+#define SDHC_WAKEUP_IRQ_NUM     SDMMC_WAKEUP_IRQ_IRQn
+
+/* ADMA Descriptor 64-bit format (matching original packed struct layout):
+ * Bits 0-15:   Attribute
+ * Bits 16-31:  Length
+ * Bits 32-63:  Address
  */
-typedef enum _SDMMC_HC_STATUS {
-    SDMMC_HC_STATUS_OK,
-    SDMMC_HC_STATUS_ERR,
-    SDMMC_HC_STATUS_INV_STATE
-} SDMMC_HC_STATUS;
-
-/**
- * @brief ADMA 32-Bit descriptor table
- */
-typedef struct _adma2_desc_t {
-    uint16_t attr;
-    uint16_t len;
-    uint32_t addr;
-} __attribute__((__packed__)) adma2_desc_t;
+#define ADMA2_DESC_ATTR_MASK   0x000000000000FFFFULL
+#define ADMA2_DESC_LEN_SHIFT   16
+#define ADMA2_DESC_LEN_MASK    0x00000000FFFF0000ULL
+#define ADMA2_DESC_ADDR_SHIFT  32
+#define ADMA2_DESC_ADDR_MASK   0xFFFFFFFF00000000ULL
 
 /* ADMA Descriptor Constant */
-#define SDMMC_ADMA2_DESC_MAX_LEN          65536U
-#define SDMMC_ADMA2_DESC_VALID            (0x1U << 0U)
-#define SDMMC_ADMA2_DESC_END              (0x1U << 1U)
-#define SDMMC_ADMA2_DESC_INT              (0x1U << 2U)
-#define SDMMC_ADMA2_DESC_TRAN             (0x1U << 5U)
-
-/* SDMMC Device ID Constnat */
-#define SDMMC_DEV_ID                      1U
+#define SDHC_ADMA2_DESC_MAX_LEN          65536U
+#define SDHC_ADMA2_MAX_DESC              32U
+#define SDHC_ADMA2_DESC_VALID            (0x1U << 0U)
+#define SDHC_ADMA2_DESC_END              (0x1U << 1U)
+#define SDHC_ADMA2_DESC_INT              (0x1U << 2U)
+#define SDHC_ADMA2_DESC_TRAN             (0x1U << 5U)
 
 /* Host Controller Specific Constant */
-#define SDMMC_HC_SPEC_V3                  0x0002U /**< HC spec version 3 */
-#define SDMMC_HC_SPEC_V2                  0x0001U /**< HC spec version 2 */
-#define SDMMC_HC_SPEC_V1                  0x0000U /**< HC spec version 1 */
-#define SDMMC_HC_SPEC_VER_Msk             0x00FFU /**< Host Specification version mask */
+#define SDHC_HC_SPEC_V3                  0x0002U /**< HC spec version 3 */
+#define SDHC_HC_SPEC_V2                  0x0001U /**< HC spec version 2 */
+#define SDHC_HC_SPEC_V1                  0x0000U /**< HC spec version 1 */
+#define SDHC_HC_SPEC_VER_Msk             0x00FFU /**< Host Specification version mask */
 
 /* Software Reset Register */
-#define SDMMC_SW_RST_ALL_Pos              0U
-#define SDMMC_SW_RST_ALL_Msk              (1U << SDMMC_SW_RST_ALL_Pos)
-#define SDMMC_SW_RST_CMD_Pos              1U
-#define SDMMC_SW_RST_CMD_Msk              (1U << SDMMC_SW_RST_CMD_Pos)
-#define SDMMC_SW_RST_DAT_Pos              2U
-#define SDMMC_SW_RST_DAT_Msk              (1U << SDMMC_SW_RST_DAT_Pos)
+#define SDHC_SW_RST_ALL_Pos              0U
+#define SDHC_SW_RST_ALL_Msk              (1U << SDHC_SW_RST_ALL_Pos)
+#define SDHC_SW_RST_CMD_Pos              1U
+#define SDHC_SW_RST_CMD_Msk              (1U << SDHC_SW_RST_CMD_Pos)
+#define SDHC_SW_RST_DAT_Pos              2U
+#define SDHC_SW_RST_DAT_Msk              (1U << SDHC_SW_RST_DAT_Pos)
 
 /* CMD and Response register mapping */
-#define SDMMC_CMD_IDX_Pos                 8U
-#define SDMMC_CMD_TYPE_Pos                6U
-#define SDMMC_CMD_RSP_SEL_Pos             0U
-
-/* SD Clk freq */
-#define SDMMC_CLK_400_KHZ                 400000U    /*!< 400KHz */
-#define SDMMC_CLK_25_MHZ                  25000000U  /*!< 25MHz  */
-#define SDMMC_CLK_50_MHz                  50000000U  /*!< 50MHz  */
-#define SDMMC_CLK_100_MHZ                 100000000U /*!< 100MHz */
-#define SDMMC_BASE_CLK                    SD_CLK_100_MHZ
-
-/* Supported Data Bus */
-#define SDMMC_1_BIT_MODE                  0x0U
-#define SDMMC_4_BIT_MODE                  0x1U
-#define SDMMC_8_BIT_MODE                  0x2U
-#define SDMMC_1_BIT_WIDTH_Msk             0x1U  /*!< Bus Width 1 */
-#define SDMMC_4_BIT_WIDTH_Msk             0x2U  /*!< Bus Width 4 */
-#define SDMMC_8_BIT_WIDTH_Msk             0x20U /*!< Bus Width 8 */
-
-/* Card Types */
-#define SDMMC_CARD_SDSC                   1U /*!< SDSC, Ver 1 Cards  */
-#define SDMMC_CARD_SDHC                   2U /*!< SDHC, SDXC Ver 2    */
-#define SDMMC_CARD_SDXC                   3U /*!< SDXC               */
-#define SDMMC_CARD_MMC                    4U /*!< MMC Cards          */
-#define SDMMC_CARD_SDIO                   5U /*!< SDIO Cards         */
-#define SDMMC_CARD_COMBO                  6U /*!< SD Combo Cards     */
-
-/* Command index */
-#define APP_CMD_PREFIX                    0x80U /* App CMD prefix       */
-#define CMD0                              0x00U
-#define CMD1                              0x01U
-#define CMD2                              0x02U
-#define CMD3                              0x03U
-#define CMD4                              0x04U
-#define CMD5                              0x05U
-#define CMD6                              0x06U
-#define ACMD6                             (APP_CMD_PREFIX + 0x06U)
-#define CMD7                              0x07U
-#define CMD8                              0x08U
-#define CMD9                              0x09U
-#define CMD10                             0x0AU
-#define CMD11                             0x0BU
-#define CMD12                             0x0CU
-#define CMD13                             0x0DU
-#define ACMD13                            (APP_CMD_PREFIX + 0x0DU)
-#define CMD16                             0x10U
-#define CMD17                             0x11U
-#define CMD18                             0x12U
-#define CMD19                             0x13U
-#define CMD21                             0x15U
-#define CMD23                             0x17U
-#define ACMD23                            (APP_CMD_PREFIX + 0x17U)
-#define CMD24                             0x18U
-#define CMD25                             0x19U
-#define CMD32                             0x20U
-#define CMD33                             0x21U
-#define CMD35                             0x23U
-#define CMD36                             0x24U
-#define CMD38                             0x26U
-#define CMD41                             0x29U
-#define ACMD41                            (APP_CMD_PREFIX + 0x29U)
-#define ACMD42                            (APP_CMD_PREFIX + 0x2AU)
-#define ACMD51                            (APP_CMD_PREFIX + 0x33U)
-#define CMD51                             0x33U
-#define CMD52                             0x34U
-#define CMD53                             0x35U
-#define CMD55                             0x37U
-#define CMD58                             0x3AU
-
-/* CMD_R */
-#define SDMMC_CMD_R_CRC_CHK_EN_Msk        8U
-#define SDMMC_CMD_R_CMD_IDX_CHK_EN_Msk    0x10U
-#define SDMMC_CMD_R_DATA_PRES_SEL_Pos     5U
-#define SDMMC_CMD_R_DATA_PRES_SEL_Msk     (1U << SDMMC_CMD_R_DATA_PRES_SEL_Pos)
-
-/* Response type */
-#define SDMMC_RESP_NONE                   0U /*!< No response expected     */
-#define SDMMC_RESP_R136                   1U /*!< 128Bit response expected */
-#define SDMMC_RESP_R48                    2U /*!< Single response expected */
-#define SDMMC_RESP_R48B                   3U /*!< check busy after resp    */
-
-#define SDMMC_RESP_R1                     (SDMMC_RESP_R48 | SDMMC_CMD_R_CRC_CHK_EN_Msk | SDMMC_CMD_R_CMD_IDX_CHK_EN_Msk)
+#define SDHC_CMD_IDX_Pos                 8U
+#define SDHC_CMD_TYPE_Pos                6U
+#define SDHC_CMD_RSP_SEL_Pos             0U
 
 /* Present state */
-#define SDMMC_CMD_INHIBIT_Msk             1U
-#define SDMMC_DAT_INHIBIT_Msk             2U
-#define SDMMC_CARD_INSRT_Msk              0x00010000U
-#define SDMMC_CARD_INSRT_Pos              0x10U
+#define SDHC_CMD_INHIBIT_Msk             1U
+#define SDHC_DAT_INHIBIT_Msk             2U
+#define SDHC_CARD_INSRT_Msk              0x00010000U
+#define SDHC_CARD_INSRT_Pos              0x10U
 #define RD_XFER_ACTIVE_Msk                0x200U
 #define WR_XFER_ACTIVE_Msk                0x100U
 #define XFER_ACTIVE_Msk                   0x300U
@@ -175,203 +91,210 @@ typedef struct _adma2_desc_t {
 #define DMA_IRQ_Msk                       (1U << DMA_IRQ_Pos)
 #define NORMAL_INT_STAT_XFER_COMPLETE_Pos 1U
 #define NORMAL_INT_STAT_XFER_COMPLETE_Msk (1U << NORMAL_INT_STAT_XFER_COMPLETE_Pos)
-#define SDMMC_CMD_LINE_LVL_UP_Pos         23U
-#define SDMMC_CMD_LINE_LVL_UP_Msk         (1U << SDMMC_CMD_LINE_LVL_UP_Pos)
-
-/* Card CSD */
-#define RAW_CSD_BUF_IDX0                  0U
-#define RAW_CSD_BUF_IDX1                  1U
-#define RAW_CSD_BUF_IDX2                  2U
-#define RAW_CSD_BUF_IDX3                  3U
-#define CSD_SPEC_VER_Msk                  0x003C0000U
-#define READ_BLK_LEN_Msk                  0x00000F00U
-#define C_SIZE_MULT_Msk                   0x00000380U
-#define C_SIZE_LOWER_Msk                  0xFFC00000U
-#define C_SIZE_LOWER_Pos                  22U
-#define C_SIZE_UPPER_Msk                  0x00000003U
-#define C_SIZE_UPPER_Pos                  0x0000000AU
-#define CSD_STRUCT_Msk                    0x00C00000U
-#define CSD_STRUCT_Pos                    22U
-#define CSD_V2_C_SIZE_Msk                 0x3FFFFF00U
-#define CSD_V2_C_SIZE_Pos                 0x8U
-#define CSD_V1_BLK_LEN_Pos                0x8U
-#define CSD_CCC_Msk                       0xFFF00000U
-#define CSD_CCC_SHIFT                     20U
-#define CSD_CCC_CLASS5_Msk                0x20U
-
-/* ext CSD Command Index */
-#define SDMMC_EXT_CSD_CMD_BOOT_CFG        0xAFU
-#define SDMMC_EXT_CSD_CMD_BUS_WIDTH       0xB7U
-#define SDMMC_EXT_CSD_CMD_HS_MODE         0xB9U
-#define SDMMC_EXT_CSD_HS_MODE             0x1U
-#define SDMMC_EXT_CSD_BOOT_WR_PROTECT     0x1U
-
-/* CMD6 Argument Format */
-#define SDMMC_CMD6_DELAY                  5000U
-#define SDMMC_CMD6_ACCESS_MODE_CMD        0U
-#define SDMMC_CMD6_ACCESS_MODE_SET_BIT    1U
-#define SDMMC_CMD6_ACCESS_MODE_CLR_BIT    2U
-#define SDMMC_CMD6_ACCESS_MODE_WR_BYTE    3U
-#define SDMMC_CMD6_SWITCH_MODE_APPLY      1U
-#define SDMMC_CMD6_SWITCH_MODE_TEST       0U
-
-#define SDMMC_EXT_CSD_WRITE_Pos           0x18U
-#define SDMMC_EXT_CSD_WRITE_Msk           (SDMMC_CMD6_ACCESS_MODE_WR_BYTE << SDMMC_EXT_CSD_WRITE_Pos)
-#define SDMMC_EXT_CSD_IDS_Pos             0x10
-#define SDMMC_EXT_CSD_IDX_Msk(IDX)        ((IDX) << SDMMC_EXT_CSD_IDS_Pos)
-#define SDMMC_EXT_CSD_VAL_Pos             0x8U
-#define SDMMC_EXT_CSD_VAL_Msk(VAL)        ((VAL) << SDMMC_EXT_CSD_VAL_Pos)
-
-/* Blk Size */
-#define SDMMC_BLK_SIZE_512_Msk            0x0200U     /*!< Blk Size 512             */
-#define SDMMC_NORM_INTR_ALL_Msk           0x0000FFFFU /*!< Mask for normal irq bits */
-#define SDMMC_ERROR_INTR_ALL_Msk          0x0000F3FFU /*!< Mask for error irq bits  */
+#define SDHC_CMD_LINE_LVL_UP_Pos         23U
+#define SDHC_CMD_LINE_LVL_UP_Msk         (1U << SDHC_CMD_LINE_LVL_UP_Pos)
 
 /* Power Control */
-#define SDMMC_PC_BUS_PWR_OFF              0x0U        /**< Bus Power Off      */
-#define SDMMC_PC_BUS_PWR_VDD1_Msk         0x00000001U /**< Bus Power Control  */
-#define SDMMC_PC_BUS_VSEL_Msk             0x0000000EU /**< Bus Voltage Select */
-#define SDMMC_PC_BUS_VSEL_3V3_Msk         0x0000000EU /**< Bus Voltage 3.3V   */
-#define SDMMC_PC_BUS_VSEL_3V0_Msk         0x0000000CU /**< Bus Voltage 3.0V   */
-#define SDMMC_PC_BUS_VSEL_1V8_Msk         0x0000000AU /**< Bus Voltage 1.8V   */
-#define SDMMC_PC_EMMC_HW_RST_Msk          0x00000010U /**< HW reset for eMMC  */
+#define SDHC_PC_BUS_PWR_OFF              0x0U        /**< Bus Power Off      */
+#define SDHC_PC_BUS_PWR_VDD1_Msk         0x00000001U /**< Bus Power Control  */
+#define SDHC_PC_BUS_VSEL_Msk             0x0000000EU /**< Bus Voltage Select */
+#define SDHC_PC_BUS_VSEL_3V3_Msk         0x0000000EU /**< Bus Voltage 3.3V   */
+#define SDHC_PC_BUS_VSEL_3V0_Msk         0x0000000CU /**< Bus Voltage 3.0V   */
+#define SDHC_PC_BUS_VSEL_1V8_Msk         0x0000000AU /**< Bus Voltage 1.8V   */
+#define SDHC_PC_EMMC_HW_RST_Msk          0x00000010U /**< HW reset for eMMC  */
 
 /* Clock Control */
-#define SDMMC_INTERNAL_CLK_EN_Msk         0x1U
-#define SDMMC_INTERNAL_CLK_STABLE_Msk     0x2U
-#define SDMMC_CLK_EN_Msk                  0x4U
-#define SDMMC_PLL_EN_Msk                  0x8U
-#define SDMMC_CLK_GEN_SEL_Pos             0x5U
-#define SDMMC_DIV_CLK_MODE                0x0U
-#define SDMMC_PROG_CLK_MODE               0x1U
-#define SDMMC_CLK_GEN_SEL_Msk             (SDMMC_DIV_CLK_MODE << SDMMC_CLK_GEN_SEL_Pos)
-#define SDMMC_UPPER_FREQ_SEL_Pos          6U
-#define SDMMC_FREQ_SEL_Pos                8U
-#define SDMMC_CLK_200KHz_DIV              (2U << SDMMC_UPPER_FREQ_SEL_Pos)
-#define SDMMC_CLK_400KHz_DIV              (1U << SDMMC_UPPER_FREQ_SEL_Pos)
-#define SDMMC_CLK_UPPR_FREQ_SEL           SDMMC_CLK_400KHz_DIV
-#define SDMMC_CLK_800KHz_DIV              0x80U
-#define SDMMC_CLK_1_5MHz_DIV              0x40U
-#define SDMMC_CLK_3MHz_DIV                0x20U
-#define SDMMC_CLK_6MHz_DIV                0x10U
-#define SDMMC_CLK_12_5MHz_DIV             0x4U
-#define SDMMC_CLK_25MHz_DIV               0x2U
-#define SDMMC_CLK_50MHz_DIV               0x1U
-#define SDMMC_CLK_100MHz_DIV              0x0U
-#define SDMMC_INIT_FREQ                   SDMMC_CLK_400KHz_DIV
-#define SDMMC_INIT_CLK_DIVSOR_Msk         (SDMMC_INIT_FREQ)
+#define SDHC_INTERNAL_CLK_EN_Msk         0x1U
+#define SDHC_INTERNAL_CLK_STABLE_Msk     0x2U
+#define SDHC_CLK_EN_Msk                  0x4U
+#define SDHC_PLL_EN_Msk                  0x8U
+#define SDHC_CLK_GEN_SEL_Pos             0x5U
+#define SDHC_DIV_CLK_MODE                0x0U
+#define SDHC_PROG_CLK_MODE               0x1U
+#define SDHC_CLK_GEN_SEL_Msk             (SDHC_DIV_CLK_MODE << SDHC_CLK_GEN_SEL_Pos)
+#define SDHC_UPPER_FREQ_SEL_Pos          6U
+#define SDHC_UPPER_FREQ_SEL_Msk          (0x3U << SDHC_UPPER_FREQ_SEL_Pos)
+#define SDHC_FREQ_SEL_Pos                8U
+#define SDHC_FREQ_SEL_Msk                (0xFFU << SDHC_FREQ_SEL_Pos)
+#define SDHC_CLK_200KHz_DIV              (2U << SDHC_UPPER_FREQ_SEL_Pos)
+#define SDHC_CLK_400KHz_DIV              (1U << SDHC_UPPER_FREQ_SEL_Pos)
+#define SDHC_CLK_UPPR_FREQ_SEL           SDHC_CLK_400KHz_DIV
+#define SDHC_CLK_800KHz_DIV              0x80U
+#define SDHC_CLK_1_5MHz_DIV              0x40U
+#define SDHC_CLK_3MHz_DIV                0x20U
+#define SDHC_CLK_6MHz_DIV                0x10U
+#define SDHC_CLK_12_5MHz_DIV             0x4U
+#define SDHC_CLK_25MHz_DIV               0x2U
+#define SDHC_CLK_50MHz_DIV               0x1U
+#define SDHC_CLK_100MHz_DIV              0x0U
+#define SDHC_INIT_FREQ                   SDHC_CLK_400KHz_DIV
+#define SDHC_INIT_CLK_DIVSOR_Msk         (SDHC_INIT_FREQ)
 
 /* Host Capabilities */
-#define SDMMC_HOST_SD_CAP_VOLT_3V3_Msk    0x01000000U /*!< 3.3V support */
-#define SDMMC_HOST_SD_CAP_VOLT_3V0_Msk    0x02000000U /*!< 3.0V support */
-#define SDMMC_HOST_SD_CAP_VOLT_1V8_Msk    0x04000000U /*!< 1.8V support */
+#define SDHC_HOST_SD_CAP_VOLT_3V3_Msk    0x01000000U /*!< 3.3V support */
+#define SDHC_HOST_SD_CAP_VOLT_3V0_Msk    0x02000000U /*!< 3.0V support */
+#define SDHC_HOST_SD_CAP_VOLT_1V8_Msk    0x04000000U /*!< 1.8V support */
 
 /* Xfer Mode Control */
-#define SDMMC_XFER_MODE_DMA_EN_Pos        0U
-#define SDMMC_XFER_MODE_DMA_EN_Msk        (1U << SDMMC_XFER_MODE_DMA_EN_Pos)
-#define SDMMC_XFER_MODE_BLK_CNT_EN_Pos    1U
-#define SDMMC_XFER_MODE_BLK_CNT_Msk       (1U << SDMMC_XFER_MODE_BLK_CNT_EN_Pos)
-#define SDMMC_XFER_MODE_AUTO_CMD_EN_Pos   2U
-#define SDMMC_XFER_MODE_AUTO_CMD_DISABLE  0U
-#define SDMMC_XFER_MODE_AUTO_CMD12        1U
-#define SDMMC_XFER_MODE_AUTO_CMD23        2U
-#define SDMMC_XFER_MODE_AUTO_CMD_AUTO_SEL 3U
-#define SDMMC_XFER_MODE_AUTO_CMD_EN_Msk                                                            \
-    (SDMMC_XFER_MODE_AUTO_CMD12 << SDMMC_XFER_MODE_AUTO_CMD_EN_Pos)
-#define SDMMC_XFER_MODE_DATA_XFER_DIR_Pos   4U
-#define SDMMC_XFER_MODE_DATA_XFER_RD_Msk    (1U << SDMMC_XFER_MODE_DATA_XFER_DIR_Pos)
-#define SDMMC_XFER_MODE_DATA_XFER_WR_Msk    (0U << SDMMC_XFER_MODE_DATA_XFER_DIR_Pos)
-#define SDMMC_XFER_MODE_MULTI_BLK_SEL_Pos   5U
-#define SDMMC_XFER_MODE_MULTI_BLK_SEL_Msk   (1U << SDMMC_XFER_MODE_MULTI_BLK_SEL_Pos)
-#define SDMMC_XFER_MODE_RESP_ERR_CHK_Pos    7U
-#define SDMMC_XFER_MODE_RESP_ERR_CHK_EN_Msk (1U << SDMMC_XFER_MODE_RESP_ERR_CHK_Pos)
+#define SDHC_XFER_MODE_DMA_EN_Pos        0U
+#define SDHC_XFER_MODE_DMA_EN_Msk        (1U << SDHC_XFER_MODE_DMA_EN_Pos)
+#define SDHC_XFER_MODE_BLK_CNT_EN_Pos    1U
+#define SDHC_XFER_MODE_BLK_CNT_Msk       (1U << SDHC_XFER_MODE_BLK_CNT_EN_Pos)
+#define SDHC_XFER_MODE_AUTO_CMD_EN_Pos   2U
+#define SDHC_XFER_MODE_AUTO_CMD_DISABLE  0U
+#define SDHC_XFER_MODE_AUTO_CMD12        1U
+#define SDHC_XFER_MODE_AUTO_CMD23        2U
+#define SDHC_XFER_MODE_AUTO_CMD_AUTO_SEL 3U
+#define SDHC_XFER_MODE_AUTO_CMD_EN_Msk \
+    (SDHC_XFER_MODE_AUTO_CMD12 << SDHC_XFER_MODE_AUTO_CMD_EN_Pos)
+#define SDHC_XFER_MODE_DATA_XFER_DIR_Pos   4U
+#define SDHC_XFER_MODE_DATA_XFER_RD_Msk    (1U << SDHC_XFER_MODE_DATA_XFER_DIR_Pos)
+#define SDHC_XFER_MODE_DATA_XFER_WR_Msk    (0U << SDHC_XFER_MODE_DATA_XFER_DIR_Pos)
+#define SDHC_XFER_MODE_MULTI_BLK_SEL_Pos   5U
+#define SDHC_XFER_MODE_MULTI_BLK_SEL_Msk   (1U << SDHC_XFER_MODE_MULTI_BLK_SEL_Pos)
+#define SDHC_XFER_MODE_RESP_ERR_CHK_Pos    7U
+#define SDHC_XFER_MODE_RESP_ERR_CHK_EN_Msk (1U << SDHC_XFER_MODE_RESP_ERR_CHK_Pos)
+#define SDHC_SIGNAL_DISABLE                 0x0U
 
 /* DMA */
-#define SDMMC_HC_DMA_ADMA2_32_Msk           0x00000010U /**< ADMA2 Mode - 32 bit */
+#define SDHC_HC_DMA_ADMA2_32_Msk           0x00000010U /**< ADMA2 Mode - 32 bit */
 
 /* Wakeup Control Register Mask */
-#define SDMMC_WKUP_CARD_IRQ_Msk             0x00000001U /*!< Card Interrupt           */
-#define SDMMC_WKUP_CARD_INSRT_Msk           0x00000002U /*!< Card Insertion           */
-#define SDMMC_WKUP_CARD_REM_Msk             0x00000004U /*!< Card Removal             */
+#define SDHC_WKUP_CARD_IRQ_Msk             0x00000001U /*!< Card Interrupt           */
+#define SDHC_WKUP_CARD_INSRT_Msk           0x00000002U /*!< Card Insertion           */
+#define SDHC_WKUP_CARD_REM_Msk             0x00000004U /*!< Card Removal             */
 
 /* Normal IRQs Mask */
-#define SDMMC_INTR_CC_Msk                   0x00000001U /*!< Command Complete         */
-#define SDMMC_INTR_TC_Msk                   0x00000002U /*!< Transfer Complete        */
-#define SDMMC_INTR_BGE_Msk                  0x00000004U /*!< Block Gap Event          */
-#define SDMMC_INTR_DMA_Msk                  0x00000008U /*!< DMA Interrupt            */
-#define SDMMC_INTR_BWR_Msk                  0x00000010U /*!< Buffer Write Ready       */
-#define SDMMC_INTR_BRR_Msk                  0x00000020U /*!< Buffer Read Ready        */
-#define SDMMC_INTR_CARD_INSRT_Msk           0x00000040U /*!< Card Insert              */
-#define SDMMC_INTR_CARD_REM_Msk             0x00000080U /*!< Card Remove              */
-#define SDMMC_INTR_CARD_Msk                 0x00000100U /*!< Card Interrupt           */
-#define SDMMC_INTR_INT_A_Msk                0x00000200U /*!< INT A Interrupt          */
-#define SDMMC_INTR_INT_B_Msk                0x00000400U /*!< INT B Interrupt          */
-#define SDMMC_INTR_INT_C_Msk                0x00000800U /*!< INT C Interrupt          */
-#define SDMMC_INTR_RE_TUNING_Msk            0x00001000U /*!< Re-Tuning Interrupt      */
-#define SDMMC_INTR_BOOT_ACK_RECV_Msk        0x00002000U /*!< Boot Ack Recv Irq        */
-#define SDMMC_INTR_BOOT_TERM_Msk            0x00004000U /*!< Boot Terminate Interrupt */
-#define SDMMC_INTR_ERR_Msk                  0x00008000U /*!< Error Interrupt          */
-#define SDMMC_NORM_INTR_ALL_Msk             0x0000FFFFU
+#define SDHC_INTR_CC_Msk                   0x00000001U /*!< Command Complete         */
+#define SDHC_INTR_TC_Msk                   0x00000002U /*!< Transfer Complete        */
+#define SDHC_INTR_BGE_Msk                  0x00000004U /*!< Block Gap Event          */
+#define SDHC_INTR_DMA_Msk                  0x00000008U /*!< DMA Interrupt            */
+#define SDHC_INTR_BWR_Msk                  0x00000010U /*!< Buffer Write Ready       */
+#define SDHC_INTR_BRR_Msk                  0x00000020U /*!< Buffer Read Ready        */
+#define SDHC_INTR_CARD_INSRT_Msk           0x00000040U /*!< Card Insert              */
+#define SDHC_INTR_CARD_REM_Msk             0x00000080U /*!< Card Remove              */
+#define SDHC_INTR_CARD_Msk                 0x00000100U /*!< Card Interrupt           */
+#define SDHC_INTR_INT_A_Msk                0x00000200U /*!< INT A Interrupt          */
+#define SDHC_INTR_INT_B_Msk                0x00000400U /*!< INT B Interrupt          */
+#define SDHC_INTR_INT_C_Msk                0x00000800U /*!< INT C Interrupt          */
+#define SDHC_INTR_RE_TUNING_Msk            0x00001000U /*!< Re-Tuning Interrupt      */
+#define SDHC_INTR_BOOT_ACK_RECV_Msk        0x00002000U /*!< Boot Ack Recv Irq        */
+#define SDHC_INTR_BOOT_TERM_Msk            0x00004000U /*!< Boot Terminate Interrupt */
+#define SDHC_INTR_ERR_Msk                  0x00008000U /*!< Error Interrupt          */
+#define SDHC_NORM_INTR_ALL_Msk             0x0000FFFFU
 
 /* Error IRQs Mask */
-#define SDMMC_INTR_ERR_CT_Msk               0x00000001U /*!< Command Timeout Error    */
-#define SDMMC_INTR_ERR_CCRC_Msk             0x00000002U /*!< Command CRC Error        */
-#define SDMMC_INTR_ERR_CEB_Msk              0x00000004U /*!< Command End Bit Error    */
-#define SDMMC_INTR_ERR_CI_Msk               0x00000008U /*!< Command Index Error      */
-#define SDMMC_INTR_ERR_DT_Msk               0x00000010U /*!< Data Timeout Error       */
-#define SDMMC_INTR_ERR_DCRC_Msk             0x00000020U /*!< Data CRC Error           */
-#define SDMMC_INTR_ERR_DEB_Msk              0x00000040U /*!< Data End Bit Error       */
-#define SDMMC_INTR_ERR_CUR_LMT_Msk          0x00000080U /*!< Current Limit Error      */
-#define SDMMC_INTR_ERR_AUTO_CMD12_Msk       0x00000100U /*!< Auto CMD12 Error         */
-#define SDMMC_INTR_ERR_ADMA_Msk             0x00000200U /*!< ADMA Error               */
-#define SDMMC_INTR_ERR_TR_Msk               0x00001000U /*!< Tuning Error             */
-#define SDMMC_INTR_VEND_SPF_ERR_Msk         0x0000E000U /*!< Vendor Specific Error    */
-#define SDMMC_ERROR_INTR_ALL_Msk            0x0000F3FFU /*!< Mask for error bits      */
+#define SDHC_INTR_ERR_CT_Msk               0x00000001U /*!< Command Timeout Error    */
+#define SDHC_INTR_ERR_CCRC_Msk             0x00000002U /*!< Command CRC Error        */
+#define SDHC_INTR_ERR_CEB_Msk              0x00000004U /*!< Command End Bit Error    */
+#define SDHC_INTR_ERR_CI_Msk               0x00000008U /*!< Command Index Error      */
+#define SDHC_INTR_ERR_DT_Msk               0x00000010U /*!< Data Timeout Error       */
+#define SDHC_INTR_ERR_DCRC_Msk             0x00000020U /*!< Data CRC Error           */
+#define SDHC_INTR_ERR_DEB_Msk              0x00000040U /*!< Data End Bit Error       */
+#define SDHC_INTR_ERR_CUR_LMT_Msk          0x00000080U /*!< Current Limit Error      */
+#define SDHC_INTR_ERR_AUTO_CMD12_Msk       0x00000100U /*!< Auto CMD12 Error         */
+#define SDHC_INTR_ERR_ADMA_Msk             0x00000200U /*!< ADMA Error               */
+#define SDHC_INTR_ERR_TR_Msk               0x00001000U /*!< Tuning Error             */
+#define SDHC_INTR_VEND_SPF_ERR_Msk         0x0000E000U /*!< Vendor Specific Error    */
+#define SDHC_ERROR_INTR_ALL_Msk            0x0000F3FFU /*!< Mask for error bits      */
+
+/* Timeout Constants */
+#define SDHC_POWER_CYCLE_DELAY_US         1000U      /*!< Power cycle delay in microseconds */
+#define SDHC_VOLTAGE_SWITCH_DELAY_US      10000U     /*!< Voltage switch delay in microseconds */
+#define SDHC_CLOCK_STABLE_DELAY_US        1000U      /*!< Clock stable delay in microseconds */
+#define SDHC_POST_CLOCK_ENABLE_DELAY_US   1000U      /*!< Delay after clock enable */
+#define SDHC_POST_1P8V_CLOCK_DELAY_US     1000U      /*!< Clock enable delay for 1.8V switch */
+#define SDHC_BUS_IDLE_TIMEOUT             0x1000U    /*!< Bus idle timeout count */
+#define SDHC_POWER_CYCLE_TIMEOUT          0xFFFFU    /*!< Power cycle timeout count */
+#define SDHC_CLOCK_STABLE_TIMEOUT         1000U      /*!< Clock stable timeout in microseconds */
+
+/* Clock Constants */
+#define SDHC_BASE_CLK_FREQ_MASK           0xFF00U     /*!< Base clock frequency mask */
+#define SDHC_BASE_CLK_FREQ_POS            7U          /*!< Base clock frequency position */
+#define SDHC_MHZ_TO_HZ                    1000000U    /*!< MHz to Hz conversion factor */
+#define SDHC_MAX_DIVIDER                  0x3FFU      /*!< Maximum clock divider value */
+#define SDHC_DIVIDER_LOW_MASK             0xFFU       /*!< Lower 8 bits of divider */
+#define SDHC_DIVIDER_HIGH_MASK            0x03U       /*!< Upper 2 bits of divider */
+#define SDHC_HS_MODE_THRESHOLD_HZ         25000000U   /*!< High speed mode threshold (25MHz) */
+#define SDHC_UHS_SDR50_THRESHOLD_HZ       50000000U   /*!< SDR50/SDR104 threshold (50MHz) */
+#define SDHC_INIT_CLOCK_FREQ_HZ           400000U     /*!< Initialization clock freq (400KHz) */
+#define SDHC_DEFAULT_BASE_CLK_MHZ         50U         /*!< Default base clock in MHz */
+
+/* Timeout Control */
+#define SDHC_MAX_TIMEOUT_VALUE            0xE         /*!< Maximum timeout value for TOUT_CTRL */
 
 /* SD Status */
-#define SDMMC_STATUS_Msk                    0x00001E00U
-#define SDMMC_STATUS_Pos                    9U
+#define SDHC_STATUS_Msk                    0x00001E00U
+#define SDHC_STATUS_Pos                    9U
 
 /* Host Control 1 */
-#define SDMMC_HOST_CTRL1_LED_ON             0x1U
-#define SDMMC_HOST_CTRL1_4_BIT_WIDTH        0x2U /*!< Host control 1 4bit mode */
-#define SDMMC_HOST_CTRL1_HIGH_SPEED_MODE_EN 0x4U /*!< Host control 1 High speed enable */
-#define SDMMC_HOST_CTRL1_SDMA_MODE          0x0U
-#define SDMMC_HOST_CTRL1_ADMA2_MODE         0x1U
-#define SDMMC_HOST_CTRL1_ADMA3_MODE         0x2U
-#define SDMMC_HOST_CTRL1_ADMA32_MODE_Msk    (0x2U << 3U)
-#define SDMMC_HOST_CTRL1_ADMA64MODE         0x3U
-#define SDMMC_HOST_CTRL1_DMA_SEL            SD_SEL_SDMA
-#define SDMMC_HOST_CTRL1_DMA_SEL_1BIT_MODE  0x0U
+#define SDHC_HOST_CTRL1_LED_ON             0x1U
+#define SDHC_HOST_CTRL1_4_BIT_WIDTH        0x2U /*!< Host control 1 4bit mode */
+#define SDHC_HOST_CTRL1_HIGH_SPEED_MODE_EN 0x4U /*!< Host control 1 High speed enable */
+#define SDHC_HOST_CTRL1_SDMA_MODE          0x0U
+#define SDHC_HOST_CTRL1_ADMA2_MODE         0x1U
+#define SDHC_HOST_CTRL1_ADMA3_MODE         0x2U
+#define SDHC_HOST_CTRL1_ADMA32_MODE_Msk    (0x2U << 3U)
+#define SDHC_HOST_CTRL1_ADMA64MODE         0x3U
+#define SDHC_HOST_CTRL1_DMA_SEL            SD_SEL_SDMA
+#define SDHC_HOST_CTRL1_DMA_SEL_1BIT_MODE  0x0U
 
 /* Host Control 2*/
-#define SDMMC_HOST_CTRL2_ASYNC_INT_EN_Msk   (1U << 14U)
-#define SDMMC_HOST_CTRL2_VER4_EN_Msk        (1U << 12U)
-#define SDMMC_HOST_CTRL2_CMD23_EN_Msk       (1U << 11U)
-#define SDMMC_HOST_CTRL2_SIGNALING_EN_Msk   (1U << 3U)
+#define SDHC_HOST_CTRL2_ASYNC_INT_EN_Msk   (1U << 14U)
+#define SDHC_HOST_CTRL2_VER4_EN_Msk        (1U << 12U)
+#define SDHC_HOST_CTRL2_CMD23_EN_Msk       (1U << 11U)
+#define SDHC_HOST_CTRL2_SIGNALING_EN_Msk   (1U << 3U)
 
-/* Card Interface Conditions constants */
-#define SDMMC_CMD8_VOL_PATTERN              0x1AAU /*!< CMD8 Voltage Pattern */
+/* UHS Mode Select - HOST_CTRL2 bits [2:0] */
+#define SDHC_HOST_CTRL2_UHS_MODESEL_Pos    0U
+#define SDHC_HOST_CTRL2_UHS_MODESEL_Msk    (0x7U << SDHC_HOST_CTRL2_UHS_MODESEL_Pos)
+#define SDHC_UHS_MODESEL_SDR12             0x0U  /*!< Default Speed (<=25MHz, 3.3V) */
+#define SDHC_UHS_MODESEL_SDR25             0x1U  /*!< High Speed   (<=50MHz, 3.3V/1.8V) */
+#define SDHC_UHS_MODESEL_SDR50             0x2U  /*!< SDR50        (50MHz, 1.8V) */
+#define SDHC_UHS_MODESEL_SDR104            0x3U  /*!< SDR104       (>50MHz, 1.8V) */
+#define SDHC_UHS_MODESEL_DDR50             0x4U  /*!< DDR50        (50MHz DDR, 1.8V) */
 
-/* Card Operating Conditions constants */
-#define SDMMC_OCR_READY                     0x80000000U /*!< OCR Ready */
-#define SDMMC_OCR_S18R                      0x1000000U
-#define SDMMC_ROCR_S18A                     SDMMC_OCR_S18R
-#define SDMMC_CMD41_HCS                     0x40000000U    /*!< ACMD41 High Capacity support */
-#define SDMMC_CMD41_3V3                     0x00300000U    /*!< ACMD41 3.3v support */
-#define SDMMC_CMD41_S18A                    SDMMC_OCR_S18R /*!< ACMD41 switch to 1.8v Accepted */
+#define HC_CLOCK_DISABLE(pHsd) \
+    (pHsd->regs->SDMMC_CLK_CTRL_R &= ~SDHC_CLK_EN_Msk)
+#define HC_CLOCK_ENABLE(pHsd) \
+    (pHsd->regs->SDMMC_CLK_CTRL_R |= SDHC_CLK_EN_Msk)
 
-/* Time out constant */
-#define SDMMC_MAX_TIMEOUT_32                0xFFFFFFFFU
-#define SDMMC_MAX_TIMEOUT_16                0xFFFFU
+/**
+  \fn          int sdhc_card_present(struct _sd_handle_t *pHsd, int (*card_det_cb)(void))
+  \brief       Check if SD card is present using GPIO callback or PSTATE register
+  \param[in]   pHsd: SD host handle
+  \param[in]   card_det_cb: Optional GPIO card detect callback
+  \return      1 if card present, 0 if not
+*/
+int sdhc_card_present(struct _sd_handle_t *pHsd, int (*card_det_cb)(void));
 
-/* SD Relative Card Address Constnat */
-#define SDMMC_RCA_Pos                       0x10U
-#define SDMMC_RCA_Msk                       0xFFFF0000U
-#define EMMC_DEFAULT_RCA                    0x12340000U
+/**
+  \fn          SD_DRV_STATUS sdhc_init(sd_handle_t *pHsd, sd_param_t *p_sd_param)
+  \brief       Initialize SD host controller
+  \param[in]   pHsd: SD host handle
+  \param[in]   p_sd_param: SD parameters
+  \return      SD driver status
+*/
+SD_DRV_STATUS sdhc_init(sd_handle_t *pHsd, sd_param_t *p_sd_param);
 
-#define HC_CLOCK_DISABLE(pHsd)              (pHsd->regs->SDMMC_CLK_CTRL_R &= ~SDMMC_CLK_EN_Msk)
-#define HC_CLOCK_ENABLE(pHsd)               (pHsd->regs->SDMMC_CLK_CTRL_R |= SDMMC_CLK_EN_Msk)
+/* Low-level host controller API declarations */
+SDHC_STATUS sdhc_send_cmd(sd_handle_t *pHsd, sd_cmd_t *pCmd);
+SDHC_STATUS sdhc_set_io(sdmmc_io_t *p_sdmmc_io_param,
+                         SDMMC_SET_IO_CMD set_io_cmd);
+SDHC_STATUS sdhc_reset(sd_handle_t *pHsd, uint8_t reset_val);
+void        sdhc_power_cycle(sd_handle_t *pHsd);
+SDHC_STATUS sdhc_xfer_dma_setup(sd_handle_t *pHsd, sd_data_t *data);
+SDHC_STATUS sdhc_set_blk_size(sd_handle_t *pHsd, uint32_t blk_size);
+void        sdhc_set_block_count(sd_handle_t *pHsd, uint32_t blk_cnt);
+SDHC_STATUS sdhc_check_xfer_done(sd_handle_t *pHsd, uint32_t timeout_cnt);
+uint32_t    sdhc_get_response1(sd_handle_t *pHsd);
+uint32_t    sdhc_get_response2(sd_handle_t *pHsd);
+uint32_t    sdhc_get_response3(sd_handle_t *pHsd);
+uint32_t    sdhc_get_response4(sd_handle_t *pHsd);
+void        sdhc_enable_irq(sd_handle_t *pHsd, uint16_t mask);
+void        sdhc_set_emmc_ctrl(sd_handle_t *pHsd, uint8_t value);
+uint32_t    sdhc_get_blk_size(sd_handle_t *pHsd);
+void        sdhc_set_led(sd_handle_t *pHsd, bool enable);
 
 #ifdef __cplusplus
 }

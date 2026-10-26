@@ -22,6 +22,7 @@
 #include "sys_utils.h"
 /* Pinmux Driver */
 #include "pinconf.h"
+#include "board_config.h"
 
 /* IO Driver */
 #include "Driver_IO.h"
@@ -36,8 +37,8 @@
 #if defined(RTE_Drivers_BMI323)
 
 /* BMI Interrupt pin control IO port */
-extern ARM_DRIVER_GPIO  ARM_Driver_GPIO_(RTE_BMI323_INT_IO_PORT);
-static ARM_DRIVER_GPIO *IO_Driver_INT = &ARM_Driver_GPIO_(RTE_BMI323_INT_IO_PORT);
+extern ARM_DRIVER_GPIO  ARM_Driver_GPIO_(BOARD_BMI323_IMU_IRQ_GPIO_PORT);
+static ARM_DRIVER_GPIO *IO_Driver_INT = &ARM_Driver_GPIO_(BOARD_BMI323_IMU_IRQ_GPIO_PORT);
 
 #define ARM_IMU_DRV_VERSION            ARM_DRIVER_VERSION_MAJOR_MINOR(1, 1)
 
@@ -198,10 +199,12 @@ static int32_t ARM_IMU_IntEnable(bool enable)
 
     if (enable) {
         /* Enable interrupt */
-        ret = IO_Driver_INT->Control(RTE_BMI323_INT_PIN_NO, ARM_GPIO_ENABLE_INTERRUPT, &arg);
+        ret = IO_Driver_INT->Control(BOARD_BMI323_IMU_IRQ_GPIO_PIN,
+                                     ARM_GPIO_ENABLE_INTERRUPT, &arg);
     } else {
         /* Disable interrupt */
-        ret = IO_Driver_INT->Control(RTE_BMI323_INT_PIN_NO, ARM_GPIO_DISABLE_INTERRUPT, NULL);
+        ret = IO_Driver_INT->Control(BOARD_BMI323_IMU_IRQ_GPIO_PIN,
+                                     ARM_GPIO_DISABLE_INTERRUPT, NULL);
     }
 
     return ret;
@@ -345,13 +348,13 @@ static int32_t IMU_Init(void)
     }
 
     /* Initialize IO driver */
-    ret = IO_Driver_INT->Initialize(RTE_BMI323_INT_PIN_NO, &ARM_IMU_IO_CB);
+    ret = IO_Driver_INT->Initialize(BOARD_BMI323_IMU_IRQ_GPIO_PIN, &ARM_IMU_IO_CB);
     if (ret != ARM_DRIVER_OK) {
         return ret;
     }
 
     /* Power-up IO driver */
-    ret = IO_Driver_INT->PowerControl(RTE_BMI323_INT_PIN_NO, ARM_POWER_FULL);
+    ret = IO_Driver_INT->PowerControl(BOARD_BMI323_IMU_IRQ_GPIO_PIN, ARM_POWER_FULL);
     if (ret != ARM_DRIVER_OK) {
         return ret;
     }
@@ -660,7 +663,7 @@ static int32_t IMU_Setup(void)
         return ret;
     }
 
-    ret = IO_Driver_INT->SetDirection(RTE_BMI323_INT_PIN_NO, GPIO_PIN_DIRECTION_INPUT);
+    ret = IO_Driver_INT->SetDirection(BOARD_BMI323_IMU_IRQ_GPIO_PIN, GPIO_PIN_DIRECTION_INPUT);
     if (ret != ARM_DRIVER_OK) {
         return ret;
     }

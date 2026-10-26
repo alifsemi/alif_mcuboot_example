@@ -14,4 +14,4 @@ The picture below shows a Segger J-Link with 19-pin Cortex-M adapter connected t
 
 ## Links
 
-- [Ensemble DevKit Gen 2](https://alifsemi.com/support/kits/ensemble-devkit-gen2/)
+- [Ensemble DevKit D1](https://alifsemi.com/support/kits/ensemble-devkit-gen2/)
